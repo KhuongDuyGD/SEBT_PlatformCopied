@@ -2,6 +2,7 @@ package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -29,17 +30,15 @@ public class ReviewEntity {
     @JoinColumn(name = "transaction_id")
     private TransactionEntity transaction;
 
-    @Column(nullable = false)
-    private Integer rating; // Add CHECK 1..5 at DB level
+    @Column(name = "rating", nullable = false)
+    private Integer rating; // 1-5 rating as per ERD note
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "review_text", columnDefinition = "NVARCHAR(MAX)")
     private String reviewText;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME2")
     private LocalDateTime createdAt;
-
-    // Note: Add UNIQUE (reviewer_id, transaction_id) if only one review per transaction. Enforce reviewer_id <> reviewed_user_id.
 
     // Constructors
     public ReviewEntity() {}
@@ -50,8 +49,7 @@ public class ReviewEntity {
         this.rating = rating;
     }
 
-    public ReviewEntity(UserEntity reviewer, UserEntity reviewedUser, TransactionEntity transaction,
-                       Integer rating, String reviewText) {
+    public ReviewEntity(UserEntity reviewer, UserEntity reviewedUser, TransactionEntity transaction, Integer rating, String reviewText) {
         this.reviewer = reviewer;
         this.reviewedUser = reviewedUser;
         this.transaction = transaction;
@@ -110,5 +108,9 @@ public class ReviewEntity {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

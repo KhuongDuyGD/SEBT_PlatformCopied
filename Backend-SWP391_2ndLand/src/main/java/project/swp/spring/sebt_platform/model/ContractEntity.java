@@ -3,10 +3,12 @@ package project.swp.spring.sebt_platform.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import project.swp.spring.sebt_platform.model.enums.ContractStatus;
 import project.swp.spring.sebt_platform.model.enums.PaymentMethod;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "contracts",
@@ -39,41 +41,49 @@ public class ContractEntity {
     @JoinColumn(name = "listing_id", nullable = false)
     private ListingEntity listing;
 
-    @Column(length = 50, nullable = false, unique = true)
+    @Column(name = "contract_number", length = 50, nullable = false, unique = true, columnDefinition = "VARCHAR(50)")
     private String contractNumber;
 
-    @Column
+    @Column(name = "handover_datetime", columnDefinition = "DATETIME2")
     private LocalDateTime handoverDatetime;
 
-    @Column(length = 300)
+    @Column(name = "handover_location", length = 600, columnDefinition = "NVARCHAR(600)")
     private String handoverLocation;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "payment_method", nullable = false, length = 30, columnDefinition = "NVARCHAR(30)")
     private PaymentMethod paymentMethod;
 
-    @Column(precision = 15, scale = 2, nullable = false)
+    @Column(name = "payment_amount", nullable = false, precision = 18, scale = 2, columnDefinition = "DECIMAL(18,2)")
     private BigDecimal paymentAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 30, columnDefinition = "NVARCHAR(30)")
     private ContractStatus status = ContractStatus.DRAFT;
 
-    @Column
+    @Column(name = "buyer_signed", columnDefinition = "BIT DEFAULT 0")
     private Boolean buyerSigned = false;
 
-    @Column
+    @Column(name = "seller_signed", columnDefinition = "BIT DEFAULT 0")
     private Boolean sellerSigned = false;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME2")
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false, columnDefinition = "DATETIME2")
     private LocalDateTime updatedAt;
 
-    // Note: Add CHECK buyer_id <> seller_id. Consider UNIQUE partial: listing_id WHERE status IN (draft,pending_buyer,pending_seller,active).
+    // Relationships
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ContractSignatureEntity> signatures;
+
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ContractRevisionEntity> revisions;
+
+    @OneToOne(mappedBy = "contract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private TransactionEntity transaction;
 
     // Constructors
     public ContractEntity() {}
@@ -189,7 +199,39 @@ public class ContractEntity {
         return createdAt;
     }
 
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public List<ContractSignatureEntity> getSignatures() {
+        return signatures;
+    }
+
+    public void setSignatures(List<ContractSignatureEntity> signatures) {
+        this.signatures = signatures;
+    }
+
+    public List<ContractRevisionEntity> getRevisions() {
+        return revisions;
+    }
+
+    public void setRevisions(List<ContractRevisionEntity> revisions) {
+        this.revisions = revisions;
+    }
+
+    public TransactionEntity getTransaction() {
+        return transaction;
+    }
+
+    public void setTransaction(TransactionEntity transaction) {
+        this.transaction = transaction;
     }
 }

@@ -7,9 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import project.swp.spring.sebt_platform.dto.request.*;
-import project.swp.spring.sebt_platform.dto.response.ErrorResponseDTO;
-import project.swp.spring.sebt_platform.dto.response.SuccessResponseDTO;
+import project.swp.spring.sebt_platform.model.dto.request.UserLoginDTO;
+import project.swp.spring.sebt_platform.model.dto.request.UserRegisterDTO;
+import project.swp.spring.sebt_platform.model.dto.request.UserSessionDTO;
+import project.swp.spring.sebt_platform.model.dto.request.UserVerifyEmailDTO;
+import project.swp.spring.sebt_platform.model.dto.response.ErrorResponseDTO;
+import project.swp.spring.sebt_platform.model.dto.response.SuccessResponseDTO;
 import project.swp.spring.sebt_platform.model.UserEntity;
 import project.swp.spring.sebt_platform.model.enums.UserRole;
 import project.swp.spring.sebt_platform.model.enums.UserStatus;
@@ -35,7 +38,7 @@ public class AuthController {
     private Utils utils;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody UserRegisterDTO user) {
+    public ResponseEntity<?> register(@Valid @RequestBody UserRegisterDTO user, HttpServletRequest request) {
         try {
             // Input validation
             if (user.password() == null || user.password().trim().isEmpty()) {
@@ -59,26 +62,17 @@ public class AuthController {
                     .body(new ErrorResponseDTO("Password must be at least 6 characters"));
             }
 
-            UserEntity userEntity = userService.findUserByEmail(user.email());
-            if (userEntity != null) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(new ErrorResponseDTO("Email already exists"));
-            }
-            
             // Register user
             String pins = utils.generatePins();
-            boolean success = authService.register(user.password(), user.email(), pins);
+            HttpSession session = request.getSession(true);
+            session.setAttribute("pins", pins);
+            session.setAttribute("password", user.password());
+            session.setAttribute("email", user.email());
 
             // Send verification email
             mailService.sendVerificationEmail(user.email(), pins);
-
-            if (success) {
                 return ResponseEntity.ok(new SuccessResponseDTO(
-                    "Registration successful. Please check your email for verification."));
-            } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponseDTO("Registration failed"));
-            }
+                    "Please check your email for verification."));
         } catch (Exception e) {
             System.err.println("Registration error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -132,23 +126,8 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
-        try {
-            HttpSession session = request.getSession(false);
-            if (session != null) {
-                session.invalidate();
-            }
-            return ResponseEntity.ok(new SuccessResponseDTO("Logout successful"));
-        } catch (Exception e) {
-            System.err.println("Logout error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponseDTO("Logout failed"));
-        }
-    }
-
     @PostMapping("/verify-email")
-    public ResponseEntity<?> verifyEmail(@Valid @RequestBody UserVerifyEmailDTO user) {
+    public ResponseEntity<?> verifyEmail(@Valid @RequestBody UserVerifyEmailDTO user, HttpServletRequest request) {
         try {
             if (user.pins() == null || user.pins().trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -158,10 +137,27 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponseDTO("Email is required"));
             }
-            
-            boolean success = authService.verifyEmail(user.email(), user.pins());
+
+            HttpSession session = request.getSession(false);
+            String sessionPins = (String) session.getAttribute("pins");
+            String sessionEmail = (String) session.getAttribute("email");
+            String sessionPassword = (String) session.getAttribute("password");
+
+            if (sessionPins == null || sessionEmail == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponseDTO("No verification process found. Please register again."));
+            }
+
+            if (!sessionPins.equals(user.pins())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponseDTO("OTP does not match the registered email."));
+            }
+
+            boolean success = authService.register(sessionPassword,sessionEmail);;
+
             if (success) {
-                return ResponseEntity.ok(new SuccessResponseDTO("Email verified successfully"));
+                session.invalidate();
+                return ResponseEntity.ok(new SuccessResponseDTO("Email verified, register successfully"));
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponseDTO("Invalid PIN or email"));
@@ -235,6 +231,21 @@ public class AuthController {
 
         public boolean isValid() { return valid; }
         public String getMessage() { return message; }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.invalidate();
+            }
+            return ResponseEntity.ok(new SuccessResponseDTO("Logout successful"));
+        } catch (Exception e) {
+            System.err.println("Logout error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponseDTO("Logout failed"));
+        }
     }
 
 }

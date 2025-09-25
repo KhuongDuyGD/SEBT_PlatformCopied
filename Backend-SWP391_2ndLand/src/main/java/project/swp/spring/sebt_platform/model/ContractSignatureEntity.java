@@ -2,15 +2,18 @@ package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-import java.time.LocalDateTime;
 import project.swp.spring.sebt_platform.model.enums.SignatureMethod;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "contract_signatures",
     indexes = {
         @Index(name = "idx_contract_signatures_contract_id", columnList = "contract_id"),
-        @Index(name = "idx_contract_signatures_user_id", columnList = "user_id"),
-        @Index(name = "uk_contract_signatures_contract_user", columnList = "contract_id, user_id", unique = true)
+        @Index(name = "idx_contract_signatures_user_id", columnList = "user_id")
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_contract_signatures_contract_user", columnNames = {"contract_id", "user_id"})
     }
 )
 public class ContractSignatureEntity {
@@ -27,20 +30,18 @@ public class ContractSignatureEntity {
     private UserEntity user;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "signed_at", nullable = false, updatable = false)
     private LocalDateTime signedAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "signature_method", nullable = false, length = 20)
     private SignatureMethod signatureMethod;
 
-    @Column(length = 45)
+    @Column(name = "ip_address", length = 45)
     private String ipAddress;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "user_agent", columnDefinition = "TEXT")
     private String userAgent;
-
-    // Note: Unique to prevent duplicate signatures from same user.
 
     // Constructors
     public ContractSignatureEntity() {}
@@ -78,6 +79,10 @@ public class ContractSignatureEntity {
 
     public LocalDateTime getSignedAt() {
         return signedAt;
+    }
+
+    public void setSignedAt(LocalDateTime signedAt) {
+        this.signedAt = signedAt;
     }
 
     public SignatureMethod getSignatureMethod() {

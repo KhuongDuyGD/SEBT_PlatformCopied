@@ -3,8 +3,9 @@ package project.swp.spring.sebt_platform.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import java.time.LocalDateTime;
 import project.swp.spring.sebt_platform.model.enums.ConfigDataType;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "system_configs",
@@ -21,31 +22,29 @@ public class SystemConfigEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 100, nullable = false, unique = true)
+    @Column(name = "config_key", length = 100, nullable = false, unique = true, columnDefinition = "VARCHAR(100)")
     private String configKey;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(name = "config_value", columnDefinition = "NVARCHAR(MAX)", nullable = false)
     private String configValue;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "data_type", nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
     private ConfigDataType dataType = ConfigDataType.STRING;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
-    @Column
+    @Column(name = "is_active", columnDefinition = "BIT DEFAULT 1")
     private Boolean isActive = true;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME2")
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false, columnDefinition = "DATETIME2")
     private LocalDateTime updatedAt;
-
-    // Note: Consider namespacing keys (e.g., payment.timeout). Add encrypted flag for secrets.
 
     // Constructors
     public SystemConfigEntity() {}
@@ -54,6 +53,13 @@ public class SystemConfigEntity {
         this.configKey = configKey;
         this.configValue = configValue;
         this.dataType = dataType;
+    }
+
+    public SystemConfigEntity(String configKey, String configValue, ConfigDataType dataType, String description) {
+        this.configKey = configKey;
+        this.configValue = configValue;
+        this.dataType = dataType;
+        this.description = description;
     }
 
     // Getters and setters
@@ -109,7 +115,15 @@ public class SystemConfigEntity {
         return createdAt;
     }
 
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
