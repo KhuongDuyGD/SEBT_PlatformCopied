@@ -1,0 +1,89 @@
+/* Navbar Styling */
+.app-navbar {
+  background: linear-gradient(90deg, #416adcff, #5fcff1ff);
+  padding: 1rem 0;
+}
+
+.navbar-brand span {
+  color: white;
+  text-decoration: none;
+}
+
+/* Custom Nav Link Styling */
+.nav-link-custom {
+  color: white;
+  padding-bottom: 8px;
+  border-bottom: 2px solid transparent; /* Prepare for active state */
+  transition: color 0.3s ease, border-bottom-color 0.3s ease;
+}
+
+.nav-link-custom:hover,
+.nav-link-custom:focus {
+  color: #ffd700;
+}
+
+.nav-link-custom.active {
+  color: #ffd700;
+  border-bottom-color: #ffd700;
+}
+
+/* Notification Badge */
+.notification-badge {
+  font-size: 0.6rem;
+}
+
+/* Login Button */
+.login-button {
+  border-radius: 25px;
+  border: 2px solid white;
+  color: #416adcff;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: #416adcff;
+  color: white;
+}
+
+/* Multi-level Dropdown Styling */
+.multi-level-dropdown .dropdown-submenu {
+  position: relative;
+}
+
+.multi-level-dropdown .dropdown-submenu .submenu {
+  display: none;
+  position: absolute;
+  top: -8px; /* Align with parent item */
+  left: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  min-width: 200px;
+  z-index: 1000;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  border-radius: 0.25rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.multi-level-dropdown .dropdown-submenu:hover .submenu {
+  display: block;
+}
+
+.multi-level-dropdown .submenu li {
+  padding: 0;
+}
+
+.multi-level-dropdown .submenu .dropdown-item {
+  padding: 8px 12px;
+  transition: background-color 0.2s ease;
+}
+
+.multi-level-dropdown .submenu .dropdown-item:hover {
+  background: #f8f9fa;
+}
+
+.submenu-title {
+  display: block;
+  width: 100%;
+}
