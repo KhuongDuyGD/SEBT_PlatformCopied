@@ -1,4 +1,4 @@
-package project.swp.spring.sebt_platform.dto.response;
+package project.swp.spring.sebt_platform.model.dto.response;
 
 public record RegisterResponseDTO(
     boolean success,
