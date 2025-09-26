@@ -2,7 +2,7 @@ package project.swp.spring.sebt_platform.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import project.swp.spring.sebt_platform.model.dto.request.UpdateProfileDTO;
+import project.swp.spring.sebt_platform.dto.request.UpdateProfileDTO;
 import project.swp.spring.sebt_platform.model.UserEntity;
 import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.UserService;
