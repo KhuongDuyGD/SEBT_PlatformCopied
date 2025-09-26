@@ -1,4 +1,4 @@
-package project.swp.spring.sebt_platform.model.dto.request;
+package project.swp.spring.sebt_platform.dto.request;
 
 public class UpdateProfileFormDTO {
     private String username;

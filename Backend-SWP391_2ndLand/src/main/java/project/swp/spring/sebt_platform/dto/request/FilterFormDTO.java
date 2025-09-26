@@ -1,4 +1,4 @@
-package project.swp.spring.sebt_platform.model.dto.request;
+package project.swp.spring.sebt_platform.dto.request;
 
 public record FilterFormDTO (
         String brand,

@@ -32,7 +32,7 @@ public class AuthController {
     private Utils utils;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody UserRegisterDTO user, HttpServletRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody UserRegisterFormDTO user, HttpServletRequest request) {
         try {
             // Input validation
             if (user.password() == null || user.password().trim().isEmpty()) {
@@ -75,7 +75,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody UserLoginDTO user, HttpServletRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody UserLoginFormDTO user, HttpServletRequest request) {
         try {
             if (user.email() == null || user.password() == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -103,7 +103,7 @@ public class AuthController {
             session.setAttribute("status", loggedInUser.getStatus());
             
             // Tạo DTO response
-            UserSessionDTO sessionDTO = new UserSessionDTO(
+            UserSessionResponseDTO sessionDTO = new UserSessionResponseDTO(
                 loggedInUser.getId(),
                 loggedInUser.getUsername(),
                 loggedInUser.getEmail(),
@@ -121,7 +121,7 @@ public class AuthController {
     }
 
     @PostMapping("/verify-email")
-    public ResponseEntity<?> verifyEmail(@Valid @RequestBody UserVerifyEmailDTO user, HttpServletRequest request) {
+    public ResponseEntity<?> verifyEmail(@Valid @RequestBody UserVerifyEmailFormDTO user, HttpServletRequest request) {
         try {
             if (user.pins() == null || user.pins().trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -133,6 +133,12 @@ public class AuthController {
             }
 
             HttpSession session = request.getSession(false);
+            // Fix: Kiểm tra session null trước khi truy cập attributes
+            if (session == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponseDTO("No verification process found. Please register again."));
+            }
+
             String sessionPins = (String) session.getAttribute("pins");
             String sessionEmail = (String) session.getAttribute("email");
             String sessionPassword = (String) session.getAttribute("password");
@@ -147,7 +153,7 @@ public class AuthController {
                     .body(new ErrorResponseDTO("OTP does not match the registered email."));
             }
 
-            boolean success = authService.register(sessionPassword,sessionEmail);;
+            boolean success = authService.register(sessionPassword,sessionEmail);
 
             if (success) {
                 session.invalidate();
@@ -183,7 +189,7 @@ public class AuthController {
                     .body(new ErrorResponseDTO("Invalid session"));
             }
             
-            UserSessionDTO sessionDTO = new UserSessionDTO(
+            UserSessionResponseDTO sessionDTO = new UserSessionResponseDTO(
                 userId, username, email, role, status, session.getId()
             );
             
@@ -232,14 +238,20 @@ public class AuthController {
         try {
             HttpSession session = request.getSession(false);
             if (session != null) {
+                // Log thông tin logout để debug
+                String sessionId = session.getId();
+                Long userId = (Long) session.getAttribute("userId");
+                System.out.println("Logout: User " + userId + " with session " + sessionId);
+
                 session.invalidate();
+                System.out.println("Session invalidated successfully");
             }
             return ResponseEntity.ok(new SuccessResponseDTO("Logout successful"));
         } catch (Exception e) {
             System.err.println("Logout error: " + e.getMessage());
+            e.printStackTrace(); // In stack trace để debug tốt hơn
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponseDTO("Logout failed"));
         }
     }
-
 }

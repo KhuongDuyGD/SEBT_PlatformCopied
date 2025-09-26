@@ -20,7 +20,7 @@ public class PostRequestEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "listing_id", nullable = false)
     private ListingEntity listing;
 
@@ -40,10 +40,6 @@ public class PostRequestEntity {
 
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
-
-    // Relationships
-    @OneToMany(mappedBy = "postRequest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<DocumentEntity> documents;
 
     // Constructors
     public PostRequestEntity() {}
@@ -108,13 +104,5 @@ public class PostRequestEntity {
 
     public void setReviewedAt(LocalDateTime reviewedAt) {
         this.reviewedAt = reviewedAt;
-    }
-
-    public List<DocumentEntity> getDocuments() {
-        return documents;
-    }
-
-    public void setDocuments(List<DocumentEntity> documents) {
-        this.documents = documents;
     }
 }

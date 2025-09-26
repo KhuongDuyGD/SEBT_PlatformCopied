@@ -1,4 +1,4 @@
-package project.swp.spring.sebt_platform.model.dto.response;
+package project.swp.spring.sebt_platform.dto.response;
 
 import project.swp.spring.sebt_platform.model.enums.UserRole;
 import project.swp.spring.sebt_platform.model.enums.UserStatus;

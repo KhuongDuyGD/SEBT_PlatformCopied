@@ -1,4 +1,4 @@
-package project.swp.spring.sebt_platform.model.dto.response;
+package project.swp.spring.sebt_platform.dto.response;
 
 public class SessionInfoResponseDTO {
     private String sessionId;

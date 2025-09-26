@@ -1,4 +1,4 @@
-package project.swp.spring.sebt_platform.model.dto.request;
+package project.swp.spring.sebt_platform.dto.request;
 
 import project.swp.spring.sebt_platform.model.ListingImageEntity;
 import project.swp.spring.sebt_platform.model.LocationEntity;
