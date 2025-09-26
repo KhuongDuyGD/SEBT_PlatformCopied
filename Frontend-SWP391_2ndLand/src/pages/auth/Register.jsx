@@ -1,23 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import {
-  Card,
-  Button,
-  Form,
-  Alert,
-  Container,
-  Row,
-  Col,
-  InputGroup,
-} from "react-bootstrap";
-import "./Auth.css"; // Import shared auth styles
+import { Card, Button, Form, Alert, Container, Row, Col, InputGroup } from "react-bootstrap";
+import { useForm } from "react-hook-form";  // Thêm
+import api from "../../api/axios";  // Adjust path if needed
+import "./Auth.css";
 
-function Register({ setIsLoggedIn, setUserInfo }) {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+function Register() {
+  const { register, handleSubmit, formState: { errors }, watch } = useForm();
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertVariant, setAlertVariant] = useState("success");
@@ -25,49 +14,18 @@ function Register({ setIsLoggedIn, setUserInfo }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!isValidEmail(formData.email)) {
-      setAlertMessage("Vui lòng nhập địa chỉ email hợp lệ!");
+  const onSubmit = async (data) => {
+    try {
+      const response = await api.post('/auth/register', data);
+      setAlertMessage(response.data.message || "Please check your email for PIN.");
+      setAlertVariant("success");
+      setShowAlert(true);
+      setTimeout(() => navigate('/verify-email'), 2000);  // Redirect to verify
+    } catch (error) {
+      setAlertMessage(error.response?.data?.message || "Registration failed");
       setAlertVariant("danger");
       setShowAlert(true);
-      return;
     }
-    if (formData.password.length < 6) {
-      setAlertMessage("Mật khẩu phải có ít nhất 6 ký tự!");
-      setAlertVariant("danger");
-      setShowAlert(true);
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setAlertMessage("Mật khẩu xác nhận không khớp!");
-      setAlertVariant("danger");
-      setShowAlert(true);
-      return;
-    }
-
-    setAlertMessage("Đăng ký thành công!");
-    setAlertVariant("success");
-    setShowAlert(true);
-
-    const userInfo = {
-      email: formData.email,
-      fullName: "Người dùng",
-      loginTime: new Date().toISOString(),
-    };
-
-    setTimeout(() => {
-      setIsLoggedIn(true);
-      setUserInfo(userInfo);
-      navigate("/");
-    }, 1500);
   };
 
   return (
@@ -79,89 +37,57 @@ function Register({ setIsLoggedIn, setUserInfo }) {
               <Card.Body>
                 <div className="text-center mb-4 auth-header">
                   <h2 className="fw-bold mb-2">Tạo Tài Khoản Mới</h2>
-                  <p className="text-muted fs-6">
-                    Tham gia cộng đồng pin EV của chúng tôi.
-                  </p>
+                  <p className="text-muted fs-6">Tham gia cộng đồng pin EV của chúng tôi.</p>
                 </div>
 
                 {showAlert && (
-                  <Alert
-                    variant={alertVariant}
-                    onClose={() => setShowAlert(false)}
-                    dismissible
-                    className="text-center"
-                  >
+                  <Alert variant={alertVariant} onClose={() => setShowAlert(false)} dismissible className="text-center">
                     {alertMessage}
                   </Alert>
                 )}
 
-                <Form onSubmit={handleSubmit}>
+                <Form onSubmit={handleSubmit(onSubmit)}>
                   <Form.Group className="mb-4">
-                    <Form.Label className="fw-semibold text-dark mb-2">
-                      Địa Chỉ Email
-                    </Form.Label>
+                    <Form.Label className="fw-semibold text-dark mb-2">Địa Chỉ Email</Form.Label>
                     <Form.Control
                       type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
+                      {...register("email", { required: true, pattern: /^\S+@\S+$/i })}
                       placeholder="example@email.com"
-                      required
                     />
+                    {errors.email && <p className="text-danger small">Email không hợp lệ</p>}
                   </Form.Group>
 
                   <Form.Group className="mb-4">
-                    <Form.Label className="fw-semibold text-dark mb-2">
-                      Mật Khẩu
-                    </Form.Label>
+                    <Form.Label className="fw-semibold text-dark mb-2">Mật Khẩu</Form.Label>
                     <InputGroup>
                       <Form.Control
                         type={showPassword ? "text" : "password"}
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
+                        {...register("password", { required: true, minLength: 6 })}
                         placeholder="Tối thiểu 6 ký tự"
-                        required
                       />
-                      <Button
-                        variant="light"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <i className="bi bi-eye-slash"></i>
-                        ) : (
-                          <i className="bi bi-eye"></i>
-                        )}
+                      <Button variant="light" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <i className="bi bi-eye-slash"></i> : <i className="bi bi-eye"></i>}
                       </Button>
                     </InputGroup>
+                    {errors.password && <p className="text-danger small">Mật khẩu phải ít nhất 6 ký tự</p>}
                   </Form.Group>
 
                   <Form.Group className="mb-4">
-                    <Form.Label className="fw-semibold text-dark mb-2">
-                      Xác Nhận Mật Khẩu
-                    </Form.Label>
+                    <Form.Label className="fw-semibold text-dark mb-2">Xác Nhận Mật Khẩu</Form.Label>
                     <InputGroup>
                       <Form.Control
                         type={showConfirmPassword ? "text" : "password"}
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
+                        {...register("confirmPassword", {
+                          required: true,
+                          validate: (val) => val === watch("password") || "Mật khẩu không khớp",
+                        })}
                         placeholder="Nhập lại mật khẩu"
-                        required
                       />
-                      <Button
-                        variant="light"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                      >
-                        {showConfirmPassword ? (
-                          <i className="bi bi-eye-slash"></i>
-                        ) : (
-                          <i className="bi bi-eye"></i>
-                        )}
+                      <Button variant="light" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                        {showConfirmPassword ? <i className="bi bi-eye-slash"></i> : <i className="bi bi-eye"></i>}
                       </Button>
                     </InputGroup>
+                    {errors.confirmPassword && <p className="text-danger small">{errors.confirmPassword.message}</p>}
                   </Form.Group>
 
                   <Button type="submit" className="w-100 fw-bold py-3 mb-3 auth-submit-btn">
@@ -175,10 +101,7 @@ function Register({ setIsLoggedIn, setUserInfo }) {
               <div className="p-3 rounded-3 auth-footer-card">
                 <span className="text-dark fs-6">
                   Đã có tài khoản?{" "}
-                  <Link
-                    to="/login"
-                    className="fw-bold text-decoration-none auth-footer-link"
-                  >
+                  <Link to="/login" className="fw-bold text-decoration-none auth-footer-link">
                     Đăng nhập ngay
                   </Link>
                 </span>

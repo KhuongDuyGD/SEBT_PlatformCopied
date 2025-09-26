@@ -1,3 +1,5 @@
+// src/components/Navbar.jsx
+
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Navbar, Nav, Container, NavDropdown, Button } from "react-bootstrap";
 import "./MegaMenu.css"; // Import custom CSS
@@ -6,8 +8,14 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
     setIsLoggedIn(false);
+    setUserInfo(null); // Clear userInfo
     navigate("/");
   };
 
@@ -108,7 +116,9 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn }) {
 
             {isLoggedIn ? (
               <NavDropdown
-                title={<span className="text-white fw-semibold">👤 Tài Khoản</span>}
+                title={
+                  <span className="text-white fw-semibold">👤 Tài Khoản</span>
+                }
                 id="basic-nav-dropdown"
                 className="mx-2"
                 menuVariant="light"

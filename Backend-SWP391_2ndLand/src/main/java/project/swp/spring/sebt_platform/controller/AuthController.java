@@ -7,18 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import project.swp.spring.sebt_platform.model.dto.request.UserLoginDTO;
-import project.swp.spring.sebt_platform.model.dto.request.UserRegisterDTO;
-import project.swp.spring.sebt_platform.model.dto.request.UserSessionDTO;
-import project.swp.spring.sebt_platform.model.dto.request.UserVerifyEmailDTO;
-import project.swp.spring.sebt_platform.model.dto.response.ErrorResponseDTO;
-import project.swp.spring.sebt_platform.model.dto.response.SuccessResponseDTO;
+import project.swp.spring.sebt_platform.dto.request.*;
+import project.swp.spring.sebt_platform.dto.response.*;
 import project.swp.spring.sebt_platform.model.UserEntity;
 import project.swp.spring.sebt_platform.model.enums.UserRole;
 import project.swp.spring.sebt_platform.model.enums.UserStatus;
-import project.swp.spring.sebt_platform.service.AuthService;
-import project.swp.spring.sebt_platform.service.MailService;
-import project.swp.spring.sebt_platform.service.UserService;
+import project.swp.spring.sebt_platform.service.*;
 import project.swp.spring.sebt_platform.util.Utils;
 
 @RestController
