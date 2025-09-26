@@ -33,7 +33,6 @@ function Home() {
                             >
                                 FPT EV Secondhand Marketplace
                             </h1>
-
                             <p
                                 className="lead mb-4 fs-5 fw-bold"
                                 style={{ color: "#000000ff" }}
@@ -85,7 +84,6 @@ function Home() {
                     </Row>
                 </Container>
             </div>
-
             {/* Features Section */}
             <Container className="py-5">
                 <h2 className="text-center mb-5 fw-bold text-primary">
@@ -158,7 +156,6 @@ function Home() {
                         </Card>
                     </Col>
                 </Row>
-
                 {/* Statistics Section */}
                 <div className="bg-light p-5 rounded-3 text-center mb-5">
                     <Row>
@@ -193,7 +190,6 @@ function Home() {
                     </Row>
                 </div>
             </Container>
-
             <style>{`
         .hover-card {
           transition: transform 0.3s ease, box-shadow 0.3s ease;
