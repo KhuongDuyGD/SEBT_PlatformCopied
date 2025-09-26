@@ -74,8 +74,8 @@ public class ListingEntity {
     @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ListingImageEntity> images;
 
-    @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<PostRequestEntity> postRequests;
+    @OneToOne(mappedBy = "listing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private PostRequestEntity postRequests;
 
     @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ContractEntity> contracts;
@@ -214,11 +214,11 @@ public class ListingEntity {
         this.images = images;
     }
 
-    public List<PostRequestEntity> getPostRequests() {
+    public PostRequestEntity getPostRequests() {
         return postRequests;
     }
 
-    public void setPostRequests(List<PostRequestEntity> postRequests) {
+    public void setPostRequests(PostRequestEntity postRequests) {
         this.postRequests = postRequests;
     }
 

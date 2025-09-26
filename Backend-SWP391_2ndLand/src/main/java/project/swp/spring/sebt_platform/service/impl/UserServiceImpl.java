@@ -2,7 +2,7 @@ package project.swp.spring.sebt_platform.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import project.swp.spring.sebt_platform.dto.request.UpdateProfileDTO;
+import project.swp.spring.sebt_platform.dto.request.UpdateProfileFormDTO;
 import project.swp.spring.sebt_platform.model.UserEntity;
 import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.UserService;
@@ -48,7 +48,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean updateProfile(UpdateProfileDTO updateProfileDTO, Long userId) {
+    public boolean updateProfile(UpdateProfileFormDTO updateProfileDTO, Long userId) {
         try {
             UserEntity user = userRepository.findById(userId).orElse(null);
             if (user == null) {

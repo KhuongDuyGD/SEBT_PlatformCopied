@@ -12,97 +12,97 @@ import api from "./api/axios";  // Import axios instance
 import "./App.css";
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userInfo, setUserInfo] = useState(null);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userInfo, setUserInfo] = useState(null);
 
-  useEffect(() => {
-    const checkLoggedIn = async () => {
-      try {
-        const response = await api.get('/auth/current-user');
-        setUserInfo(response.data);
-        setIsLoggedIn(true);
-      } catch (error) {
-        setIsLoggedIn(false);
-        setUserInfo(null);
-        localStorage.removeItem('userInfo');
-      }
-    };
-    checkLoggedIn();
-  }, []);
+    useEffect(() => {
+        const checkLoggedIn = async () => {
+            try {
+                const response = await api.get('/auth/current-user');
+                setUserInfo(response.data);
+                setIsLoggedIn(true);
+            } catch (error) {
+                setIsLoggedIn(false);
+                setUserInfo(null);
+                localStorage.removeItem('userInfo');
+            }
+        };
+        checkLoggedIn();
+    }, []);
 
-  useEffect(() => {
-    localStorage.setItem("isLoggedIn", isLoggedIn);
-    if (isLoggedIn && userInfo) {
-      localStorage.setItem("userInfo", JSON.stringify(userInfo));
-    } else {
-      localStorage.removeItem("userInfo");
-    }
-  }, [isLoggedIn, userInfo]);
+    useEffect(() => {
+        localStorage.setItem("isLoggedIn", isLoggedIn);
+        if (isLoggedIn && userInfo) {
+            localStorage.setItem("userInfo", JSON.stringify(userInfo));
+        } else {
+            localStorage.removeItem("userInfo");
+        }
+    }, [isLoggedIn, userInfo]);
 
-  return (
-    <Router>
-      <AppNavbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />  {/* Pass setUserInfo cho logout */}
-      <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/battery" element={<PinListings />} />
-          <Route path="/cars" element={<CarListings />} />
-          <Route path="/support" element={
-            <Container className="py-5 text-center">
-              <h2 className="fw-bold text-warning mb-4">Hỗ Trợ Khách Hàng</h2>
-              <p className="text-muted">Liên hệ: support@evbatteryhub.com</p>
-            </Container>
-          } />
-          <Route path="/notifications" element={
-            <Container className="py-5 text-center">
-              <h2 className="fw-bold text-info mb-4">Thông Báo</h2>
-              <p className="text-muted">Bạn chưa có thông báo mới.</p>
-            </Container>
-          } />
-          <Route path="/account" element={
-            <Container className="py-5 text-center">
-              <h2 className="fw-bold text-secondary mb-4">Hồ Sơ Cá Nhân</h2>
-              {userInfo ? (
-                <p>Chào mừng: <strong>{userInfo.email}</strong></p>
-              ) : (
-                <p className="text-muted">Vui lòng đăng nhập để xem thông tin.</p>
-              )}
-            </Container>
-          } />
-          <Route path="/orders" element={
-            <Container className="py-5 text-center">
-              <h2 className="fw-bold mb-4">Đơn Hàng Của Tôi</h2>
-              <p className="text-muted">Tính năng đang được phát triển.</p>
-            </Container>
-          } />
-          <Route path="/favorites" element={
-            <Container className="py-5 text-center">
-              <h2 className="fw-bold text-danger mb-4">Danh Sách Yêu Thích</h2>
-              <p className="text-muted">Tính năng đang được phát triển.</p>
-            </Container>
-          } />
-          <Route path="/settings" element={
-            <Container className="py-5 text-center">
-              <h2 className="fw-bold mb-4">Cài Đặt</h2>
-              <p className="text-muted">Tính năng đang được phát triển.</p>
-            </Container>
-          } />
-          <Route path="/login" element={
-            <Login setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />
-          } />
-          <Route path="/register" element={
-            <Register />
-          } />
-          <Route path="/verify-email" element={<VerifyEmail setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />} />  {/* Thêm route */}
-        </Routes>
-      </main>
-      <footer className="footer text-center">
-        <Container>
-          <p className="mb-0">© 2024 EV Battery Hub - Nền tảng pin EV cũ hàng đầu Việt Nam</p>
-        </Container>
-      </footer>
-    </Router>
-  );
+    return (
+        <Router>
+            <AppNavbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />  {/* Pass setUserInfo cho logout */}
+            <main>
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/battery" element={<PinListings />} />
+                    <Route path="/cars" element={<CarListings />} />
+                    <Route path="/support" element={
+                        <Container className="py-5 text-center">
+                            <h2 className="fw-bold text-warning mb-4">Hỗ Trợ Khách Hàng</h2>
+                            <p className="text-muted">Liên hệ: support@evbatteryhub.com</p>
+                        </Container>
+                    } />
+                    <Route path="/notifications" element={
+                        <Container className="py-5 text-center">
+                            <h2 className="fw-bold text-info mb-4">Thông Báo</h2>
+                            <p className="text-muted">Bạn chưa có thông báo mới.</p>
+                        </Container>
+                    } />
+                    <Route path="/account" element={
+                        <Container className="py-5 text-center">
+                            <h2 className="fw-bold text-secondary mb-4">Hồ Sơ Cá Nhân</h2>
+                            {userInfo ? (
+                                <p>Chào mừng: <strong>{userInfo.email}</strong></p>
+                            ) : (
+                                <p className="text-muted">Vui lòng đăng nhập để xem thông tin.</p>
+                            )}
+                        </Container>
+                    } />
+                    <Route path="/orders" element={
+                        <Container className="py-5 text-center">
+                            <h2 className="fw-bold mb-4">Đơn Hàng Của Tôi</h2>
+                            <p className="text-muted">Tính năng đang được phát triển.</p>
+                        </Container>
+                    } />
+                    <Route path="/favorites" element={
+                        <Container className="py-5 text-center">
+                            <h2 className="fw-bold text-danger mb-4">Danh Sách Yêu Thích</h2>
+                            <p className="text-muted">Tính năng đang được phát triển.</p>
+                        </Container>
+                    } />
+                    <Route path="/settings" element={
+                        <Container className="py-5 text-center">
+                            <h2 className="fw-bold mb-4">Cài Đặt</h2>
+                            <p className="text-muted">Tính năng đang được phát triển.</p>
+                        </Container>
+                    } />
+                    <Route path="/login" element={
+                        <Login setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />
+                    } />
+                    <Route path="/register" element={
+                        <Register />
+                    } />
+                    <Route path="/verify-email" element={<VerifyEmail setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />} />  {/* Thêm route */}
+                </Routes>
+            </main>
+            <footer className="footer text-center">
+                <Container>
+                    <p className="mb-0">© 2024 EV Battery Hub - Nền tảng pin EV cũ hàng đầu Việt Nam</p>
+                </Container>
+            </footer>
+        </Router>
+    );
 }
 
 export default App;
