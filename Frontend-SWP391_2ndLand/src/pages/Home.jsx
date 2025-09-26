@@ -43,13 +43,35 @@ function Home() {
               <div className="d-flex gap-3 flex-wrap">
                 <Button
                   as={Link}
-                  to="/battery"
+                  to="/post-listing"
                   variant="light"
                   size="lg"
                   className="px-4 py-2 fw-semibold"
-                  style={{ color: "#416adcff", backgroundColor: "#fee877ff" }}
+                  style={{ color: "#416adcff", backgroundColor: "#fee877ff", transition: "transform 0.3s ease, box-shadow 0.3s ease" }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = "translateY(-2px)";
+                    e.target.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = "none";
+                  }}
                 >
-                  Tìm Pin ngay
+                  Đăng bán
+                </Button>
+                <Button
+                  as={Link}
+                  to="/battery"
+                  variant="outline-light"
+                  size="lg"
+                  className="px-4 py-2 fw-semibold"
+                  style={{
+                    color: "#416adcff",
+                    borderColor: "#416adcff",
+                    borderWidth: "1.5px",
+                  }}
+                >
+                  Tìm pin
                 </Button>
                 <Button
                   as={Link}
@@ -64,20 +86,6 @@ function Home() {
                   }}
                 >
                   Tìm xe
-                </Button>
-                <Button
-                  as={Link}
-                  to="/post-listing"
-                  variant="outline-light"
-                  size="lg"
-                  className="px-4 py-2 fw-semibold"
-                  style={{
-                    color: "#416adcff",
-                    borderColor: "#416adcff",
-                    borderWidth: "1.5px",
-                  }}
-                >
-                  Đăng bài
                 </Button>
               </div>
             </Col>
@@ -160,7 +168,7 @@ function Home() {
         </Row>
 
         {/* Statistics Section */}
-        <div className="bg-light p-5 rounded-3 text-center mb-5">
+  <div className="bg-light p-5 rounded-3 text-center mb-5">
           <Row>
             <Col md={3}>
               <div className="mb-3 text-primary">

@@ -1,10 +1,12 @@
 package project.swp.spring.sebt_platform.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import project.swp.spring.sebt_platform.dto.request.*;
@@ -228,12 +230,28 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         try {
             HttpSession session = request.getSession(false);
             if (session != null) {
                 session.invalidate();
             }
+            // Explicitly expire the session cookies on the client
+            // Primary cookie name is configured as SEBT_SESSION
+            ResponseCookie deleteSebtSession = ResponseCookie.from("SEBT_SESSION", "")
+                .path("/")
+                .httpOnly(true)
+                .maxAge(0)
+                .build();
+            // Also attempt to clear default JSESSIONID if it exists (safety)
+            ResponseCookie deleteJSessionId = ResponseCookie.from("JSESSIONID", "")
+                .path("/")
+                .httpOnly(true)
+                .maxAge(0)
+                .build();
+
+            response.addHeader("Set-Cookie", deleteSebtSession.toString());
+            response.addHeader("Set-Cookie", deleteJSessionId.toString());
             return ResponseEntity.ok(new SuccessResponseDTO("Logout successful"));
         } catch (Exception e) {
             System.err.println("Logout error: " + e.getMessage());
