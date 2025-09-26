@@ -2,9 +2,12 @@ package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-import java.time.LocalDateTime;
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
 import project.swp.spring.sebt_platform.model.enums.VehicleCondition;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "ev_vehicles",
@@ -20,36 +23,38 @@ public class EvVehicleEntity {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "type", nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
     private VehicleType type;
 
-    @Column(length = 100, nullable = false)
+    @Column(name = "name", length = 200, nullable = false, columnDefinition = "NVARCHAR(200)")
     private String name;
 
-    @Column(length = 100)
+    @Column(name = "model", length = 200, columnDefinition = "NVARCHAR(200)")
     private String model;
 
-    @Column(length = 100, nullable = false)
+    @Column(name = "brand", length = 200, nullable = false, columnDefinition = "NVARCHAR(200)")
     private String brand;
 
-    @Column(nullable = false)
+    @Column(name = "year", nullable = false)
     private Integer year;
 
-    @Column
+    @Column(name = "mileage", columnDefinition = "INT DEFAULT 0")
     private Integer mileage = 0;
 
-    @Column
-    private Double batteryCapacity;
+    @Column(name = "battery_capacity", precision = 10, scale = 2, columnDefinition = "DECIMAL(10,2)")
+    private BigDecimal batteryCapacity;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "condition_status", nullable = false, length = 30, columnDefinition = "NVARCHAR(30)")
     private VehicleCondition conditionStatus = VehicleCondition.GOOD;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME2")
     private LocalDateTime createdAt;
 
-    // Note: Add CHECK year BETWEEN 1990 AND current year at DB level.
+    // Relationships
+    @OneToMany(mappedBy = "evVehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ProductEntity> products;
 
     // Constructors
     public EvVehicleEntity() {}
@@ -118,11 +123,11 @@ public class EvVehicleEntity {
         this.mileage = mileage;
     }
 
-    public Double getBatteryCapacity() {
+    public BigDecimal getBatteryCapacity() {
         return batteryCapacity;
     }
 
-    public void setBatteryCapacity(Double batteryCapacity) {
+    public void setBatteryCapacity(BigDecimal batteryCapacity) {
         this.batteryCapacity = batteryCapacity;
     }
 
@@ -136,5 +141,17 @@ public class EvVehicleEntity {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public List<ProductEntity> getProducts() {
+        return products;
+    }
+
+    public void setProducts(List<ProductEntity> products) {
+        this.products = products;
     }
 }

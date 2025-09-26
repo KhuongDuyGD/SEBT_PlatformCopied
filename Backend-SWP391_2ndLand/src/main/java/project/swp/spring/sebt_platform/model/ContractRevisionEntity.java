@@ -2,6 +2,7 @@ package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,14 +25,60 @@ public class ContractRevisionEntity {
     @JoinColumn(name = "edited_by", nullable = false)
     private UserEntity editedBy;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String changesMade; // Suggest JSON structured format
+    @Column(name = "changes_made", columnDefinition = "TEXT", nullable = false)
+    private String changesMade;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "edited_at", nullable = false, updatable = false)
     private LocalDateTime editedAt;
 
-    // Note: Add revision_number column if strict ordering required.
-    // Getters and setters ...
-}
+    // Constructors
+    public ContractRevisionEntity() {}
 
+    public ContractRevisionEntity(ContractEntity contract, UserEntity editedBy, String changesMade) {
+        this.contract = contract;
+        this.editedBy = editedBy;
+        this.changesMade = changesMade;
+    }
+
+    // Getters and setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public ContractEntity getContract() {
+        return contract;
+    }
+
+    public void setContract(ContractEntity contract) {
+        this.contract = contract;
+    }
+
+    public UserEntity getEditedBy() {
+        return editedBy;
+    }
+
+    public void setEditedBy(UserEntity editedBy) {
+        this.editedBy = editedBy;
+    }
+
+    public String getChangesMade() {
+        return changesMade;
+    }
+
+    public void setChangesMade(String changesMade) {
+        this.changesMade = changesMade;
+    }
+
+    public LocalDateTime getEditedAt() {
+        return editedAt;
+    }
+
+    public void setEditedAt(LocalDateTime editedAt) {
+        this.editedAt = editedAt;
+    }
+}

@@ -4,8 +4,7 @@ import project.swp.spring.sebt_platform.model.UserEntity;
 
 public interface AuthService {
     public UserEntity login(String email, String password);
-    public boolean register(String password, String email,String pins);
-    public boolean verifyEmail(String email, String pins);
+    public boolean register(String password, String email);
     public boolean logout();
     public String getCurrentUserName();
     public String getCurrentUserEmail();

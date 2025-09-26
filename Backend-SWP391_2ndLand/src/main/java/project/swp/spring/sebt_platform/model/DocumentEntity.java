@@ -2,6 +2,7 @@ package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,23 +20,21 @@ public class DocumentEntity {
     @JoinColumn(name = "post_request_id", nullable = false)
     private PostRequestEntity postRequest;
 
-    @Column(length = 255, nullable = false)
+    @Column(name = "file_name", length = 500, nullable = false, columnDefinition = "NVARCHAR(500)")
     private String fileName;
 
-    @Column(length = 50, nullable = false)
+    @Column(name = "file_type", length = 50, nullable = false, columnDefinition = "VARCHAR(50)")
     private String fileType;
 
-    @Column
+    @Column(name = "file_size")
     private Long fileSize;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(name = "file_path", columnDefinition = "NVARCHAR(MAX)", nullable = false)
     private String filePath;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "uploaded_at", nullable = false, updatable = false, columnDefinition = "DATETIME2")
     private LocalDateTime uploadedAt;
-
-    // Note: Consider adding checksum (file_hash) for deduplication.
 
     // Constructors
     public DocumentEntity() {}
@@ -98,5 +97,9 @@ public class DocumentEntity {
 
     public LocalDateTime getUploadedAt() {
         return uploadedAt;
+    }
+
+    public void setUploadedAt(LocalDateTime uploadedAt) {
+        this.uploadedAt = uploadedAt;
     }
 }

@@ -1,9 +1,7 @@
 package project.swp.spring.sebt_platform.service;
 
-import project.swp.spring.sebt_platform.dto.request.UpdateProfileDTO;
+import project.swp.spring.sebt_platform.model.dto.request.UpdateProfileDTO;
 import project.swp.spring.sebt_platform.model.UserEntity;
-
-import java.security.NoSuchAlgorithmException;
 
 
 public interface UserService {

@@ -2,14 +2,17 @@ package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "listing_images",
     indexes = {
         @Index(name = "idx_listing_images_listing_id", columnList = "listing_id"),
-        @Index(name = "idx_listing_images_display_order", columnList = "display_order"),
-        @Index(name = "uk_listing_images_listing_display_order", columnList = "listing_id, display_order", unique = true)
+        @Index(name = "idx_listing_images_display_order", columnList = "display_order")
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_listing_images_listing_display", columnNames = {"listing_id", "display_order"})
     }
 )
 public class ListingImageEntity {
@@ -21,17 +24,15 @@ public class ListingImageEntity {
     @JoinColumn(name = "listing_id", nullable = false)
     private ListingEntity listing;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(name = "image_url", columnDefinition = "TEXT", nullable = false)
     private String imageUrl;
 
-    @Column
+    @Column(name = "display_order", columnDefinition = "int DEFAULT 0")
     private Integer displayOrder = 0;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    // Note: If you rely on mainImage in listings, ensure sync or drop mainImage and mark one image as primary.
 
     // Constructors
     public ListingImageEntity() {}
@@ -77,5 +78,9 @@ public class ListingImageEntity {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

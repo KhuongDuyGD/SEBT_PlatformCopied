@@ -2,7 +2,7 @@ package project.swp.spring.sebt_platform.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import project.swp.spring.sebt_platform.dto.request.UpdateProfileDTO;
+import project.swp.spring.sebt_platform.model.dto.request.UpdateProfileDTO;
 import project.swp.spring.sebt_platform.model.UserEntity;
 import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.UserService;
@@ -67,10 +67,6 @@ public class UserServiceImpl implements UserService {
 
             if (updateProfileDTO.getAvatar() != null && !updateProfileDTO.getAvatar().trim().isEmpty()) {
                 user.setAvatar(updateProfileDTO.getAvatar());
-            }
-
-            if (updateProfileDTO.getAddress() != null && !updateProfileDTO.getAddress().trim().isEmpty()) {
-                user.setAddress(updateProfileDTO.getAddress());
             }
 
             userRepository.save(user);

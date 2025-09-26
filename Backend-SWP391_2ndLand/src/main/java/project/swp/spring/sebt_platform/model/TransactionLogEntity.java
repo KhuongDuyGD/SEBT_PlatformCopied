@@ -2,8 +2,9 @@ package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-import java.time.LocalDateTime;
 import project.swp.spring.sebt_platform.model.enums.TransactionStatus;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transaction_logs",
@@ -22,17 +23,15 @@ public class TransactionLogEntity {
     private TransactionEntity transaction;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 20)
     private TransactionStatus status;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    // Note: Add previous_status if auditing transitions needed.
 
     // Constructors
     public TransactionLogEntity() {}
@@ -83,5 +82,9 @@ public class TransactionLogEntity {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

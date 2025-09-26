@@ -36,6 +36,7 @@ public class MailServiceImpl implements MailService {
             mailSender.send(message);
         } catch (MessagingException e) {
             throw new RuntimeException("Không thể gửi email", e);
+
         }
     }
 

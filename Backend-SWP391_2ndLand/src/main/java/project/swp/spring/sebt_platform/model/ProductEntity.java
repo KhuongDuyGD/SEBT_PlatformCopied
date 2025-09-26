@@ -2,22 +2,16 @@ package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
-@Table(name = "products",
-    indexes = {
-        @Index(name = "idx_products_category_id", columnList = "category_id")
-    }
-)
+@Table(name = "products")
 public class ProductEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
-    private CategoryEntity category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ev_id")
@@ -28,25 +22,21 @@ public class ProductEntity {
     private BatteryEntity battery;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // Note: Logical constraint (enforce at DB): exactly ONE of (ev_id, battery_id) must be NOT NULL.
+    // Relationships
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private ListingEntity listing;
 
     // Constructors
     public ProductEntity() {}
 
-    public ProductEntity(CategoryEntity category) {
-        this.category = category;
-    }
-
-    public ProductEntity(CategoryEntity category, EvVehicleEntity evVehicle) {
-        this.category = category;
+    public ProductEntity(EvVehicleEntity evVehicle) {
         this.evVehicle = evVehicle;
     }
 
-    public ProductEntity(CategoryEntity category, BatteryEntity battery) {
-        this.category = category;
+    public ProductEntity(BatteryEntity battery) {
         this.battery = battery;
     }
 
@@ -57,14 +47,6 @@ public class ProductEntity {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public CategoryEntity getCategory() {
-        return category;
-    }
-
-    public void setCategory(CategoryEntity category) {
-        this.category = category;
     }
 
     public EvVehicleEntity getEvVehicle() {
@@ -85,5 +67,26 @@ public class ProductEntity {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public ListingEntity getListing() {
+        return listing;
+    }
+
+    public void setListing(ListingEntity listing) {
+        this.listing = listing;
+    }
+
+    // Helper methods to check product type
+    public boolean isVehicleProduct() {
+        return evVehicle != null && battery == null;
+    }
+
+    public boolean isBatteryProduct() {
+        return battery != null && evVehicle == null;
     }
 }

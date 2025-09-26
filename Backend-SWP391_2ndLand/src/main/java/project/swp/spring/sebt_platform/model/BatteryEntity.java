@@ -2,8 +2,11 @@ package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-import java.time.LocalDateTime;
 import project.swp.spring.sebt_platform.model.enums.BatteryCondition;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "batteries",
@@ -18,33 +21,123 @@ public class BatteryEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 100, nullable = false)
+    @Column(name = "brand", length = 200, nullable = false, columnDefinition = "NVARCHAR(200)")
     private String brand;
 
-    @Column(length = 100)
+    @Column(name = "model", length = 200, columnDefinition = "NVARCHAR(200)")
     private String model;
 
-    @Column(nullable = false)
-    private Double capacity;
+    @Column(name = "capacity", nullable = false, precision = 10, scale = 2, columnDefinition = "DECIMAL(10,2)")
+    private BigDecimal capacity;
 
-    @Column(nullable = false)
+    @Column(name = "health_percentage", nullable = false)
     private Integer healthPercentage;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "compatible_vehicles", columnDefinition = "NVARCHAR(MAX)")
     private String compatibleVehicles;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "condition_status", nullable = false, length = 30, columnDefinition = "NVARCHAR(30)")
     private BatteryCondition conditionStatus = BatteryCondition.GOOD;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME2")
     private LocalDateTime createdAt;
 
-    // Note: Normalize compatibleVehicles via join table if querying needed.
-    // Getters and setters ...
-}
+    // Relationships
+    @OneToMany(mappedBy = "battery", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ProductEntity> products;
 
+    // Constructors
+    public BatteryEntity() {}
+
+    public BatteryEntity(String brand, BigDecimal capacity, Integer healthPercentage) {
+        this.brand = brand;
+        this.capacity = capacity;
+        this.healthPercentage = healthPercentage;
+    }
+
+    // Getters and setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public BigDecimal getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(BigDecimal capacity) {
+        this.capacity = capacity;
+    }
+
+    public Integer getHealthPercentage() {
+        return healthPercentage;
+    }
+
+    public void setHealthPercentage(Integer healthPercentage) {
+        this.healthPercentage = healthPercentage;
+    }
+
+    public String getCompatibleVehicles() {
+        return compatibleVehicles;
+    }
+
+    public void setCompatibleVehicles(String compatibleVehicles) {
+        this.compatibleVehicles = compatibleVehicles;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public BatteryCondition getConditionStatus() {
+        return conditionStatus;
+    }
+
+    public void setConditionStatus(BatteryCondition conditionStatus) {
+        this.conditionStatus = conditionStatus;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public List<ProductEntity> getProducts() {
+        return products;
+    }
+
+    public void setProducts(List<ProductEntity> products) {
+        this.products = products;
+    }
+}
