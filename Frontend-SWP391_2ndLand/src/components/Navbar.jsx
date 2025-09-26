@@ -2,21 +2,31 @@
 
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Navbar, Nav, Container, NavDropdown, Button } from "react-bootstrap";
+import api from "../api/axios"; // Import api (adjust path if needed, ví dụ: "../../api/axios")
 import "./MegaMenu.css"; // Import custom CSS
 
-function AppNavbar({ isLoggedIn, setIsLoggedIn }) {
+function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
+  // Thêm setUserInfo vào props
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogout = async () => {
+    const confirmLogout = window.confirm("Bạn có chắc muốn đăng xuất?");
+    if (!confirmLogout) return;
+    sessionStorage.clear(); // Hoặc removeItem nếu chỉ xóa key cụ thể
+    // Sau đó try-catch...
     try {
       await api.post("/auth/logout");
+      // Success: clear state & storage
+      setIsLoggedIn(false);
+      setUserInfo(null);
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("userInfo");
+      navigate("/");
     } catch (error) {
       console.error("Logout failed", error);
+      alert("Đăng xuất thất bại. Vui lòng thử lại."); // Thêm alert cho UX tốt hơn
     }
-    setIsLoggedIn(false);
-    setUserInfo(null); // Clear userInfo
-    navigate("/");
   };
 
   const isActiveLink = (path) => location.pathname === path;
@@ -110,7 +120,8 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn }) {
             >
               Thông Báo
               <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">
-                3
+                3{" "}
+                {/* Sau này: replace bằng state fetch từ API /notifications/count */}
               </span>
             </Nav.Link>
 
