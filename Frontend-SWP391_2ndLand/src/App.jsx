@@ -1,9 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import AppNavbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import VerifyEmail from "./pages/auth/VerifyEmail";  // Thêm mới
+import Profile from "./pages/profile/Profile";
 import CarListings from "./pages/listings/CarListings";
 import PinListings from "./pages/listings/PinListings";
 import { useState, useEffect } from "react";
@@ -59,16 +60,16 @@ function App() {
                             <p className="text-muted">Bạn chưa có thông báo mới.</p>
                         </Container>
                     } />
-                    <Route path="/account" element={
-                        <Container className="py-5 text-center">
-                            <h2 className="fw-bold text-secondary mb-4">Hồ Sơ Cá Nhân</h2>
-                            {userInfo ? (
-                                <p>Chào mừng: <strong>{userInfo.email}</strong></p>
+                    <Route
+                        path="/account"
+                        element={
+                            isLoggedIn ? (
+                                <Profile />
                             ) : (
-                                <p className="text-muted">Vui lòng đăng nhập để xem thông tin.</p>
-                            )}
-                        </Container>
-                    } />
+                                <Navigate to="/login" replace />
+                            )
+                        }
+                    />
                     <Route path="/orders" element={
                         <Container className="py-5 text-center">
                             <h2 className="fw-bold mb-4">Đơn Hàng Của Tôi</h2>
