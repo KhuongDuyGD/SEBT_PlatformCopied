@@ -9,10 +9,9 @@ import java.time.LocalDateTime;
 @Table(name = "listing_images",
     indexes = {
         @Index(name = "idx_listing_images_listing_id", columnList = "listing_id"),
-        @Index(name = "idx_listing_images_display_order", columnList = "display_order")
     },
     uniqueConstraints = {
-        @UniqueConstraint(name = "uk_listing_images_listing_display", columnNames = {"listing_id", "display_order"})
+        @UniqueConstraint(name = "uk_listing_images_listing_display", columnNames = {"listing_id"})
     }
 )
 public class ListingImageEntity {
@@ -27,9 +26,6 @@ public class ListingImageEntity {
     @Column(name = "image_url", columnDefinition = "TEXT", nullable = false)
     private String imageUrl;
 
-    @Column(name = "display_order", columnDefinition = "int DEFAULT 0")
-    private Integer displayOrder = 0;
-
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -37,10 +33,9 @@ public class ListingImageEntity {
     // Constructors
     public ListingImageEntity() {}
 
-    public ListingImageEntity(ListingEntity listing, String imageUrl, Integer displayOrder) {
+    public ListingImageEntity(ListingEntity listing, String imageUrl) {
         this.listing = listing;
         this.imageUrl = imageUrl;
-        this.displayOrder = displayOrder;
     }
 
     // Getters and setters
@@ -68,14 +63,6 @@ public class ListingImageEntity {
         this.imageUrl = imageUrl;
     }
 
-    public Integer getDisplayOrder() {
-        return displayOrder;
-    }
-
-    public void setDisplayOrder(Integer displayOrder) {
-        this.displayOrder = displayOrder;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -84,3 +71,4 @@ public class ListingImageEntity {
         this.createdAt = createdAt;
     }
 }
+

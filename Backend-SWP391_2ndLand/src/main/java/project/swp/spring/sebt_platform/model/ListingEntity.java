@@ -29,7 +29,7 @@ public class ListingEntity {
     @JoinColumn(name = "seller_id", nullable = false)
     private UserEntity seller;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "product_id", nullable = false)
     private ProductEntity product;
 
@@ -68,19 +68,19 @@ public class ListingEntity {
     private LocalDateTime updatedAt;
 
     // Relationships
-    @OneToOne(mappedBy = "listing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "listing", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private LocationEntity location;
 
-    @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "listing", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ListingImageEntity> images;
 
-    @OneToOne(mappedBy = "listing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "listing", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private PostRequestEntity postRequests;
 
-    @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "listing", fetch = FetchType.LAZY)
     private List<ContractEntity> contracts;
 
-    @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "listing", fetch = FetchType.LAZY)
     private List<FavoriteEntity> favorites;
 
     // Constructors

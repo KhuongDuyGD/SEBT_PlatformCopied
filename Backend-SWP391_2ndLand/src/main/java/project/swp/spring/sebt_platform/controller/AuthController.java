@@ -248,6 +248,7 @@ public class AuthController {
                 session.invalidate();
                 System.out.println("Session invalidated successfully");
             }
+
             // Explicitly expire the session cookies on the client
             // Primary cookie name is configured as SEBT_SESSION
             ResponseCookie deleteSebtSession = ResponseCookie.from("SEBT_SESSION", "")
@@ -255,15 +256,8 @@ public class AuthController {
                 .httpOnly(true)
                 .maxAge(0)
                 .build();
-            // Also attempt to clear default JSESSIONID if it exists (safety)
-            ResponseCookie deleteJSessionId = ResponseCookie.from("JSESSIONID", "")
-                .path("/")
-                .httpOnly(true)
-                .maxAge(0)
-                .build();
 
             response.addHeader("Set-Cookie", deleteSebtSession.toString());
-            response.addHeader("Set-Cookie", deleteJSessionId.toString());
             return ResponseEntity.ok(new SuccessResponseDTO("Logout successful"));
         } catch (Exception e) {
             System.err.println("Logout error: " + e.getMessage());

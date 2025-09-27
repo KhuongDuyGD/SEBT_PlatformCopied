@@ -48,8 +48,7 @@ public class MemberController {
             if (updateResult) {
                 return ResponseEntity.ok(new SuccessResponseDTO("Profile updated successfully"));
             } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("Failed to update profile. User not found."));
+                return ResponseEntity.ok(new ErrorResponseDTO("Failed to update profile."));
             }
 
         } catch (Exception e) {

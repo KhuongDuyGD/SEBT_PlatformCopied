@@ -56,17 +56,23 @@ public class UserServiceImpl implements UserService {
                 return false;
             }
 
+            user = userRepository.findUserByUsername(user.getUsername());
+            if (user != null) {
+                System.err.println("username already exists: " + updateProfileDTO.username());
+                return false;
+            }
+
             // Update user fields from DTO - only update if values are provided
-            if (updateProfileDTO.getUsername() != null && !updateProfileDTO.getUsername().trim().isEmpty()) {
-                user.setUsername(updateProfileDTO.getUsername());
+            if (updateProfileDTO.username() != null && !updateProfileDTO.username().trim().isEmpty()) {
+                user.setUsername(updateProfileDTO.username());
             }
 
-            if (updateProfileDTO.getPhone() != null && !updateProfileDTO.getPhone().trim().isEmpty()) {
-                user.setPhoneNumber(updateProfileDTO.getPhone());
+            if (updateProfileDTO.phoneNumber() != null && !updateProfileDTO.phoneNumber().trim().isEmpty()) {
+                user.setPhoneNumber(updateProfileDTO.phoneNumber());
             }
 
-            if (updateProfileDTO.getAvatar() != null && !updateProfileDTO.getAvatar().trim().isEmpty()) {
-                user.setAvatar(updateProfileDTO.getAvatar());
+            if (updateProfileDTO.avatarUrl() != null && !updateProfileDTO.avatarUrl().trim().isEmpty()) {
+                user.setAvatar(updateProfileDTO.avatarUrl());
             }
 
             userRepository.save(user);
