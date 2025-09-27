@@ -11,8 +11,7 @@ import java.util.List;
 @Entity
 @Table(name = "post_requests",
     indexes = {
-        @Index(name = "idx_post_requests_status", columnList = "status"),
-        @Index(name = "idx_post_requests_requested_date", columnList = "requested_date")
+        @Index(name = "idx_post_requests_status", columnList = "status")
     }
 )
 public class PostRequestEntity {
@@ -20,12 +19,9 @@ public class PostRequestEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "listing_id", nullable = false)
     private ListingEntity listing;
-
-    @Column(name = "requested_date", nullable = false)
-    private LocalDate requestedDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -44,9 +40,8 @@ public class PostRequestEntity {
     // Constructors
     public PostRequestEntity() {}
 
-    public PostRequestEntity(ListingEntity listing, LocalDate requestedDate) {
+    public PostRequestEntity(ListingEntity listing) {
         this.listing = listing;
-        this.requestedDate = requestedDate;
     }
 
     // Getters and setters
@@ -64,14 +59,6 @@ public class PostRequestEntity {
 
     public void setListing(ListingEntity listing) {
         this.listing = listing;
-    }
-
-    public LocalDate getRequestedDate() {
-        return requestedDate;
-    }
-
-    public void setRequestedDate(LocalDate requestedDate) {
-        this.requestedDate = requestedDate;
     }
 
     public ApprovalStatus getStatus() {

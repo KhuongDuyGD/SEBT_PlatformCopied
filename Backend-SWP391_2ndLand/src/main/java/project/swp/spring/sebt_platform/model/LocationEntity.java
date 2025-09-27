@@ -19,29 +19,22 @@ public class LocationEntity {
     @Column(name = "district", length = 20, columnDefinition = "NVARCHAR(20)")
     private String district;
 
-    @Column(name = "stress_name", length = 20, columnDefinition = "NVARCHAR(20)")
-    private String stressName;
-
-    @Column(name = "extra", length = 50, columnDefinition = "NVARCHAR(50)")
-    private String extra;
+    @Column(name = "details", length = 30, columnDefinition = "NVARCHAR(30)")
+    private String details;
 
     // Constructors
     public LocationEntity() {}
 
-    public LocationEntity(String province, String district, String stressName, String extra) {
+    public LocationEntity(String province, String district, String details) {
         this.province = province;
         this.district = district;
-        this.stressName = stressName;
-        this.extra = extra;
+        this.details = details;
     }
 
     // Getters and setters
+
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public ListingEntity getListing() {
@@ -68,27 +61,19 @@ public class LocationEntity {
         this.district = district;
     }
 
-    public String getStressName() {
-        return stressName;
+    public String getDetails() {
+        return details;
     }
 
-    public void setStressName(String stressName) {
-        this.stressName = stressName;
-    }
-
-    public String getExtra() {
-        return extra;
-    }
-
-    public void setExtra(String extra) {
-        this.extra = extra;
+    public void setDetails(String details) {
+        this.details = details;
     }
 
     // Utility method to get full address
     public String getFullAddress() {
         StringBuilder fullAddress = new StringBuilder();
-        if (stressName != null && !stressName.isEmpty()) {
-            fullAddress.append(stressName);
+        if (this.details != null && !this.details.isEmpty()) {
+            fullAddress.append(this.details);
         }
         if (district != null && !district.isEmpty()) {
             if (fullAddress.length() > 0) fullAddress.append(", ");
@@ -97,10 +82,6 @@ public class LocationEntity {
         if (province != null && !province.isEmpty()) {
             if (fullAddress.length() > 0) fullAddress.append(", ");
             fullAddress.append(province);
-        }
-        if (extra != null && !extra.isEmpty()) {
-            if (fullAddress.length() > 0) fullAddress.append(" - ");
-            fullAddress.append(extra);
         }
         return fullAddress.toString();
     }

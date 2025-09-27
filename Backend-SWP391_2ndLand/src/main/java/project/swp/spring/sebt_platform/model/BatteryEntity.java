@@ -36,9 +36,6 @@ public class BatteryEntity {
     @Column(name = "compatible_vehicles", columnDefinition = "NVARCHAR(MAX)")
     private String compatibleVehicles;
 
-    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
-    private String description;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "condition_status", nullable = false, length = 30, columnDefinition = "NVARCHAR(30)")
     private BatteryCondition conditionStatus = BatteryCondition.GOOD;
@@ -107,14 +104,6 @@ public class BatteryEntity {
 
     public void setCompatibleVehicles(String compatibleVehicles) {
         this.compatibleVehicles = compatibleVehicles;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public BatteryCondition getConditionStatus() {
