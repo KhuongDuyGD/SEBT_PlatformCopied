@@ -166,8 +166,9 @@ Tài liệu này mô tả chi tiết các API endpoints của 3 controllers chí
 **Request Body**:
 ```json
 {
-  // UpdateProfileFormDTO fields
-  // Cần xem chi tiết DTO để biết các fields cụ thể
+  "username": "string (optional) - Tênhiển thị",
+  "phoneNumber": "string (optional) - Số điện thoại",
+  "avatarUrl": "string (optional) - URL ảnh đại diện"
 }
 ```
 
@@ -200,10 +201,7 @@ Tài liệu này mô tả chi tiết các API endpoints của 3 controllers chí
 - **200 OK**: Trả về thông tin profile
   ```json
   {
-    "message": "Profile retrieved successfully",
-    "data": {
-      // User profile object
-    }
+    "message": "Profile retrieved successfully"
   }
   ```
 - **401 Unauthorized**: Không có session hoặc session không hợp lệ
@@ -252,8 +250,7 @@ Tài liệu này mô tả chi tiết các API endpoints của 3 controllers chí
 **Request Body** (`CreateListingFormDTO`):
 ```json
 {
-  "title": "string (required) - Tiêu đề listing, tối đa 400 ký tự",
-  "sell_Id": "long (required) - ID của người bán (từ session)",
+  "title": "string (required) - Tiêu đề listing",
   "product": {
     "ev": {
       "type": "VehicleType enum (required) - Loại xe: CAR, MOTORCYCLE, BICYCLE, SCOOTER",
@@ -296,7 +293,6 @@ Tài liệu này mô tả chi tiết các API endpoints của 3 controllers chí
 ```json
 {
   "title": "Xe điện VinFast VF8 2023 như mới",
-  "sell_Id": 1,
   "product": {
     "ev": {
       "type": "CAR",
@@ -333,7 +329,7 @@ Tài liệu này mô tả chi tiết các API endpoints của 3 controllers chí
   "location": {
     "province": "TP. Hồ Chí Minh",
     "district": "Quận 1",
-    "details": "123 Nguyen Hue Street, Ben Nghe Ward"
+    "details": "123 Nguyen Hue Street, Ben Nghe Ward, District 1, Ho Chi Minh City"
   }
 }
 ```
