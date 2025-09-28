@@ -2,11 +2,13 @@ package project.swp.spring.sebt_platform.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import project.swp.spring.sebt_platform.model.*;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.model.enums.ApprovalStatus;
 import project.swp.spring.sebt_platform.repository.PostRequestRepository;
+import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.ListingService;
 
 import java.math.BigDecimal;
@@ -17,10 +19,12 @@ import java.util.List;
 public class ListingServiceImpl implements ListingService {
 
     private final PostRequestRepository postRequestRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public ListingServiceImpl(PostRequestRepository postRequestRepository) {
+    public ListingServiceImpl(PostRequestRepository postRequestRepository, UserRepository userRepository) {
         this.postRequestRepository = postRequestRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -29,6 +33,7 @@ public class ListingServiceImpl implements ListingService {
     }
 
     @Override
+    @Transactional
     public boolean createListing(CreateListingFormDTO createListingForm) {
         try {
             if (createListingForm == null) {
@@ -51,6 +56,13 @@ public class ListingServiceImpl implements ListingService {
                 return false;
             }
 
+            UserEntity user = userRepository.findById(createListingForm.sell_Id()).orElse(null);
+
+            if (user == null) {
+                System.err.println("User not found with ID: " + createListingForm.sell_Id());
+                return false;
+            }
+
             // Create ListingEntity and set its fields
             ListingEntity listingEntity = new ListingEntity();
             listingEntity.setTitle(createListingForm.title());
@@ -60,6 +72,7 @@ public class ListingServiceImpl implements ListingService {
             listingEntity.setPrice(BigDecimal.valueOf(createListingForm.price()));
 
             listingEntity.setImages(new ArrayList<>());
+            listingEntity.setSeller(user);
 
             // Create ProductEntity
             ProductEntity productEntity = new ProductEntity();
@@ -83,6 +96,7 @@ public class ListingServiceImpl implements ListingService {
                 BatteryEntity batteryEntity = new BatteryEntity();
                 batteryEntity.setBrand(createListingForm.product().battery().brand());
                 batteryEntity.setModel(createListingForm.product().battery().model());
+                batteryEntity.setHealthPercentage(createListingForm.product().battery().healthPercentage());
                 batteryEntity.setCapacity(BigDecimal.valueOf(createListingForm.product().battery().capacity()));
                 batteryEntity.setCompatibleVehicles(createListingForm.product().battery().compatibleVehicles());
                 batteryEntity.setConditionStatus(createListingForm.product().battery().conditionStatus());

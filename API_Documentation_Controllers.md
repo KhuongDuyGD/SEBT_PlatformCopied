@@ -243,13 +243,98 @@ Tài liệu này mô tả chi tiết các API endpoints của 3 controllers chí
 ## 3. ListingController (`/api/listings`)
 
 ### 3.1 PUT `/api/listings/create`
-**Mô tả**: Tạo listing mới
+**Mô tả**: Tạo listing mới cho việc bán xe điện và pin
 
-**Request Body**:
+**Headers**: Session cookie required
+
+**Authorization**: Cần session hợp lệ với userId
+
+**Request Body** (`CreateListingFormDTO`):
 ```json
 {
-  // CreateListingFormDTO fields
-  // Cần xem chi tiết DTO để biết các fields cụ thể
+  "title": "string (required) - Tiêu đề listing, tối đa 400 ký tự",
+  "sell_Id": "long (required) - ID của người bán (từ session)",
+  "product": {
+    "ev": {
+      "type": "VehicleType enum (required) - Loại xe: CAR, MOTORCYCLE, BICYCLE, SCOOTER",
+      "name": "string (required) - Tên xe",
+      "model": "string (required) - Model xe", 
+      "brand": "string (required) - Thương hiệu xe",
+      "year": "integer (required) - Năm sản xuất",
+      "mileage": "integer (required) - Số km đã đi",
+      "batteryCapacity": "double (required) - Dung lượng pin (kWh)",
+      "conditionStatus": "VehicleCondition enum (required) - Tình trạng: NEW, LIKE_NEW, GOOD, FAIR, POOR"
+    },
+    "battery": {
+      "brand": "string (required) - Thương hiệu pin",
+      "model": "string (required) - Model pin",
+      "capacity": "double (required) - Dung lượng pin",
+      "healthPercentage": "integer (required) - % sức khỏe pin (0-100)",
+      "compatibleVehicles": "string (required) - Các xe tương thích",
+      "conditionStatus": "BatteryCondition enum (required) - Tình trạng: NEW, GOOD, DEGRADED, NEEDS_REPLACEMENT"
+    }
+  },
+  "listingType": "ListingType enum (required) - Loại listing: NORMAL, PREMIUM, FEATURED",
+  "mainImage": "string (optional) - URL ảnh chính",
+  "listingImages": [
+    {
+      "imageUrl": "string (required) - URL ảnh sản phẩm"
+    }
+  ],
+  "description": "string (optional) - Mô tả chi tiết sản phẩm",
+  "price": "double (required) - Giá bán",
+  "category": "string (required) - Danh mục sản phẩm",
+  "location": {
+    "province": "string (required) - Tỉnh/Thành phố",
+    "district": "string (required) - Quận/Huyện", 
+    "details": "string (required) - Địa chỉ chi tiết, tối đa 255 ký tự"
+  }
+}
+```
+
+**Example Request**:
+```json
+{
+  "title": "Xe điện VinFast VF8 2023 như mới",
+  "sell_Id": 1,
+  "product": {
+    "ev": {
+      "type": "CAR",
+      "name": "VinFast VF8",
+      "model": "VF8 Plus",
+      "brand": "VinFast",
+      "year": 2023,
+      "mileage": 5000,
+      "batteryCapacity": 87.7,
+      "conditionStatus": "LIKE_NEW"
+    },
+    "battery": {
+      "brand": "CATL",
+      "model": "LFP Battery",
+      "capacity": 87.7,
+      "healthPercentage": 95,
+      "compatibleVehicles": "VinFast VF8, VF9",
+      "conditionStatus": "GOOD"
+    }
+  },
+  "listingType": "NORMAL",
+  "mainImage": "https://example.com/main-image.jpg",
+  "listingImages": [
+    {
+      "imageUrl": "https://example.com/image1.jpg"
+    },
+    {
+      "imageUrl": "https://example.com/image2.jpg"
+    }
+  ],
+  "description": "Xe điện VinFast VF8 2023 tình trạng như mới, chạy 5000km. Pin CATL còn 95% dung lượng. Xe được bảo dưỡng định kỳ tại hãng.",
+  "price": 1200000000.0,
+  "category": "Ô tô điện",
+  "location": {
+    "province": "TP. Hồ Chí Minh",
+    "district": "Quận 1",
+    "details": "123 Nguyen Hue Street, Ben Nghe Ward"
+  }
 }
 ```
 
@@ -258,18 +343,45 @@ Tài liệu này mô tả chi tiết các API endpoints của 3 controllers chí
   ```json
   "Create listing request successfully"
   ```
-- **400 Bad Request**: Tạo listing thất bại
+- **400 Bad Request**: Tạo listing thất bại (validation error, missing fields)
   ```json
   "Create listing request failed"
+  ```
+- **401 Unauthorized**: Không có session hoặc session không hợp lệ
+  ```json
+  "No active session. Please login first."
+  ```
+  hoặc
+  ```json
+  "Invalid session. Please login again."
   ```
 - **500 Internal Server Error**: Lỗi server
   ```json
   "Internal server error: {error_message}"
   ```
 
-**Lưu ý**: 
-- Sử dụng HTTP method PUT thay vì POST (có thể cần review)
-- Cần xem chi tiết CreateListingFormDTO để biết các trường bắt buộc
+**Business Logic**:
+- Tự động tạo `PostRequestEntity` khi tạo listing
+- Tự động lưu `LocationEntity` với thông tin vị trí
+- Lưu danh sách `ListingImageEntity` từ listingImages
+- Tạo `ProductEntity` với thông tin EV và Battery
+- Thiết lập trạng thái mặc định: `status = SUSPENDED`, `listingType = NORMAL`
+- Tự động set timestamps: `createdAt`, `updatedAt`
+
+**Validation Rules**:
+- `title`: bắt buộc, tối đa 400 ký tự
+- `price`: bắt buộc, số dương
+- `healthPercentage`: từ 0-100
+- `year`: năm hợp lệ
+- `mileage`: số không âm
+- `location.details`: tối đa 255 ký tự
+- `sell_Id` phải khớp với userId từ session
+
+**Lưu ý**:
+- HTTP method hiện tại là PUT (có thể cần đổi thành POST)
+- Cần session hợp lệ để xác định người bán
+- Hệ thống sử dụng cascade để tự động lưu các entity liên quan
+- Ảnh được lưu dưới dạng URL, cần upload ảnh trước khi gọi API này
 
 ---
 
@@ -335,4 +447,3 @@ Tài liệu này mô tả chi tiết các API endpoints của 3 controllers chí
    - Implement global exception handler
    - Standardize error codes
    - Add more specific error messages
-

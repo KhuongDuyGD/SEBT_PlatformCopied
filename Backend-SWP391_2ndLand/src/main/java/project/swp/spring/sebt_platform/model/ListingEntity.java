@@ -44,7 +44,7 @@ public class ListingEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
-    private ListingStatus status = ListingStatus.DRAFT;
+    private ListingStatus status = ListingStatus.SUSPENDED;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "listing_type", nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
