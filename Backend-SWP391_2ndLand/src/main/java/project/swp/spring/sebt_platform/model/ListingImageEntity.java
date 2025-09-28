@@ -9,9 +9,6 @@ import java.time.LocalDateTime;
 @Table(name = "listing_images",
     indexes = {
         @Index(name = "idx_listing_images_listing_id", columnList = "listing_id"),
-    },
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_listing_images_listing_display", columnNames = {"listing_id"})
     }
 )
 public class ListingImageEntity {

@@ -19,7 +19,7 @@ public class LocationEntity {
     @Column(name = "district", length = 20, columnDefinition = "NVARCHAR(20)")
     private String district;
 
-    @Column(name = "details", length = 30, columnDefinition = "NVARCHAR(30)")
+    @Column(name = "details", length = 255, columnDefinition = "NVARCHAR(255)")
     private String details;
 
     // Constructors
