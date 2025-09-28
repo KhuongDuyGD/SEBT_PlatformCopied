@@ -9,17 +9,14 @@ import project.swp.spring.sebt_platform.model.enums.UserStatus;
 import project.swp.spring.sebt_platform.model.enums.UserRole;
 
 @Entity
-@Table(name = "users",
-    indexes = {
+@Table(name = "users", indexes = {
         @Index(name = "idx_users_username", columnList = "username"),
         @Index(name = "idx_users_email", columnList = "email"),
         @Index(name = "idx_users_status", columnList = "status")
-    },
-    uniqueConstraints = {
+}, uniqueConstraints = {
         @UniqueConstraint(name = "uk_users_username", columnNames = "username"),
         @UniqueConstraint(name = "uk_users_email", columnNames = "email")
-    }
-)
+})
 public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,7 +35,7 @@ public class UserEntity {
     private String phoneNumber;
 
     @Column(name = "avatar", columnDefinition = "NVARCHAR(MAX)")
-    private String avatar;
+    private String avatar = "http://localhost:8080/images/avatar_classic.jpg";
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
@@ -86,7 +83,8 @@ public class UserEntity {
     private List<ComplaintEntity> complaints;
 
     // Constructors
-    public UserEntity() {}
+    public UserEntity() {
+    }
 
     public UserEntity(String username, String password, String email) {
         this.username = username;
