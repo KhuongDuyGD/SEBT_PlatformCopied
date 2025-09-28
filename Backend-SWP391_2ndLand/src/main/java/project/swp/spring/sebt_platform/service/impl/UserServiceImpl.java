@@ -2,14 +2,15 @@ package project.swp.spring.sebt_platform.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import project.swp.spring.sebt_platform.dto.request.UpdateProfileFormDTO;
 import project.swp.spring.sebt_platform.model.UserEntity;
 import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.UserService;
 
-
 @Service
 public class UserServiceImpl implements UserService {
+
     private final UserRepository userRepository;
 
     @Autowired
@@ -47,8 +48,13 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    /**
+     * Cập nhật profile.
+     * Trả về true nếu có ít nhất một trường thay đổi; false nếu không đổi hoặc lỗi.
+     */
     @Override
-    public boolean updateProfile(UpdateProfileFormDTO updateProfileDTO, Long userId) {
+    @Transactional
+    public boolean updateProfile(UpdateProfileFormDTO dto, Long userId) {
         try {
             UserEntity user = userRepository.findById(userId).orElse(null);
             if (user == null) {
@@ -56,23 +62,39 @@ public class UserServiceImpl implements UserService {
                 return false;
             }
 
-            user = userRepository.findUserByUsername(user.getUsername());
-            if (user != null) {
-                System.err.println("username already exists: " + updateProfileDTO.username());
+            boolean changed = false;
+
+            // Username
+            if (dto.username() != null && !dto.username().trim().isEmpty()
+                    && !dto.username().equals(user.getUsername())) {
+
+                UserEntity existed = userRepository.findUserByUsername(dto.username().trim());
+                if (existed != null && !existed.getId().equals(user.getId())) {
+                    System.err.println("Username already taken: " + dto.username());
+                    return false; // hoặc ném exception custom
+                }
+                user.setUsername(dto.username().trim());
+                changed = true;
+            }
+
+            // Phone number
+            if (dto.phoneNumber() != null && !dto.phoneNumber().trim().isEmpty()
+                    && !dto.phoneNumber().equals(user.getPhoneNumber())) {
+                user.setPhoneNumber(dto.phoneNumber().trim());
+                changed = true;
+            }
+
+            // Avatar URL
+            if (dto.avatarUrl() != null && !dto.avatarUrl().trim().isEmpty()
+                    && !dto.avatarUrl().equals(user.getAvatar())) { // giả sử field tên avatar
+                user.setAvatar(dto.avatarUrl().trim());
+                changed = true;
+            }
+
+            if (!changed) {
+                System.out.println("No changes detected for user ID: " + userId);
+                // Tùy ý: trả true (coi như OK) hoặc false (giữ nguyên). Ở đây trả false để giống logic cũ.
                 return false;
-            }
-
-            // Update user fields from DTO - only update if values are provided
-            if (updateProfileDTO.username() != null && !updateProfileDTO.username().trim().isEmpty()) {
-                user.setUsername(updateProfileDTO.username());
-            }
-
-            if (updateProfileDTO.phoneNumber() != null && !updateProfileDTO.phoneNumber().trim().isEmpty()) {
-                user.setPhoneNumber(updateProfileDTO.phoneNumber());
-            }
-
-            if (updateProfileDTO.avatarUrl() != null && !updateProfileDTO.avatarUrl().trim().isEmpty()) {
-                user.setAvatar(updateProfileDTO.avatarUrl());
             }
 
             userRepository.save(user);
