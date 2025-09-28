@@ -17,6 +17,8 @@ function Register() {
     const onSubmit = async (data) => {
         try {
             const response = await api.post('/auth/register', data);
+            localStorage.setItem("registerEmail", data.email);
+
             setAlertMessage(response.data.message || "Please check your email for PIN.");
             setAlertVariant("success");
             setShowAlert(true);
