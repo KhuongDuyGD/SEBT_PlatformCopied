@@ -1,16 +1,31 @@
 // src/pages/Home.jsx
-import { Link } from "react-router-dom";
-import { Button, Card, Row, Col, Container, Carousel } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
+import { Button, Card, Row, Col, Container, Carousel, Modal } from "react-bootstrap";
 import {
   BatteryCharging,
   Handshake,
   ShieldCheck,
   Tag,
   Quote,
+  User,
 } from "lucide-react";
 import backgroundImage from "../assets/background.jpg";
+import { useContext, useState } from "react";
+import { AuthContext } from "../App";  // Import AuthContext from App.jsx (adjust path if needed)
 
 function Home() {
+  const { isLoggedIn } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+
+  const handlePostListingClick = () => {
+    if (isLoggedIn) {
+      navigate("/post-listing");  // Navigate to post-listing if logged in
+    } else {
+      setShowModal(true);  // Show popup if not logged in
+    }
+  };
+
   return (
     <>
       {/* Hero Section with Overlay and Animation */}
@@ -46,8 +61,6 @@ function Home() {
               </p>
               <div className="d-flex gap-3 flex-wrap align-items-center">
                 <Button
-                  as={Link}
-                  to="/post-listing"
                   variant="light"
                   size="lg"
                   className="px-5 py-3 fw-bold" // Larger padding for prominence
@@ -64,6 +77,7 @@ function Home() {
                     e.target.style.transform = "scale(1)";
                     e.target.style.boxShadow = "none";
                   }}
+                  onClick={handlePostListingClick}  // Change from as={Link} to onClick handler
                 >
                   Đăng bán
                 </Button>
@@ -132,9 +146,15 @@ function Home() {
                   Mua Pin Chất Lượng
                 </h5>
                 <p className="card-text text-muted mb-4">
-                  Khám phá hàng ngàn pin EV đã qua kiểm định chất lượng với giá cả hợp lý.
+                  Khám phá hàng ngàn pin EV đã qua kiểm định chất lượng với giá
+                  cả hợp lý.
                 </p>
-                <Button as={Link} to="/buy" variant="success" className="px-4 rounded-pill">
+                <Button
+                  as={Link}
+                  to="/buy"
+                  variant="success"
+                  className="px-4 rounded-pill"
+                >
                   Xem Pin →
                 </Button>
               </Card.Body>
@@ -150,9 +170,15 @@ function Home() {
                   Bán Pin Dễ Dàng
                 </h5>
                 <p className="card-text text-muted mb-4">
-                  Đăng bán pin của bạn với quy trình đơn giản và nhận được giá tốt nhất.
+                  Đăng bán pin của bạn với quy trình đơn giản và nhận được giá
+                  tốt nhất.
                 </p>
-                <Button as={Link} to="/sell" variant="info" className="px-4 rounded-pill">
+                <Button
+                  as={Link}
+                  to="/sell"
+                  variant="info"
+                  className="px-4 rounded-pill"
+                >
                   Đăng Bán →
                 </Button>
               </Card.Body>
@@ -168,9 +194,15 @@ function Home() {
                   Hỗ Trợ 24/7
                 </h5>
                 <p className="card-text text-muted mb-4">
-                  Đội ngũ chuyên gia sẵn sàng hỗ trợ bạn mọi lúc với dịch vụ tận tâm.
+                  Đội ngũ chuyên gia sẵn sàng hỗ trợ bạn mọi lúc với dịch vụ tận
+                  tâm.
                 </p>
-                <Button as={Link} to="/support" variant="warning" className="px-4 rounded-pill">
+                <Button
+                  as={Link}
+                  to="/support"
+                  variant="warning"
+                  className="px-4 rounded-pill"
+                >
                   Liên Hệ →
                 </Button>
               </Card.Body>
@@ -180,7 +212,10 @@ function Home() {
       </Container>
 
       {/* Statistics Section with Gradient */}
-      <div className="stats-section py-5" style={{ background: "linear-gradient(180deg, #f8f9fa, #ffffff)" }}>
+      <div
+        className="stats-section py-5"
+        style={{ background: "linear-gradient(180deg, #f8f9fa, #ffffff)" }}
+      >
         <Container>
           <Row className="text-center">
             <Col md={3}>
@@ -224,26 +259,81 @@ function Home() {
           <Carousel.Item>
             <div className="text-center p-4">
               <Quote size={32} className="text-secondary mb-3" />
-              <p className="lead fst-italic">"Dễ dàng tìm được pin chất lượng với giá tốt. Hỗ trợ tuyệt vời!"</p>
+              <p className="lead fst-italic">
+                "Dễ dàng tìm được pin chất lượng với giá tốt. Hỗ trợ tuyệt vời!"
+              </p>
               <p className="fw-bold">- Nguyễn Văn A, Hà Nội</p>
             </div>
           </Carousel.Item>
           <Carousel.Item>
             <div className="text-center p-4">
               <Quote size={32} className="text-secondary mb-3" />
-              <p className="lead fst-italic">"Đăng bán xe điện cũ nhanh chóng, nhận được nhiều offer."</p>
+              <p className="lead fst-italic">
+                "Đăng bán xe điện cũ nhanh chóng, nhận được nhiều offer."
+              </p>
               <p className="fw-bold">- Trần Thị B, TP.HCM</p>
             </div>
           </Carousel.Item>
           <Carousel.Item>
             <div className="text-center p-4">
               <Quote size={32} className="text-secondary mb-3" />
-              <p className="lead fst-italic">"Nền tảng đáng tin cậy cho pin EV second-hand."</p>
+              <p className="lead fst-italic">
+                "Nền tảng đáng tin cậy cho pin EV second-hand."
+              </p>
               <p className="fw-bold">- Lê Văn C, Đà Nẵng</p>
             </div>
           </Carousel.Item>
         </Carousel>
       </Container>
+
+      {/* Updated Modal for Login Prompt */}
+      <Modal 
+        show={showModal} 
+        onHide={() => setShowModal(false)} 
+        centered 
+        className="custom-modal"
+        animation={true}
+      >
+        <Modal.Header closeButton className="bg-light border-0 pb-0">
+          <Modal.Title className="d-flex align-items-center">
+            <User size={24} className="me-2" style={{ color: "#416adcff" }} />
+            Yêu Cầu Đăng Nhập
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-2 pb-4">
+          <p className="text-center mb-0" style={{ fontSize: "1.1rem", color: "#333" }}>
+            Bạn cần đăng nhập để đăng bán sản phẩm. 
+            <br />
+            Nếu chưa có tài khoản, hãy đăng ký ngay!
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="border-0 justify-content-center pt-0">
+          <Button 
+            variant="outline-secondary" 
+            onClick={() => setShowModal(false)}
+            className="me-2 px-4 py-2 rounded-pill"
+            style={{ borderColor: "#ccc", color: "#666" }}
+          >
+            Đóng
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => { setShowModal(false); navigate("/login"); }}
+            className="me-2 px-4 py-2 rounded-pill"
+            style={{ backgroundColor: "#416adcff", border: "none" }}
+          >
+            Đăng Nhập Ngay
+          </Button>
+          <Button 
+            variant="warning" 
+            onClick={() => { setShowModal(false); navigate("/register"); }}
+            className="px-4 py-2 rounded-pill"
+            style={{ backgroundColor: "#fee877ff", border: "none", color: "#416adcff" }}
+          >
+            Đăng Ký Ngay
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       <style>{`
         .animate-fade-in {
@@ -259,6 +349,16 @@ function Home() {
         .hover-card:hover {
           transform: translateY(-10px);
           box-shadow: 0 1rem 2rem rgba(0,0,0,0.15) !important;
+        }
+        .custom-modal .modal-content {
+          border-radius: 20px;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+          overflow: hidden;
+          animation: modalFadeIn 0.3s ease-out;
+        }
+        @keyframes modalFadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </>
