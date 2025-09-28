@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface ListingService {
     public List<ListingCartResponseDTO> getListingsByKeyWord(String keyWord);
-    public boolean createListing(CreateListingFormDTO createListingForm);
+    public boolean createListing(CreateListingFormDTO createListingForm,Long sellerId);
 }

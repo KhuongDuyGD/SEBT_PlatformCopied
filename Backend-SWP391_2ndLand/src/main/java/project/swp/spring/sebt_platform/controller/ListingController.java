@@ -31,7 +31,7 @@ public class ListingController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please login again.");
             }
 
-            if(listingService.createListing(createListingFormDTO)){
+            if(listingService.createListing(createListingFormDTO,userId)){
                 return ResponseEntity.ok().body("Create listing request successfully");
             } else {
                 return ResponseEntity.badRequest().body("Create listing request failed");

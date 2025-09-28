@@ -34,7 +34,7 @@ public class ListingServiceImpl implements ListingService {
 
     @Override
     @Transactional
-    public boolean createListing(CreateListingFormDTO createListingForm) {
+    public boolean createListing(CreateListingFormDTO createListingForm,Long sellerId) {
         try {
             if (createListingForm == null) {
                 System.err.println("Create listing form is null");
@@ -56,10 +56,10 @@ public class ListingServiceImpl implements ListingService {
                 return false;
             }
 
-            UserEntity user = userRepository.findById(createListingForm.sell_Id()).orElse(null);
+            UserEntity user = userRepository.findById(sellerId).orElse(null);
 
             if (user == null) {
-                System.err.println("User not found with ID: " + createListingForm.sell_Id());
+                System.err.println("User not found with ID: " + sellerId);
                 return false;
             }
 

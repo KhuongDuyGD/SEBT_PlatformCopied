@@ -9,7 +9,6 @@ import java.util.List;
 
 public record CreateListingFormDTO(
         String title,
-        Long sell_Id,
         Product product,
         ListingType listingType,
         String mainImage,
