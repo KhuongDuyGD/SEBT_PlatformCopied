@@ -62,7 +62,7 @@ function UserInfoCard({ userInfo }) {
             <Phone className="me-3 text-primary" size={20} />
             <div>
               <small className="text-muted d-block">Số điện thoại</small>
-              <span className="fw-medium">{userInfo.phone || "Chưa cập nhật"}</span>
+              <span className="fw-medium">{userInfo.phoneNumber || "Chưa cập nhật"}</span>
             </div>
           </ListGroup.Item>
 
