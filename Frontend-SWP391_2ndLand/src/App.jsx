@@ -1,20 +1,16 @@
-// Updated src/App.jsx
-// No major changes needed here, but ensure the /post-listing route is added if it exists.
-// For now, assuming /post-listing will be a protected route or page (you can add it later).
-// We'll use Context to share auth state.
-
+// src/App.jsx (Updated with loading state to prevent premature redirect)
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import AppNavbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
-import VerifyEmail from "./pages/auth/VerifyEmail";  // Thêm mới
+import VerifyEmail from "./pages/auth/VerifyEmail";
 import Profile from "./pages/profile/Profile";
 import CarListings from "./pages/listings/CarListings";
 import PinListings from "./pages/listings/PinListings";
-import { useState, useEffect, createContext } from "react";  // Add createContext
-import { Container } from "react-bootstrap";
-import api from "./api/axios";  // Import axios instance
+import { useState, useEffect, createContext } from "react";
+import { Container, Spinner } from "react-bootstrap"; // Add Spinner for loading
+import api from "./api/axios";
 import "./App.css";
 
 // Create AuthContext to share login state across components
@@ -23,6 +19,7 @@ export const AuthContext = createContext(null);
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userInfo, setUserInfo] = useState(null);
+    const [loading, setLoading] = useState(true); // Add loading state
 
     useEffect(() => {
         const checkLoggedIn = async () => {
@@ -34,13 +31,15 @@ function App() {
                 setIsLoggedIn(false);
                 setUserInfo(null);
                 localStorage.removeItem('userInfo');
+            } finally {
+                setLoading(false); // End loading after check
             }
         };
         checkLoggedIn();
     }, []);
 
     useEffect(() => {
-        localStorage.setItem("isLoggedIn", isLoggedIn);
+        localStorage.setItem("isLoggedIn", isLoggedIn.toString()); // Store as string
         if (isLoggedIn && userInfo) {
             localStorage.setItem("userInfo", JSON.stringify(userInfo));
         } else {
@@ -48,10 +47,20 @@ function App() {
         }
     }, [isLoggedIn, userInfo]);
 
+    // Show loading spinner while checking auth
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center vh-100">
+                <Spinner animation="border" variant="primary" />
+                <span className="ms-3">Đang kiểm tra phiên đăng nhập...</span>
+            </div>
+        );
+    }
+
     return (
         <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, userInfo, setUserInfo }}>
             <Router>
-                <AppNavbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />  {/* Pass setUserInfo cho logout */}
+                <AppNavbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />
                 <main>
                     <Routes>
                         <Route path="/" element={<Home />} />
@@ -103,9 +112,7 @@ function App() {
                         <Route path="/register" element={
                             <Register />
                         } />
-                        <Route path="/verify-email" element={<VerifyEmail setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />} />  {/* Thêm route */}
-                        {/* Add this if you have a PostListing page, otherwise create it */}
-                        {/* <Route path="/post-listing" element={isLoggedIn ? <PostListing /> : <Navigate to="/login" />} /> */}
+                        <Route path="/verify-email" element={<VerifyEmail setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />} />
                     </Routes>
                 </main>
                 <footer className="footer text-center">
