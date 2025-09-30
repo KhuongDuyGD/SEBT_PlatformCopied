@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import backgroundImage from "../assets/background.jpg";
 import { useContext, useState } from "react";
-import { AuthContext } from "../App";  // Import AuthContext from App.jsx (adjust path if needed)
+import { AuthContext } from "../contexts/AuthContext";  // Import AuthContext from AuthContext.js (adjust path if needed)
 
 function Home() {
   const { isLoggedIn } = useContext(AuthContext);
@@ -100,7 +100,7 @@ function Home() {
                     e.target.style.backgroundColor = "transparent";
                   }}
                 >
-                  Tìm pin
+                  Tìm xe điện
                 </Button>
                 <Button
                   as={Link}
@@ -143,10 +143,10 @@ function Home() {
                   <BatteryCharging size={48} />
                 </div>
                 <h5 className="card-title fw-bold text-success mb-3">
-                  Mua Pin Chất Lượng
+                  Mua Xe Điện Chất Lượng
                 </h5>
                 <p className="card-text text-muted mb-4">
-                  Khám phá hàng ngàn pin EV đã qua kiểm định chất lượng với giá
+                  Khám phá hàng ngàn xe điện đã qua kiểm định chất lượng với giá
                   cả hợp lý.
                 </p>
                 <Button
@@ -155,7 +155,7 @@ function Home() {
                   variant="success"
                   className="px-4 rounded-pill"
                 >
-                  Xem Pin →
+                  Xem Xe Điện →
                 </Button>
               </Card.Body>
             </Card>
@@ -167,10 +167,10 @@ function Home() {
                   <Tag size={48} />
                 </div>
                 <h5 className="card-title fw-bold text-info mb-3">
-                  Bán Pin Dễ Dàng
+                  Bán Xe Điện Dễ Dàng
                 </h5>
                 <p className="card-text text-muted mb-4">
-                  Đăng bán pin của bạn với quy trình đơn giản và nhận được giá
+                  Đăng bán xe điện của bạn với quy trình đơn giản và nhận được giá
                   tốt nhất.
                 </p>
                 <Button
@@ -222,7 +222,7 @@ function Home() {
               <div className="mb-4">
                 <ShieldCheck size={40} className="text-primary mb-2" />
                 <h3 className="fw-bold">1,000+</h3>
-                <p className="text-muted">Pin Đã Bán</p>
+                <p className="text-muted">Xe Điện Đã Bán</p>
               </div>
             </Col>
             <Col md={3}>
@@ -260,7 +260,7 @@ function Home() {
             <div className="text-center p-4">
               <Quote size={32} className="text-secondary mb-3" />
               <p className="lead fst-italic">
-                "Dễ dàng tìm được pin chất lượng với giá tốt. Hỗ trợ tuyệt vời!"
+                "Dễ dàng tìm được xe điện chất lượng với giá tốt. Hỗ trợ tuyệt vời!"
               </p>
               <p className="fw-bold">- Nguyễn Văn A, Hà Nội</p>
             </div>
@@ -278,7 +278,7 @@ function Home() {
             <div className="text-center p-4">
               <Quote size={32} className="text-secondary mb-3" />
               <p className="lead fst-italic">
-                "Nền tảng đáng tin cậy cho pin EV second-hand."
+                "Nền tảng đáng tin cậy cho xe điện second-hand."
               </p>
               <p className="fw-bold">- Lê Văn C, Đà Nẵng</p>
             </div>

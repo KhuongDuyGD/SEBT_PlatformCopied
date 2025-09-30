@@ -85,3 +85,92 @@
   text-decoration: underline !important;
   color: #fee877ff;
 }
+
+/* OTP Input Styling */
+.otp-container {
+  padding: 1rem 0;
+}
+
+.otp-inputs {
+  gap: 12px !important;
+}
+
+.otp-input {
+  width: 50px;
+  height: 60px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #416adcff;
+  background-color: #f8f9fa;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.otp-input:focus {
+  border-color: #416adcff;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 0.2rem rgba(65, 106, 220, 0.25);
+  transform: scale(1.05);
+}
+
+.otp-input:disabled {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.otp-input:not(:placeholder-shown) {
+  background-color: #ffffff;
+  border-color: #416adcff;
+}
+
+/* Verify Email Specific Styling */
+.verify-icon {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.auth-submit-btn:disabled {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.auth-submit-btn:disabled:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive Design for OTP */
+@media (max-width: 576px) {
+  .otp-input {
+    width: 45px;
+    height: 55px;
+    font-size: 1.3rem;
+  }
+  
+  .otp-inputs {
+    gap: 8px !important;
+  }
+  
+  .auth-card .card-body {
+    padding: 2rem 1.5rem;
+  }
+}

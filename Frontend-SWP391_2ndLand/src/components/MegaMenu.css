@@ -47,6 +47,78 @@
   color: white;
 }
 
+/* Logout Modal Styling */
+.modal-content {
+  border-radius: 15px;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #416adcff, #5fcff1ff);
+  color: white;
+  border-radius: 15px 15px 0 0;
+  padding: 1.5rem;
+}
+
+.modal-header .modal-title {
+  color: white;
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.modal-footer {
+  padding: 1.5rem 2rem;
+}
+
+/* Logout Animation */
+.modal.fade .modal-dialog {
+  transform: translate(0, -50px);
+  transition: transform 0.3s ease-out;
+}
+
+.modal.show .modal-dialog {
+  transform: translate(0, 0);
+}
+
+/* Logout dropdown item hover effect */
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+  transform: translateX(5px);
+  transition: all 0.2s ease;
+}
+
+.dropdown-item.text-danger:hover {
+  background-color: #fee;
+  color: #dc3545 !important;
+}
+
+/* Toast styling */
+.toast {
+  border: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.toast.bg-success {
+  background: linear-gradient(135deg, #28a745, #20c997) !important;
+}
+
+/* Button animations */
+.btn {
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
 /* Multi-level Dropdown Styling */
 .multi-level-dropdown .dropdown-submenu {
   position: relative;

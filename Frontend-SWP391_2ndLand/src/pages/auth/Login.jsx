@@ -11,9 +11,11 @@ function Login({ setIsLoggedIn, setUserInfo }) {
     const [alertMessage, setAlertMessage] = useState("");
     const [alertVariant, setAlertVariant] = useState("success");
     const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const onSubmit = async (data) => {
+        setIsLoading(true);
         try {
             const response = await api.post('/auth/login', data);
             setUserInfo(response.data);
@@ -21,11 +23,14 @@ function Login({ setIsLoggedIn, setUserInfo }) {
             setAlertVariant("success");
             setShowAlert(true);
             setIsLoggedIn(true);
-            setTimeout(() => navigate('/'), 1500);
+            // Remove delay - redirect immediately
+            navigate('/');
         } catch (error) {
             setAlertMessage(error.response?.data?.message || "Đăng nhập thất bại");
             setAlertVariant("danger");
             setShowAlert(true);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -73,8 +78,19 @@ function Login({ setIsLoggedIn, setUserInfo }) {
                                         {errors.password && <p className="text-danger small">Mật khẩu phải ít nhất 6 ký tự</p>}
                                     </Form.Group>
 
-                                    <Button type="submit" className="w-100 fw-bold py-3 mb-3 auth-submit-btn">
-                                        Đăng Nhập
+                                    <Button 
+                                        type="submit" 
+                                        disabled={isLoading}
+                                        className="w-100 fw-bold py-3 mb-3 auth-submit-btn"
+                                    >
+                                        {isLoading ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                                                Đang đăng nhập...
+                                            </>
+                                        ) : (
+                                            "Đăng Nhập"
+                                        )}
                                     </Button>
 
                                     <div className="text-center">
