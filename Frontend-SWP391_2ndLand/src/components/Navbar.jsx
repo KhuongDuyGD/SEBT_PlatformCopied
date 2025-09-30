@@ -1,7 +1,8 @@
 // src/components/Navbar.jsx
 
+import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Navbar, Nav, Container, NavDropdown, Button } from "react-bootstrap";
+import { Navbar, Nav, Container, NavDropdown, Button, Modal, Spinner, Toast, ToastContainer } from "react-bootstrap";
 import api from "../api/axios"; // Import api (adjust path if needed, ví dụ: "../../api/axios")
 import "./MegaMenu.css"; // Import custom CSS
 
@@ -9,24 +10,75 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
   // Thêm setUserInfo vào props
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // State để quản lý modal logout
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
-  const handleLogout = async () => {
-    const confirmLogout = window.confirm("Bạn có chắc muốn đăng xuất?");
-    if (!confirmLogout) return;
-    sessionStorage.clear(); // Hoặc removeItem nếu chỉ xóa key cụ thể
-    // Sau đó try-catch...
+  // Xử lý khi người dùng click nút đăng xuất
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  // Xử lý xác nhận đăng xuất
+  const confirmLogout = async () => {
+    setIsLoggingOut(true);
+    
     try {
+      // Gọi API đăng xuất
       await api.post("/auth/logout");
-      // Success: clear state & storage
-      setIsLoggedIn(false);
-      setUserInfo(null);
+      
+      // Xóa tất cả dữ liệu session và storage
+      sessionStorage.clear();
       localStorage.removeItem("isLoggedIn");
       localStorage.removeItem("userInfo");
-      navigate("/");
+      localStorage.removeItem("registerEmail");
+      localStorage.removeItem("tempPassword");
+      
+      // Cập nhật state
+      setIsLoggedIn(false);
+      setUserInfo(null);
+      
+      // Đóng modal và hiển thị thông báo thành công
+      setShowLogoutModal(false);
+      setToastMessage("Đăng xuất thành công! Hẹn gặp lại bạn.");
+      setShowToast(true);
+      
+      // Chuyển về trang chủ sau khi hiển thị toast
+      setTimeout(() => {
+        navigate("/");
+      }, 500);
+      
     } catch (error) {
       console.error("Logout failed", error);
-      alert("Đăng xuất thất bại. Vui lòng thử lại."); // Thêm alert cho UX tốt hơn
+      // Vẫn thực hiện logout phía frontend nếu API lỗi
+      sessionStorage.clear();
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("userInfo");
+      localStorage.removeItem("registerEmail");
+      localStorage.removeItem("tempPassword");
+      
+      setIsLoggedIn(false);
+      setUserInfo(null);
+      setShowLogoutModal(false);
+      
+      // Hiển thị toast thông báo (ngay cả khi API lỗi)
+      setToastMessage("Đã đăng xuất khỏi tài khoản.");
+      setShowToast(true);
+      
+      setTimeout(() => {
+        navigate("/");
+      }, 500);
+    } finally {
+      setIsLoggingOut(false);
     }
+  };
+
+  // Hủy đăng xuất
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   const isActiveLink = (path) => location.pathname === path;
@@ -39,7 +91,7 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
     >
       <Container>
         <Navbar.Brand as={Link} to="/" className="fw-bold fs-3 text-white">
-          <span>EV Battery Hub</span>
+          <span>EV Secondhand Marketplace</span>
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
@@ -148,9 +200,10 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
                 </NavDropdown.Item>
                 <NavDropdown.Divider />
                 <NavDropdown.Item
-                  onClick={handleLogout}
+                  onClick={handleLogoutClick}
                   className="text-danger fw-semibold"
                 >
+                  <i className="fas fa-sign-out-alt me-2"></i>
                   Đăng Xuất
                 </NavDropdown.Item>
               </NavDropdown>
@@ -167,6 +220,81 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
           </Nav>
         </Navbar.Collapse>
       </Container>
+
+      {/* Modal xác nhận đăng xuất */}
+      <Modal 
+        show={showLogoutModal} 
+        onHide={cancelLogout}
+        centered
+        backdrop="static"
+        keyboard={false}
+      >
+        <Modal.Header className="border-0 pb-2">
+          <Modal.Title className="w-100 text-center">
+            <i className="fas fa-sign-out-alt text-warning me-2" style={{fontSize: '1.5rem'}}></i>
+            <span className="fw-bold">Xác nhận đăng xuất</span>
+          </Modal.Title>
+        </Modal.Header>
+        
+        <Modal.Body className="text-center py-4">
+          <div className="mb-3">
+            <i className="fas fa-question-circle text-primary" style={{fontSize: '3rem'}}></i>
+          </div>
+          <h5 className="mb-3">Bạn có chắc chắn muốn đăng xuất?</h5>
+          <p className="text-muted mb-0">
+            Bạn sẽ cần đăng nhập lại để sử dụng các tính năng của EV Secondhand Marketplace.
+          </p>
+        </Modal.Body>
+        
+        <Modal.Footer className="border-0 pt-0 justify-content-center">
+          <Button 
+            variant="outline-secondary" 
+            onClick={cancelLogout}
+            disabled={isLoggingOut}
+            className="px-4 py-2 fw-semibold"
+          >
+            <i className="fas fa-times me-2"></i>
+            Hủy
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={confirmLogout}
+            disabled={isLoggingOut}
+            className="px-4 py-2 fw-semibold ms-2"
+          >
+            {isLoggingOut ? (
+              <>
+                <Spinner size="sm" className="me-2" />
+                Đang đăng xuất...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-sign-out-alt me-2"></i>
+                Đăng xuất
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Toast notification cho logout */}
+      <ToastContainer position="top-end" className="p-3">
+        <Toast 
+          show={showToast} 
+          onClose={() => setShowToast(false)}
+          delay={3000}
+          autohide
+          bg="success"
+        >
+          <Toast.Header>
+            <i className="fas fa-check-circle text-success me-2"></i>
+            <strong className="me-auto">EV Secondhand Marketplace</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">
+            {toastMessage}
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
     </Navbar>
   );
 }

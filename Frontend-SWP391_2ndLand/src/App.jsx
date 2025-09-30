@@ -8,13 +8,11 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 import Profile from "./pages/profile/Profile";
 import CarListings from "./pages/listings/CarListings";
 import PinListings from "./pages/listings/PinListings";
-import { useState, useEffect, createContext } from "react";
+import { useState, useEffect } from "react";
 import { Container, Spinner } from "react-bootstrap"; // Add Spinner for loading
 import api from "./api/axios";
+import { AuthContext } from "./contexts/AuthContext"; // Import AuthContext từ file riêng
 import "./App.css";
-
-// Create AuthContext to share login state across components
-export const AuthContext = createContext(null);
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -28,6 +26,8 @@ function App() {
                 setUserInfo(response.data);
                 setIsLoggedIn(true);
             } catch (error) {
+                // Log lỗi để debug nếu cần
+                console.log('User chưa đăng nhập hoặc session hết hạn:', error.message);
                 setIsLoggedIn(false);
                 setUserInfo(null);
                 localStorage.removeItem('userInfo');
@@ -69,7 +69,7 @@ function App() {
                         <Route path="/support" element={
                             <Container className="py-5 text-center">
                                 <h2 className="fw-bold text-warning mb-4">Hỗ Trợ Khách Hàng</h2>
-                                <p className="text-muted">Liên hệ: support@evbatteryhub.com</p>
+                                <p className="text-muted">Liên hệ: support@evsecondhand.com</p>
                             </Container>
                         } />
                         <Route path="/notifications" element={
@@ -117,7 +117,7 @@ function App() {
                 </main>
                 <footer className="footer text-center">
                     <Container>
-                        <p className="mb-0">© 2024 EV Battery Hub - Nền tảng pin EV cũ hàng đầu Việt Nam</p>
+                        <p className="mb-0">© 2024 EV Secondhand Marketplace - Nền tảng xe điện cũ hàng đầu Việt Nam</p>
                     </Container>
                 </footer>
             </Router>

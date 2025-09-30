@@ -1,20 +1,32 @@
 package project.swp.spring.sebt_platform.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import project.swp.spring.sebt_platform.dto.request.*;
-import project.swp.spring.sebt_platform.dto.response.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+import project.swp.spring.sebt_platform.dto.request.ResendOtpRequestDTO;
+import project.swp.spring.sebt_platform.dto.request.UserLoginFormDTO;
+import project.swp.spring.sebt_platform.dto.request.UserRegisterFormDTO;
+import project.swp.spring.sebt_platform.dto.request.UserVerifyEmailFormDTO;
+import project.swp.spring.sebt_platform.dto.response.ErrorResponseDTO;
+import project.swp.spring.sebt_platform.dto.response.SuccessResponseDTO;
+import project.swp.spring.sebt_platform.dto.response.UserSessionResponseDTO;
 import project.swp.spring.sebt_platform.model.UserEntity;
 import project.swp.spring.sebt_platform.model.enums.UserRole;
 import project.swp.spring.sebt_platform.model.enums.UserStatus;
-import project.swp.spring.sebt_platform.service.*;
+import project.swp.spring.sebt_platform.service.AuthService;
+import project.swp.spring.sebt_platform.service.MailService;
+import project.swp.spring.sebt_platform.service.UserService;
 import project.swp.spring.sebt_platform.util.Utils;
 
 @RestController
@@ -168,6 +180,44 @@ public class AuthController {
             System.err.println("Email verification error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponseDTO("Verification failed"));
+        }
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOtp(@Valid @RequestBody ResendOtpRequestDTO request, HttpServletRequest httpRequest) {
+        try {
+            if (request.email() == null || request.email().trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponseDTO("Email is required"));
+            }
+
+            HttpSession session = httpRequest.getSession(false);
+            if (session == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponseDTO("No verification process found. Please register again."));
+            }
+
+            String sessionEmail = (String) session.getAttribute("email");
+            if (sessionEmail == null || !sessionEmail.equals(request.email())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponseDTO("Email does not match the registration session."));
+            }
+
+            // Generate new OTP
+            String newPins = utils.generatePins();
+            
+            // Update session with new OTP
+            session.setAttribute("pins", newPins);
+            
+            // Send new OTP email
+            mailService.sendVerificationEmail(request.email(), newPins);
+            
+            return ResponseEntity.ok(new SuccessResponseDTO("New OTP has been sent to your email"));
+            
+        } catch (Exception e) {
+            System.err.println("Resend OTP error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponseDTO("Failed to resend OTP"));
         }
     }
 

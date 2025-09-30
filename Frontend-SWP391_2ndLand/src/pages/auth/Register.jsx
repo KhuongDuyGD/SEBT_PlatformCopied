@@ -12,21 +12,28 @@ function Register() {
     const [alertVariant, setAlertVariant] = useState("success");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const onSubmit = async (data) => {
+        setIsLoading(true);
         try {
             const response = await api.post('/auth/register', data);
+            // Lưu email và password tạm thời để auto-login sau khi verify
             localStorage.setItem("registerEmail", data.email);
+            localStorage.setItem("tempPassword", data.password);
 
-            setAlertMessage(response.data.message || "Please check your email for PIN.");
+            setAlertMessage(response.data.message || "Vui lòng kiểm tra email để nhận mã OTP.");
             setAlertVariant("success");
             setShowAlert(true);
-            setTimeout(() => navigate('/verify-email'), 2000);  // Redirect to verify
+            // Chuyển ngay đến trang verify để hoàn tất đăng ký
+            navigate('/verify-email');
         } catch (error) {
-            setAlertMessage(error.response?.data?.message || "Registration failed");
+            setAlertMessage(error.response?.data?.message || "Đăng ký thất bại");
             setAlertVariant("danger");
             setShowAlert(true);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -39,7 +46,7 @@ function Register() {
                             <Card.Body>
                                 <div className="text-center mb-4 auth-header">
                                     <h2 className="fw-bold mb-2">Tạo Tài Khoản Mới</h2>
-                                    <p className="text-muted fs-6">Tham gia cộng đồng pin EV của chúng tôi.</p>
+                                    <p className="text-muted fs-6">Tham gia cộng đồng xe điện của chúng tôi.</p>
                                 </div>
 
                                 {showAlert && (
@@ -92,8 +99,19 @@ function Register() {
                                         {errors.confirmPassword && <p className="text-danger small">{errors.confirmPassword.message}</p>}
                                     </Form.Group>
 
-                                    <Button type="submit" className="w-100 fw-bold py-3 mb-3 auth-submit-btn">
-                                        Tạo Tài Khoản
+                                    <Button 
+                                        type="submit" 
+                                        disabled={isLoading}
+                                        className="w-100 fw-bold py-3 mb-3 auth-submit-btn"
+                                    >
+                                        {isLoading ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                                                Đang tạo tài khoản...
+                                            </>
+                                        ) : (
+                                            "Tạo Tài Khoản"
+                                        )}
                                     </Button>
                                 </Form>
                             </Card.Body>
