@@ -78,7 +78,7 @@ public class MemberController {
             }
 
             // Get user profile
-            var userProfile = userService.findUserById(userId);
+            var userProfile = userService.getUserProfileById(userId);
 
             if (userProfile == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)

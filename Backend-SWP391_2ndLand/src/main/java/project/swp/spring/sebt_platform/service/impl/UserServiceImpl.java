@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.swp.spring.sebt_platform.dto.request.UpdateProfileFormDTO;
+import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
 import project.swp.spring.sebt_platform.model.UserEntity;
 import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.UserService;
@@ -19,9 +20,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserEntity findUserById(Long id) {
+    public UserProfileResponseDTO getUserProfileById(Long id) {
         try {
-            return userRepository.findById(id).orElse(null);
+            UserEntity user = userRepository.findById(id).orElse(null);
+            if (user == null) {
+                return null;
+            }
+            return new UserProfileResponseDTO(user.getUsername(), user.getEmail(), user.getPhoneNumber(), user.getAvatar(), user.getCreatedAt());
+
         } catch (Exception e) {
             System.err.println("Find user by ID error: " + e.getMessage());
             return null;
