@@ -1,5 +1,6 @@
 package project.swp.spring.sebt_platform.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ public class ListingController {
     private CloudinaryService cloudinaryService;
 
     @PutMapping(value = "/create",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createListingRequest(@RequestPart("createListingForm") CreateListingFormDTO createListingFormDTO,
+    public ResponseEntity<?> createListingRequest(@RequestPart("createListingForm") String createListingFormJson,
                                                   @RequestPart("listingImages") List<MultipartFile> listingImages,
                                                   @RequestPart("thumbnailImage") MultipartFile thumbnailImage,
                                                   HttpServletRequest request) {
@@ -40,6 +41,9 @@ public class ListingController {
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please login again.");
             }
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            CreateListingFormDTO createListingFormDTO = objectMapper.readValue(createListingFormJson, CreateListingFormDTO.class);
 
             // Validate input
             if (createListingFormDTO == null) {

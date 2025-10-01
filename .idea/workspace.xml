@@ -5,39 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4fa67949-db7b-446f-b539-ae7cafb7c212" name="Changes" comment="complete create listing">
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/LocationRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/CloudinaryService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/CloudinaryServiceImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/CLOUDINARY_SERVICE_DOCUMENTATION.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ENTITY_REFACTORING_DOCUMENTATION.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/AsyncConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/AsyncConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/SessionConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/CloudinaryConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/AuthController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/ListingController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/ListingController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/ProductImage.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Image.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/request/CreateListingFormDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/request/CreateListingFormDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ContractEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ContractEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ContractRevisionEntity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ContractSignatureEntity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/FavoriteEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/FavoriteEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ListingEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ListingEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ListingImageEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ListingImageEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ProductEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ProductEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ReviewEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/ReviewEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/TransactionEntity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/TransactionLogEntity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/UserEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/UserEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/ListingImageRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/ListingImageRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/ListingRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/ListingRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/ListingService.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/ListingService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/ListingServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/ListingServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/MailServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/MailServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/App.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/pages/listings/CarListings.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/pages/listings/CarListings.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/pages/listings/PinListings.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/pages/listings/PinListings.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,7 +25,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="main" />
+        <entry key="$PROJECT_DIR$" value="UI/UX_VerifyEmail_Logout_&amp;_EmailTemplate" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -97,7 +66,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Spring Boot.SebtPlatformApplication.executor": "Run",
-    "git-widget-placeholder": "UI/UX__VerifyEmail__Logout__&&__EmailTemplate",
+    "git-widget-placeholder": "MinhBe/test-cloud",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
@@ -159,7 +128,7 @@
       <workItem from="1759030822338" duration="2226000" />
       <workItem from="1759056560814" duration="3224000" />
       <workItem from="1759190832967" duration="618000" />
-      <workItem from="1759288141260" duration="16114000" />
+      <workItem from="1759288141260" duration="17589000" />
     </task>
     <task id="LOCAL-00001" summary="add create listing">
       <option name="closed" value="true" />
@@ -185,7 +154,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758962371325</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="complete create listing">
+      <option name="closed" value="true" />
+      <created>1759310008686</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1759310008686</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -198,6 +175,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add create listing" />
     <MESSAGE value="chỉnh sửa entities, chỉnh lại chức năng profile" />
-    <option name="LAST_COMMIT_MESSAGE" value="chỉnh sửa entities, chỉnh lại chức năng profile" />
+    <MESSAGE value="complete create listing" />
+    <option name="LAST_COMMIT_MESSAGE" value="complete create listing" />
   </component>
 </project>
