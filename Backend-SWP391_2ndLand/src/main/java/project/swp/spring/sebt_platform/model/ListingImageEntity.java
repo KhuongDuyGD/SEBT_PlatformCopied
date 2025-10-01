@@ -23,6 +23,9 @@ public class ListingImageEntity {
     @Column(name = "image_url", columnDefinition = "TEXT", nullable = false)
     private String imageUrl;
 
+    @Column(name = "public_id", columnDefinition = "VARCHAR(255)")
+    private String publicId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -33,6 +36,12 @@ public class ListingImageEntity {
     public ListingImageEntity(ListingEntity listing, String imageUrl) {
         this.listing = listing;
         this.imageUrl = imageUrl;
+    }
+
+    public ListingImageEntity(ListingEntity listing, String imageUrl, String publicId) {
+        this.listing = listing;
+        this.imageUrl = imageUrl;
+        this.publicId = publicId;
     }
 
     // Getters and setters
@@ -60,6 +69,23 @@ public class ListingImageEntity {
         this.imageUrl = imageUrl;
     }
 
+    // Alias methods for compatibility với code hiện tại
+    public String getUrl() {
+        return imageUrl;
+    }
+
+    public void setUrl(String url) {
+        this.imageUrl = url;
+    }
+
+    public String getPublicId() {
+        return publicId;
+    }
+
+    public void setPublicId(String publicId) {
+        this.publicId = publicId;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -67,5 +93,17 @@ public class ListingImageEntity {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-}
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ListingImageEntity)) return false;
+        ListingImageEntity that = (ListingImageEntity) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+}

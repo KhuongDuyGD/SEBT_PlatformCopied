@@ -70,6 +70,12 @@ public class AuthController {
                     .body(new ErrorResponseDTO("Password must be at least 6 characters"));
             }
 
+            // Check if email already exists
+            if (userService.findUserByEmail(user.email()) != null) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new ErrorResponseDTO("Email is already registered"));
+            }
+
             // Register user
             String pins = utils.generatePins();
             HttpSession session = request.getSession(true);
@@ -225,7 +231,7 @@ public class AuthController {
     public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
         try {
             HttpSession session = request.getSession(false);
-            if (session == null) {
+            if (session == null || session.getAttribute("userId") == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ErrorResponseDTO("No active session"));
             }
@@ -299,7 +305,6 @@ public class AuthController {
                 System.out.println("Session invalidated successfully");
             }
 
-            // Explicitly expire the session cookies on the client
             // Primary cookie name is configured as SEBT_SESSION
             ResponseCookie deleteSebtSession = ResponseCookie.from("SEBT_SESSION", "")
                 .path("/")

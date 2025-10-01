@@ -2,6 +2,7 @@ package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
 import project.swp.spring.sebt_platform.model.enums.VehicleCondition;
 
@@ -53,6 +54,7 @@ public class EvVehicleEntity {
     private LocalDateTime createdAt;
 
     // Relationships
+    @JsonIgnore // Add this annotation to prevent deep nesting
     @OneToMany(mappedBy = "evVehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ProductEntity> products;
 

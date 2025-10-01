@@ -2,6 +2,7 @@ package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import project.swp.spring.sebt_platform.model.enums.BatteryCondition;
 
 import java.math.BigDecimal;
@@ -45,6 +46,7 @@ public class BatteryEntity {
     private LocalDateTime createdAt;
 
     // Relationships
+    @JsonIgnore // Add this annotation to prevent deep nesting
     @OneToMany(mappedBy = "battery", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ProductEntity> products;
 

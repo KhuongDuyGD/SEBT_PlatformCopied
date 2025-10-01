@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -13,21 +12,17 @@ public class ProductEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "ev_id")
     private EvVehicleEntity evVehicle;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "battery_id")
     private BatteryEntity battery;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    // Relationships
-    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private ListingEntity listing;
 
     // Constructors
     public ProductEntity() {}
@@ -73,14 +68,6 @@ public class ProductEntity {
         this.createdAt = createdAt;
     }
 
-    public ListingEntity getListing() {
-        return listing;
-    }
-
-    public void setListing(ListingEntity listing) {
-        this.listing = listing;
-    }
-
     // Helper methods to check product type
     public boolean isVehicleProduct() {
         return evVehicle != null && battery == null;
@@ -88,5 +75,18 @@ public class ProductEntity {
 
     public boolean isBatteryProduct() {
         return battery != null && evVehicle == null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ProductEntity)) return false;
+        ProductEntity that = (ProductEntity) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

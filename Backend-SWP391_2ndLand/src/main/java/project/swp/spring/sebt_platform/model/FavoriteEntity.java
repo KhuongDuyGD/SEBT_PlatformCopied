@@ -3,107 +3,50 @@ package project.swp.spring.sebt_platform.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "favorites")
-@IdClass(FavoriteEntity.FavoriteId.class)
+@Table(name = "favorites",
+    indexes = {
+        @Index(name = "idx_favorites_user_id", columnList = "user_id"),
+        @Index(name = "idx_favorites_listing_id", columnList = "listing_id")
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_favorites_user_listing", columnNames = {"user_id", "listing_id"})
+    }
+)
 public class FavoriteEntity {
-
     @Id
-    @Column(name = "user_id")
-    private Long userId;
-
-    @Id
-    @Column(name = "listing_id")
-    private Long listingId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "listing_id", insertable = false, updatable = false)
+    @JoinColumn(name = "listing_id", nullable = false)
     private ListingEntity listing;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME2")
     private LocalDateTime createdAt;
 
     // Constructors
     public FavoriteEntity() {}
 
-    public FavoriteEntity(Long userId, Long listingId) {
-        this.userId = userId;
-        this.listingId = listingId;
-    }
-
     public FavoriteEntity(UserEntity user, ListingEntity listing) {
         this.user = user;
         this.listing = listing;
-        this.userId = user.getId();
-        this.listingId = listing.getId();
-    }
-
-    // Composite Primary Key Class
-    public static class FavoriteId implements Serializable {
-        private Long userId;
-        private Long listingId;
-
-        public FavoriteId() {}
-
-        public FavoriteId(Long userId, Long listingId) {
-            this.userId = userId;
-            this.listingId = listingId;
-        }
-
-        // Getters and setters
-        public Long getUserId() {
-            return userId;
-        }
-
-        public void setUserId(Long userId) {
-            this.userId = userId;
-        }
-
-        public Long getListingId() {
-            return listingId;
-        }
-
-        public void setListingId(Long listingId) {
-            this.listingId = listingId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            FavoriteId that = (FavoriteId) o;
-            return userId.equals(that.userId) && listingId.equals(that.listingId);
-        }
-
-        @Override
-        public int hashCode() {
-            return userId.hashCode() + listingId.hashCode();
-        }
     }
 
     // Getters and setters
-    public Long getUserId() {
-        return userId;
+    public Long getId() {
+        return id;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public Long getListingId() {
-        return listingId;
-    }
-
-    public void setListingId(Long listingId) {
-        this.listingId = listingId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public UserEntity getUser() {
@@ -112,9 +55,6 @@ public class FavoriteEntity {
 
     public void setUser(UserEntity user) {
         this.user = user;
-        if (user != null) {
-            this.userId = user.getId();
-        }
     }
 
     public ListingEntity getListing() {
@@ -123,9 +63,6 @@ public class FavoriteEntity {
 
     public void setListing(ListingEntity listing) {
         this.listing = listing;
-        if (listing != null) {
-            this.listingId = listing.getId();
-        }
     }
 
     public LocalDateTime getCreatedAt() {
@@ -134,5 +71,18 @@ public class FavoriteEntity {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof FavoriteEntity)) return false;
+        FavoriteEntity that = (FavoriteEntity) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
