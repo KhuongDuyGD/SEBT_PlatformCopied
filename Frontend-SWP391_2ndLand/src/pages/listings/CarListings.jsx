@@ -1,55 +1,136 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ListingPage from "./ListingPage";
-
-// Sample car auction data
-const auctionCars = [
-  {
-    id: 1,
-    image: "/images/car1.jpg",
-    brand: "Peugeot 2008 GT Line 2022",
-    location: "Hà Nội",
-    km: "27,000 km",
-    left: "1 ngày",
-    price: "499 triệu",
-    owner: "******7817",
-    comments: 6,
-    description: "tư vấn thêm mấy dòng 🙌",
-  },
-  {
-    id: 2,
-    image: "/images/car2.jpg",
-    brand: "Mazda 2S 2014 Trắng",
-    location: "Thanh Hóa",
-    km: "130,000 km",
-    left: "23:03:42",
-    price: "Trả giá ngay",
-    owner: "Sơn",
-    comments: 1,
-    description: "mình có chiếc mitsubishi mi...",
-  },
-  {
-    id: 3,
-    image: "/images/car3.jpg",
-    brand: "Vinfast Lux a 2.0 Cao cấp...",
-    location: "TP. Hồ Chí Minh",
-    km: "14,700 km",
-    left: "22:42:19",
-    price: "Trả giá ngay",
-    owner: "",
-    comments: 0,
-    description: "Chưa có bình luận",
-    certified: true,
-  },
-];
+import api from "../../api/axios";
 
 function CarListings() {
+  const [carListings, setCarListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  /**
+   * Fetch danh sách xe từ API
+   */
+  const fetchCarListings = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await api.get('/listings/cars');
+      
+      if (response.data && Array.isArray(response.data)) {
+        // Chuyển đổi dữ liệu từ API thành format phù hợp với ListingPage
+        const formattedListings = response.data.map(listing => ({
+          id: listing.id,
+          image: listing.mainImage || "/images/default-car.jpg",
+          brand: listing.product?.vehicle?.brand + " " + listing.product?.vehicle?.name || listing.title,
+          location: listing.location?.province || "Không rõ",
+          km: listing.product?.vehicle?.mileage ? `${listing.product?.vehicle?.mileage.toLocaleString()} km` : "Không rõ",
+          left: calculateTimeLeft(listing.expiresAt),
+          price: formatPrice(listing.price),
+          owner: listing.seller?.username || "Ẩn danh",
+          comments: 0, // Tạm thời để 0, sau này sẽ implement comment system
+          description: listing.description || "Chưa có mô tả",
+          certified: listing.listingType === 'PREMIUM',
+          year: listing.product?.vehicle?.year,
+          condition: listing.product?.vehicle?.conditionStatus,
+          batteryCapacity: listing.product?.vehicle?.batteryCapacity,
+          viewsCount: listing.viewsCount || 0,
+          createdAt: listing.createdAt
+        }));
+        
+        setCarListings(formattedListings);
+      } else {
+        console.warn('API response không đúng format:', response.data);
+        setCarListings([]);
+      }
+    } catch (err) {
+      console.error('Lỗi khi fetch car listings:', err);
+      setError('Không thể tải danh sách xe. Vui lòng thử lại sau.');
+      setCarListings([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Tính toán thời gian còn lại của listing
+   * @param {string} expiresAt - Thời gian hết hạn
+   * @returns {string} - Chuỗi mô tả thời gian còn lại
+   */
+  const calculateTimeLeft = (expiresAt) => {
+    if (!expiresAt) return "Không giới hạn";
+    
+    const now = new Date();
+    const expiration = new Date(expiresAt);
+    const diff = expiration - now;
+    
+    if (diff <= 0) return "Đã hết hạn";
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (days > 0) return `${days} ngày`;
+    if (hours > 0) return `${hours} giờ`;
+    return "Sắp hết hạn";
+  };
+
+  /**
+   * Format giá tiền
+   * @param {number} price - Giá
+   * @returns {string} - Chuỗi giá đã format
+   */
+  const formatPrice = (price) => {
+    if (!price) return "Liên hệ";
+    
+    if (price >= 1000000000) {
+      return `${(price / 1000000000).toFixed(1)} tỷ`;
+    } else if (price >= 1000000) {
+      return `${(price / 1000000).toFixed(0)} triệu`;
+    } else {
+      return `${price.toLocaleString()} VND`;
+    }
+  };
+
+  // Fetch data khi component mount
+  useEffect(() => {
+    fetchCarListings();
+  }, [fetchCarListings]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Đang tải danh sách xe...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={fetchCarListings}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ListingPage
       pageTitle="Các xe mới nhất"
       searchPlaceholder="Tìm kiếm xe..."
       brandPlaceholder="VD: Vinfast, Peugeot..."
-      items={auctionCars}
+      items={carListings}
       showStatusFilter={true}
+      onRefresh={fetchCarListings}
     />
   );
 }

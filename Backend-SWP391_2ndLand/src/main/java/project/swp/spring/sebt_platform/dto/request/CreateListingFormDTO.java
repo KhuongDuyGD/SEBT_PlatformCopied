@@ -1,11 +1,11 @@
 package project.swp.spring.sebt_platform.dto.request;
 
+import java.util.List;
+
 import project.swp.spring.sebt_platform.dto.object.Location;
 import project.swp.spring.sebt_platform.dto.object.Product;
 import project.swp.spring.sebt_platform.dto.object.ProductImage;
 import project.swp.spring.sebt_platform.model.enums.ListingType;
-
-import java.util.List;
 
 public record CreateListingFormDTO(
         String title,
@@ -16,5 +16,6 @@ public record CreateListingFormDTO(
         String description,
         Double price,
         String category,
-        Location location
+        Location location,
+        Long sellerId  // Thêm sellerId để tránh session issue
 ){}
