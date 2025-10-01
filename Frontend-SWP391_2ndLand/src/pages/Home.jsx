@@ -1,6 +1,14 @@
 // src/pages/Home.jsx
 import { Link, useNavigate } from "react-router-dom";
-import { Button, Card, Row, Col, Container, Carousel, Modal } from "react-bootstrap";
+import {
+  Button,
+  Card,
+  Row,
+  Col,
+  Container,
+  Carousel,
+  Modal,
+} from "react-bootstrap";
 import {
   BatteryCharging,
   Handshake,
@@ -11,7 +19,7 @@ import {
 } from "lucide-react";
 import backgroundImage from "../assets/background.jpg";
 import { useContext, useState } from "react";
-import { AuthContext } from "../contexts/AuthContext";  // Import AuthContext from AuthContext.js (adjust path if needed)
+import { AuthContext } from "../contexts/AuthContext"; // Import AuthContext from AuthContext.js (adjust path if needed)
 
 function Home() {
   const { isLoggedIn } = useContext(AuthContext);
@@ -20,9 +28,9 @@ function Home() {
 
   const handlePostListingClick = () => {
     if (isLoggedIn) {
-      navigate("/post-listing");  // Navigate to post-listing if logged in
+      navigate("/post-listing"); // Navigate to post-listing if logged in
     } else {
-      setShowModal(true);  // Show popup if not logged in
+      setShowModal(true); // Show popup if not logged in
     }
   };
 
@@ -77,13 +85,13 @@ function Home() {
                     e.target.style.transform = "scale(1)";
                     e.target.style.boxShadow = "none";
                   }}
-                  onClick={handlePostListingClick}  // Change from as={Link} to onClick handler
+                  onClick={handlePostListingClick} // Change from as={Link} to onClick handler
                 >
                   Đăng bán
                 </Button>
                 <Button
                   as={Link}
-                  to="/battery"
+                  to="/listings?category=pin"
                   variant="outline-light"
                   size="lg"
                   className="px-4 py-3 fw-bold"
@@ -100,11 +108,11 @@ function Home() {
                     e.target.style.backgroundColor = "transparent";
                   }}
                 >
-                  Tìm xe điện
+                  Tìm pin
                 </Button>
                 <Button
                   as={Link}
-                  to="/cars"
+                  to="/listings?category=cars"
                   variant="outline-light"
                   size="lg"
                   className="px-4 py-3 fw-bold"
@@ -155,7 +163,7 @@ function Home() {
                   variant="success"
                   className="px-4 rounded-pill"
                 >
-                  Xem Xe Điện →
+                  Tìm pin
                 </Button>
               </Card.Body>
             </Card>
@@ -170,8 +178,8 @@ function Home() {
                   Bán Xe Điện Dễ Dàng
                 </h5>
                 <p className="card-text text-muted mb-4">
-                  Đăng bán xe điện của bạn với quy trình đơn giản và nhận được giá
-                  tốt nhất.
+                  Đăng bán xe điện của bạn với quy trình đơn giản và nhận được
+                  giá tốt nhất.
                 </p>
                 <Button
                   as={Link}
@@ -260,7 +268,8 @@ function Home() {
             <div className="text-center p-4">
               <Quote size={32} className="text-secondary mb-3" />
               <p className="lead fst-italic">
-                "Dễ dàng tìm được xe điện chất lượng với giá tốt. Hỗ trợ tuyệt vời!"
+                "Dễ dàng tìm được xe điện chất lượng với giá tốt. Hỗ trợ tuyệt
+                vời!"
               </p>
               <p className="fw-bold">- Nguyễn Văn A, Hà Nội</p>
             </div>
@@ -287,10 +296,10 @@ function Home() {
       </Container>
 
       {/* Updated Modal for Login Prompt */}
-      <Modal 
-        show={showModal} 
-        onHide={() => setShowModal(false)} 
-        centered 
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        centered
         className="custom-modal"
         animation={true}
       >
@@ -301,34 +310,47 @@ function Home() {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-2 pb-4">
-          <p className="text-center mb-0" style={{ fontSize: "1.1rem", color: "#333" }}>
-            Bạn cần đăng nhập để đăng bán sản phẩm. 
+          <p
+            className="text-center mb-0"
+            style={{ fontSize: "1.1rem", color: "#333" }}
+          >
+            Bạn cần đăng nhập để đăng bán sản phẩm.
             <br />
             Nếu chưa có tài khoản, hãy đăng ký ngay!
           </p>
         </Modal.Body>
         <Modal.Footer className="border-0 justify-content-center pt-0">
-          <Button 
-            variant="outline-secondary" 
+          <Button
+            variant="outline-secondary"
             onClick={() => setShowModal(false)}
             className="me-2 px-4 py-2 rounded-pill"
             style={{ borderColor: "#ccc", color: "#666" }}
           >
             Đóng
           </Button>
-          <Button 
-            variant="primary" 
-            onClick={() => { setShowModal(false); navigate("/login"); }}
+          <Button
+            variant="primary"
+            onClick={() => {
+              setShowModal(false);
+              navigate("/login");
+            }}
             className="me-2 px-4 py-2 rounded-pill"
             style={{ backgroundColor: "#416adcff", border: "none" }}
           >
             Đăng Nhập Ngay
           </Button>
-          <Button 
-            variant="warning" 
-            onClick={() => { setShowModal(false); navigate("/register"); }}
+          <Button
+            variant="warning"
+            onClick={() => {
+              setShowModal(false);
+              navigate("/register");
+            }}
             className="px-4 py-2 rounded-pill"
-            style={{ backgroundColor: "#fee877ff", border: "none", color: "#416adcff" }}
+            style={{
+              backgroundColor: "#fee877ff",
+              border: "none",
+              color: "#416adcff",
+            }}
           >
             Đăng Ký Ngay
           </Button>

@@ -1,111 +1,145 @@
-import React from "react";
+// src/pages/listings/ListingPage.jsx
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Container,
   Row,
   Col,
-  Card,
-  Badge,
   Form,
   Button,
+  Card,
+  Spinner,
 } from "react-bootstrap";
-import { MapPin, Gauge, MessageCircle, Tag } from "lucide-react";
-import "./Listings.css";
+import api from "../../api/axios";
 
-function ListingPage({
-  pageTitle,
-  searchPlaceholder,
-  brandPlaceholder,
-  items,
-  showStatusFilter,
-}) {
+function ListingPage() {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const initialCategory = params.get("category") || "cars"; // default cars
+  const initialType = params.get("type") || "";
+
+  const [category, setCategory] = useState(initialCategory);
+  const [type, setType] = useState(initialType);
+  const [priceRange, setPriceRange] = useState([0, 100000000]); // 0-100 triệu default
+  const [year, setYear] = useState("");
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchListings = async () => {
+    setLoading(true);
+    try {
+      let endpoint = "/api/listings/all";
+      if (category === "cars") endpoint = "/api/listings/cars";
+      if (category === "pin") endpoint = "/api/listings/pins";
+
+      const res = await api.get(endpoint);
+      let data = res.data || [];
+
+      // filter client-side demo
+      if (year) data = data.filter((l) => l.productInfo?.year == year);
+      if (priceRange)
+        data = data.filter(
+          (l) => l.price >= priceRange[0] && l.price <= priceRange[1]
+        );
+      if (type)
+        data = data.filter((l) =>
+          l.productInfo?.type?.toLowerCase().includes(type.toLowerCase())
+        );
+
+      setListings(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchListings();
+  }, [category, type, year, priceRange]);
+
   return (
-    <Container fluid className="listing-page py-4">
+    <Container fluid className="py-4">
       <Row>
-        {/* Sidebar */}
-        <Col md={3}>
-          <Card className="filter-card shadow-sm">
-            <Card.Body>
-              <Card.Title className="fw-bold mb-3">Bộ lọc</Card.Title>
-              <Form>
-                <Form.Group className="mb-3">
-                  <Form.Label>Tìm kiếm</Form.Label>
-                  <Form.Control type="text" placeholder={searchPlaceholder} />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Hãng</Form.Label>
-                  <Form.Control type="text" placeholder={brandPlaceholder} />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Vị trí</Form.Label>
-                  <Form.Control type="text" placeholder="Chọn vị trí" />
-                </Form.Group>
-                {showStatusFilter && (
-                  <Form.Group className="mb-3">
-                    <Form.Label>Trạng thái</Form.Label>
-                    <Form.Check type="checkbox" label="Đã kiểm định" />
-                    <Form.Check type="checkbox" label="Chưa kiểm định" />
-                  </Form.Group>
-                )}
-                <Button variant="primary" type="submit" className="w-100">
-                  Áp dụng
-                </Button>
-              </Form>
-            </Card.Body>
+        {/* Sidebar Filter */}
+        <Col md={3} className="mb-4">
+          <Card className="p-3 shadow-sm">
+            <h5 className="fw-bold mb-3">Bộ lọc</h5>
+            <Form.Group className="mb-3">
+              <Form.Label>Loại</Form.Label>
+              <Form.Select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <option value="cars">Xe</option>
+                <option value="pin">Pin</option>
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Năm sản xuất</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="VD: 2022"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Khoảng giá</Form.Label>
+              <div className="d-flex gap-2">
+                <Form.Control
+                  type="number"
+                  value={priceRange[0]}
+                  onChange={(e) =>
+                    setPriceRange([+e.target.value, priceRange[1]])
+                  }
+                />
+                <Form.Control
+                  type="number"
+                  value={priceRange[1]}
+                  onChange={(e) =>
+                    setPriceRange([priceRange[0], +e.target.value])
+                  }
+                />
+              </div>
+            </Form.Group>
+            <Button variant="primary" onClick={fetchListings}>
+              Áp dụng
+            </Button>
           </Card>
         </Col>
 
         {/* Listings */}
         <Col md={9}>
-          <h2 className="mb-4 fw-bold">{pageTitle}</h2>
-          <Row>
-            {items.map((item) => (
-              <Col key={item.id} md={4} className="mb-4">
-                <Card className="listing-card h-100 shadow-sm border-0">
-                  <div className="position-relative">
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" />
+            </div>
+          ) : (
+            <Row className="g-4">
+              {listings.map((item) => (
+                <Col md={4} key={item.id}>
+                  <Card className="h-100 shadow-sm">
                     <Card.Img
                       variant="top"
-                      src={item.image}
-                      className="listing-card-img"
+                      src={item.mainImage || "https://via.placeholder.com/300"}
                     />
-                    <div className="card-img-overlay d-flex flex-column p-0">
-                      <div className="mt-auto card-overlay-footer">
-                        <span>
-                          Phiên còn lại: <b>{item.left}</b>
-                        </span>
-                        <span>
-                          Cao nhất: <b>{item.price}</b>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <Card.Body>
-                    <Card.Title className="fw-bold text-primary">
-                      {item.brand}
-                    </Card.Title>
-                    <div className="d-flex align-items-center text-muted mb-2">
-                      <MapPin size={16} className="me-2" /> {item.location}
-                      <Gauge size={16} className="ms-3 me-2" /> {item.km}
-                    </div>
-                    <div className="d-flex align-items-center text-muted">
-                      <Tag size={16} className="me-2" />
-                      {item.owner || "Chưa có"}
-                      {item.comments > 0 && (
-                        <div className="ms-auto d-flex align-items-center">
-                          <MessageCircle size={16} className="me-1" />
-                          <Badge pill bg="danger">
-                            {item.comments}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                    <Card.Text className="mt-2 text-muted fst-italic">
-                      "{item.description}"
-                    </Card.Text>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+                    <Card.Body>
+                      <Card.Title>{item.title}</Card.Title>
+                      <Card.Text>{item.price?.toLocaleString()} VND</Card.Text>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        href={`/listings/${item.id}`}
+                      >
+                        Xem chi tiết
+                      </Button>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          )}
         </Col>
       </Row>
     </Container>
