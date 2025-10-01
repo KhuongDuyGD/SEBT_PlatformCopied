@@ -13,5 +13,8 @@ public record CreateListingFormDTO(
         String description,
         Double price,
         String category,
-        Location location
+        Location location,
+        // Cloudinary image URLs (đã được upload từ frontend)
+        String mainImageUrl,
+        List<String> imageUrls
 ){}
