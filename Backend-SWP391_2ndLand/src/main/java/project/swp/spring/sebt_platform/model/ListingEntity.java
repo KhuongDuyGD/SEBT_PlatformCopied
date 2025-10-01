@@ -36,8 +36,11 @@ public class ListingEntity {
     @Column(name = "title", length = 400, nullable = false, columnDefinition = "NVARCHAR(400)")
     private String title;
 
-    @Column(name = "main_image", columnDefinition = "NVARCHAR(MAX)")
-    private String mainImage;
+    @Column (name = "thumbnail_public_id", length = 255, columnDefinition = "VARCHAR(255)")
+    private String thumbnailPublicId;
+
+    @Column(name = "thumbnail_image", columnDefinition = "NVARCHAR(MAX)")
+    private String thumbnailImage;
 
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
@@ -105,20 +108,28 @@ public class ListingEntity {
         this.product = product;
     }
 
+    public String getThumbnailPublicId() {
+        return thumbnailPublicId;
+    }
+
+    public void setThumbnailPublicId(String thumbnailPublicId) {
+        this.thumbnailPublicId = thumbnailPublicId;
+    }
+
+    public String getThumbnailImage() {
+        return thumbnailImage;
+    }
+
+    public void setThumbnailImage(String thumbnailImage) {
+        this.thumbnailImage = thumbnailImage;
+    }
+
     public String getTitle() {
         return title;
     }
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getMainImage() {
-        return mainImage;
-    }
-
-    public void setMainImage(String mainImage) {
-        this.mainImage = mainImage;
     }
 
     public String getDescription() {

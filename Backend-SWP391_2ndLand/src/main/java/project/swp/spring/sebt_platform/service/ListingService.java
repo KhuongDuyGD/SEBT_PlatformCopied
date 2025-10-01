@@ -5,6 +5,7 @@ import java.util.List;
 import project.swp.spring.sebt_platform.dto.object.Image;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
+import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
 
 public interface ListingService {
 
@@ -15,18 +16,16 @@ public interface ListingService {
             Long sellerId,
             List<Image> imageUrls,
             Image thumbnailUrl);
-//
-//    List<ListingResponseDTO> getAllActiveListings();
-//
-//    ListingResponseDTO getListingById(Long listingId);
-//
-//    List<ListingResponseDTO> getCarListings();
-//
-//    List<ListingResponseDTO> getPinListings();
-//
-//    List<ListingResponseDTO> getListingsBySeller(Long sellerId);
-//
-//    void incrementViewCount(Long listingId);
-//
-//    int deleteListingImages(List<String> publicIds);
+
+    List<ListingCartResponseDTO> getAllActiveListingCarts();
+
+    ListingDetailResponseDTO getListingDetailById(Long listingId);
+
+    List<ListingCartResponseDTO> getCarListingCarts();
+
+    List<ListingCartResponseDTO> getPinListingCarts();
+
+    List<ListingCartResponseDTO> getListingCartsBySeller(Long sellerId);
+
+    int deleteListingImages(List<String> publicIds);
 }

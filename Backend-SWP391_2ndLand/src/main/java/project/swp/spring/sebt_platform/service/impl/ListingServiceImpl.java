@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import project.swp.spring.sebt_platform.dto.object.Image;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
+import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
 import project.swp.spring.sebt_platform.model.*;
 import project.swp.spring.sebt_platform.model.enums.*;
 import project.swp.spring.sebt_platform.repository.*;
@@ -132,7 +133,8 @@ public class ListingServiceImpl implements ListingService {
 
             // Set main image (thumbnail)
             if (thumbnailUrl != null) {
-                listingEntity.setMainImage(thumbnailUrl.getUrl());
+                listingEntity.setThumbnailPublicId(thumbnailUrl.getPublicId());
+                listingEntity.setThumbnailImage(thumbnailUrl.getUrl());
             } else {
                 System.err.println("Thumbnail URL is null");
                 return false;
@@ -179,4 +181,37 @@ public class ListingServiceImpl implements ListingService {
             return false;
         }
     }
+
+    @Override
+    public List<ListingCartResponseDTO> getAllActiveListingCarts() {
+
+        return List.of();
+    }
+
+    @Override
+    public ListingDetailResponseDTO getListingDetailById(Long listingId) {
+        return null;
+    }
+
+    @Override
+    public List<ListingCartResponseDTO> getCarListingCarts() {
+        return List.of();
+    }
+
+    @Override
+    public List<ListingCartResponseDTO> getPinListingCarts() {
+        return List.of();
+    }
+
+    @Override
+    public List<ListingCartResponseDTO> getListingCartsBySeller(Long sellerId) {
+        return List.of();
+    }
+
+    @Override
+    public int deleteListingImages(List<String> publicIds) {
+        return 0;
+    }
+
+
 }
