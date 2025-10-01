@@ -28,4 +28,5 @@ public interface ListingService {
     List<ListingCartResponseDTO> getListingCartsBySeller(Long sellerId);
 
     int deleteListingImages(List<String> publicIds);
+
 }
