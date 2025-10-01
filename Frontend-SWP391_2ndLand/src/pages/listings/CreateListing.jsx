@@ -128,17 +128,17 @@ function CreateListing() {
       setLoading(true);
       setError(null);
       
-      // Validate dữ liệu đầu vào
+      // Validate dữ liệu đầu vào trước khi gửi yêu cầu đăng bài
       if (!formData.title.trim()) {
-        throw new Error('Vui lòng nhập tiêu đề listing');
+        throw new Error('Vui lòng nhập tiêu đề bài đăng');
       }
       
       if (!formData.price || formData.price <= 0) {
-        throw new Error('Vui lòng nhập giá hợp lệ');
+        throw new Error('Vui lòng nhập giá bán hợp lệ');
       }
       
       if (!formData.location.province.trim()) {
-        throw new Error('Vui lòng nhập tỉnh/thành phố');
+        throw new Error('Vui lòng chọn tỉnh/thành phố');
       }
 
       // Kiểm tra authentication - cần có user để làm seller
@@ -204,7 +204,10 @@ function CreateListing() {
         price: Number(formData.price),
         listingType: 'NORMAL', // Backend sẽ map thành database enum: NORMAL, PREMIUM, FEATURED
         category: formData.productType, // 'VEHICLE' or 'BATTERY' để backend biết loại sản phẩm
-        mainImage: formData.mainImage || null,
+        
+        // Cloudinary image URLs (đã được upload từ frontend)
+        mainImageUrl: formData.mainImage || null,
+        imageUrls: formData.mainImage ? [formData.mainImage] : [],
         
         // Product object theo Backend DTO structure
         product: formData.productType === 'VEHICLE' ? {
@@ -238,25 +241,19 @@ function CreateListing() {
           province: formData.location.province.trim(),
           district: formData.location.district?.trim() || null,
           details: formData.location.details?.trim() || null
-        },
-        
-        // Listing images array - Cloudinary URLs
-        listingImages: formData.mainImage ? [{
-          imageUrl: formData.mainImage,
-          displayOrder: 1
-        }] : []
+        }
       };
 
       // Debug payload trước khi gửi với Backend DTO mapping
-      console.log('🚀 FULL DEBUG - FormData:', formData);
-      console.log('🔐 Authentication Info:', {
+      console.log('DEBUG - Dữ liệu form chuẩn bị đăng bài:', formData);
+      console.log('Thông tin xác thực người dùng:', {
         user_from_context: user,
         user_from_storage: JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || 'null'),
         currentUser: currentUser,
         hasValidAuth: !!(currentUser && currentUser.id)
       });
       
-      console.log('📦 Payload theo Backend DTO sẽ gửi:', payload);
+      console.log('Payload sẽ gửi cho backend (tạo bài chờ duyệt):', payload);
       
       console.log('✅ Backend DTO compliance check:', {
         has_required_listing_fields: !!(payload.title && payload.price && payload.listingType),
@@ -267,21 +264,28 @@ function CreateListing() {
         ev_vehicle_details: payload.product?.ev,
         battery_details: payload.product?.battery,
         location_details: payload.location,
-        images_count: payload.listingImages?.length || 0
+        mainImageUrl: payload.mainImageUrl,
+        imageUrls_count: payload.imageUrls?.length || 0
       });
 
-      console.log('📤 Gửi request đến backend (tạo listing trực tiếp - không cần admin duyệt)...');
+      console.log('Gửi yêu cầu đăng bài đến backend (cần admin xét duyệt)...');
       
-      // Thêm userId vào payload để tránh vấn đề session
-      const payloadWithUser = {
-        ...payload,
-        sellerId: currentUser.id // Gửi userId trực tiếp
-      };
+      // QUAN TRỌNG: Ảnh đã được upload lên Cloudinary rồi (qua CloudinaryImageUpload component)
+      // Chỉ cần gửi Cloudinary URL trong JSON payload, KHÔNG cần upload lại
       
-      console.log('📦 Final payload with userId:', payloadWithUser);
-      const response = await api.post('/listings/create', payloadWithUser);
+      // Kiểm tra ảnh đã được upload lên Cloudinary chưa
+      if (!formData.mainImage || !formData.mainImage.startsWith('http')) {
+        throw new Error('Vui lòng upload ảnh trước khi đăng bài');
+      }
       
-      console.log('📥 Response từ backend:', {
+      console.log('✅ Ảnh đã có sẵn từ Cloudinary:', formData.mainImage);
+      
+      console.log('Final payload với Cloudinary URLs:', payload);
+      
+      // Gửi JSON request (không phải multipart) vì ảnh đã có sẵn trên Cloudinary
+      const response = await api.post('/listings/create', payload);
+      
+      console.log('Response từ backend:', {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
@@ -289,12 +293,12 @@ function CreateListing() {
       });
       
       if (response.status === 200 || response.status === 201) {
-        console.log('✅ Tạo listing thành công!');
+        console.log('✅ Đăng bài thành công! Bài đăng đang chờ admin xét duyệt.');
         setSuccess(true);
         
-        // Reset form và chuyển về trang listing sau 2 giây
+        // Hiển thị thông báo và chuyển về home screen sau 3 giây
         setTimeout(() => {
-          // Reset form về trạng thái ban đầu
+          // Reset form về trạng thái ban đầu để chuẩn bị cho lần đăng bài tiếp theo
           setFormData({
             title: '',
             description: '',
@@ -329,13 +333,11 @@ function CreateListing() {
           setSuccess(false);
           setCurrentStep(1);
           
-          // Chuyển về trang listing tương ứng
-          if (formData.productType === 'VEHICLE') {
-            navigate('/car-listings');
-          } else {
-            navigate('/battery-listings');
-          }
-        }, 2000);
+          // Chuyển về trang chủ thay vì trang listing cụ thể
+          // Vì bài đăng cần được admin duyệt trước khi hiện ra trong listing
+          console.log('Chuyển hướng về trang chủ...');
+          navigate('/');
+        }, 3000); // Tăng thời gian lên 3 giây để user đọc được thông báo
       }
       
     } catch (err) {
@@ -351,36 +353,39 @@ function CreateListing() {
       });
       
       // Phân tích loại lỗi cụ thể
-      let userErrorMessage = 'Có lỗi xảy ra khi tạo listing';
+      let userErrorMessage = 'Có lỗi xảy ra khi đăng bài';
       
       if (err.response) {
         const { status, data } = err.response;
         
-        console.error('🔍 Backend Error Analysis:', {
+        console.error('Phân tích lỗi từ backend:', {
           status: status,
           data: data,
           is_validation_error: status === 400,
+          is_unauthorized: status === 401,
           is_server_error: status >= 500,
-          is_rollback_error: data?.message?.includes('rollback')
+          is_method_not_allowed: status === 405
         });
         
         if (status === 400) {
-          userErrorMessage = '❌ Dữ liệu không hợp lệ: ' + (data?.message || 'Vui lòng kiểm tra lại thông tin đã nhập');
+          userErrorMessage = '❌ Thông tin không hợp lệ: ' + (data || 'Vui lòng kiểm tra lại các thông tin đã nhập');
         } else if (status === 401) {
-          userErrorMessage = '🔐 Không có quyền truy cập: Vui lòng đăng nhập lại';
+          userErrorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để đăng bài';
+        } else if (status === 405) {
+          userErrorMessage = '🚫 Phương thức không được hỗ trợ. Vui lòng liên hệ hỗ trợ kỹ thuật';
         } else if (status === 403) {
-          userErrorMessage = '🚫 Không có quyền thực hiện: Tài khoản chưa có quyền tạo listing';
+          userErrorMessage = '🚫 Không có quyền đăng bài: Tài khoản của bạn chưa được phép đăng bài';
         } else if (status === 500) {
-          if (data?.message?.includes('rollback')) {
-            userErrorMessage = '🗄️ Lỗi database: Có conflict trong dữ liệu, vui lòng thử lại';
+          if (data?.includes && data.includes('rollback')) {
+            userErrorMessage = 'Lỗi cơ sở dữ liệu: Vui lòng thử đăng bài lại sau ít phút';
           } else {
-            userErrorMessage = '⚠️ Lỗi hệ thống: Server đang gặp sự cố, vui lòng thử lại sau';
+            userErrorMessage = '⚠️ Lỗi hệ thống: Server đang bảo trì, vui lòng thử lại sau';
           }
         } else {
-          userErrorMessage = `HTTP ${status}: ${data?.message || 'Lỗi không xác định'}`;
+          userErrorMessage = `Lỗi HTTP ${status}: ${data || 'Vui lòng liên hệ hỗ trợ kỹ thuật'}`;
         }
       } else if (err.request) {
-        userErrorMessage = '🌐 Lỗi kết nối: Không thể kết nối đến server';
+        userErrorMessage = '🌐 Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng';
       }
       
       console.error('👤 User Error Message:', userErrorMessage);
@@ -553,11 +558,13 @@ function CreateListing() {
           <div className="alert-success">
             <div className="alert-success-header">
               <CheckCircle className="w-5 h-5 mr-3" />
-              Đăng bán thành công!
+              Đăng bài thành công!
             </div>
             <p className="alert-success-text">
-              Listing của bạn đã được đăng thành công và đang hiển thị trên trang chủ. 
-              Bạn sẽ được chuyển về trang listing trong giây lát...
+              🎉 Bài đăng của bạn đã được gửi thành công và đang chờ admin xét duyệt. 
+              📧 Bạn sẽ nhận được thông báo qua email khi bài đăng được phê duyệt.
+              <br />
+              🏠 Đang chuyển về trang chủ trong 3 giây...
             </p>
           </div>
         )}

@@ -1,20 +1,18 @@
 package project.swp.spring.sebt_platform.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import project.swp.spring.sebt_platform.dto.object.Image;
-import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
-import project.swp.spring.sebt_platform.service.CloudinaryService;
-import project.swp.spring.sebt_platform.service.ListingService;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
+import project.swp.spring.sebt_platform.service.ListingService;
 
 @RestController
 @RequestMapping("/api/listings")
@@ -23,56 +21,84 @@ public class ListingController {
     @Autowired
     private ListingService listingService;
 
-    @Autowired
-    private CloudinaryService cloudinaryService;
 
-    @PutMapping(value = "/create",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createListingRequest(@RequestPart("createListingForm") String createListingFormJson,
-                                                  @RequestPart("listingImages") List<MultipartFile> listingImages,
-                                                  @RequestPart("thumbnailImage") MultipartFile thumbnailImage,
+
+    // API endpoint để đăng bài mới - bài sẽ được gửi đến admin để xét duyệt
+    // Nhận JSON payload vì ảnh đã được upload lên Cloudinary trước đó (không cần multipart)
+    @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> createListingRequest(@RequestBody CreateListingFormDTO createListingFormDTO,
                                                   HttpServletRequest request) {
         try {
+            System.out.println("🚀 [DEBUG] Bắt đầu xử lý create listing request với Cloudinary URLs...");
+            
+            // Bước 1: Kiểm tra session
             HttpSession session = request.getSession(false);
             if (session == null) {
+                System.out.println("❌ [DEBUG] Session null");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No active session. Please login first.");
             }
 
             Long userId = (Long) session.getAttribute("userId");
             if (userId == null) {
+                System.out.println("❌ [DEBUG] UserId null trong session");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please login again.");
             }
+            System.out.println("✅ [DEBUG] Session hợp lệ, userId = " + userId);
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            CreateListingFormDTO createListingFormDTO = objectMapper.readValue(createListingFormJson, CreateListingFormDTO.class);
-
-            // Validate input
+            // Bước 2: Validate DTO (Spring đã parse JSON tự động)
             if (createListingFormDTO == null) {
+                System.out.println("❌ [DEBUG] CreateListingFormDTO null");
                 return ResponseEntity.badRequest().body("Create listing form is required");
             }
+            
+            System.out.println("✅ [DEBUG] Nhận được DTO:");
+            System.out.println("📋 [DEBUG] - Title: " + createListingFormDTO.title());
+            System.out.println("📋 [DEBUG] - Price: " + createListingFormDTO.price());
+            System.out.println("📋 [DEBUG] - MainImage: " + createListingFormDTO.title());
 
-            if (listingImages == null || listingImages.isEmpty()) {
-                return ResponseEntity.badRequest().body("At least one listing image is required");
+            // Bước 3: Validate Cloudinary URLs có trong payload
+            String mainImageUrl = createListingFormDTO.mainImageUrl();
+            if (mainImageUrl == null || !mainImageUrl.startsWith("http")) {
+                System.out.println("❌ [DEBUG] MainImage URL không hợp lệ: " + mainImageUrl);
+                return ResponseEntity.badRequest().body("Ảnh chính không hợp lệ hoặc chưa được upload");
+            }
+            
+            if (createListingFormDTO.imageUrls() == null || createListingFormDTO.imageUrls().isEmpty()) {
+                System.out.println("❌ [DEBUG] ImageUrls danh sách trống");
+                return ResponseEntity.badRequest().body("Cần ít nhất một ảnh chi tiết");
             }
 
-            if (thumbnailImage == null || thumbnailImage.isEmpty()) {
-                return ResponseEntity.badRequest().body("Thumbnail image is required");
-            }
+            System.out.println("✅ [DEBUG] Validation passed, sử dụng ảnh từ Cloudinary");
 
-            // Upload images to Cloudinary
-            List<Image> imageList = cloudinaryService.uploadMultipleImages(listingImages, "listings");
-            Image thumbnailImageResult = cloudinaryService.uploadImage(thumbnailImage, "thumbnails");
-
-            // Create listing
-            if (listingService.createListing(createListingFormDTO, userId, imageList, thumbnailImageResult)) {
-                return ResponseEntity.ok().body("Create listing request successfully");
+            // Bước 4: Gọi service với null cho image params (vì đã có URL sẵn)
+            System.out.println("🔄 [DEBUG] Gọi listingService.createListing với Cloudinary URLs...");
+            boolean createResult = listingService.createListing(createListingFormDTO, userId, null, null);
+            
+            if (createResult) {
+                System.out.println("✅ [DEBUG] CreateListing thành công!");
+                return ResponseEntity.ok().body("Bài đăng đã được tạo thành công và đang chờ admin xét duyệt. Bạn sẽ nhận được thông báo khi bài đăng được phê duyệt.");
             } else {
-                return ResponseEntity.badRequest().body("Create listing request failed");
+                System.out.println("❌ [DEBUG] CreateListing thất bại!");
+                return ResponseEntity.badRequest().body("Tạo bài đăng thất bại. Vui lòng thử lại sau.");
             }
 
         } catch (Exception e) {
-            System.err.println("Create listing error: " + e.getMessage());
+            // Log chi tiết lỗi để debug
+            System.err.println("❌ ERROR trong createListingRequest:");
+            System.err.println("   - Message: " + e.getMessage());
+            System.err.println("   - Class: " + e.getClass().getSimpleName());
+            if (e.getCause() != null) {
+                System.err.println("   - Cause: " + e.getCause().getMessage());
+            }
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body("Internal server error: " + e.getMessage());
+            
+            // Trả về error message chi tiết hơn cho frontend debug
+            String errorMessage = "Lỗi server: " + e.getMessage();
+            if (e.getCause() != null) {
+                errorMessage += " (Cause: " + e.getCause().getMessage() + ")";
+            }
+            
+            return ResponseEntity.internalServerError().body(errorMessage);
         }
     }
 }

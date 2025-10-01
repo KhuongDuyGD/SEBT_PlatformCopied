@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import AppNavbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
@@ -23,14 +28,14 @@ function App() {
   useEffect(() => {
     const checkLoggedIn = async () => {
       try {
-        const response = await api.get('/auth/current-user');
+        const response = await api.get("/auth/current-user");
         setUserInfo(response.data);
         setIsLoggedIn(true);
       } catch (error) {
-        console.log('User chưa đăng nhập hoặc session hết hạn:', error.message);
+        console.log("User chưa đăng nhập hoặc session hết hạn:", error.message);
         setIsLoggedIn(false);
         setUserInfo(null);
-        localStorage.removeItem('userInfo');
+        localStorage.removeItem("userInfo");
       } finally {
         setLoading(false);
       }
@@ -48,28 +53,73 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, userInfo, setUserInfo }}>
+    <AuthContext.Provider
+      value={{ isLoggedIn, setIsLoggedIn, userInfo, setUserInfo }}
+    >
       <Router>
-        <AppNavbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />
+        <AppNavbar
+          isLoggedIn={isLoggedIn}
+          setIsLoggedIn={setIsLoggedIn}
+          setUserInfo={setUserInfo}
+        />
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/listings" element={<ListingPage />} /> {/* ✅ ListingPage */}
-            <Route path="/post-listing" element={
-              isLoggedIn ? <CreateListing /> : <Navigate to="/login" replace />
-            } />
+            <Route path="/listings" element={<ListingPage />} />{" "}
+            {/* ✅ ListingPage */}
+            <Route
+              path="/post-listing"
+              element={
+                isLoggedIn ? (
+                  <CreateListing />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
             {/* <Route path="/listings/:id" element={<ListingDetail />} /> */}
-            <Route path="/support" element={
-              <Container className="py-5 text-center">
-                <h2 className="fw-bold text-warning mb-4">Hỗ Trợ Khách Hàng</h2>
-                <p className="text-muted">Liên hệ: support@evsecondhand.com</p>
-              </Container>
-            } />
-            <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />} />
+            <Route
+              path="/support"
+              element={
+                <Container className="py-5 text-center">
+                  <h2 className="fw-bold text-warning mb-4">
+                    Hỗ Trợ Khách Hàng
+                  </h2>
+                  <p className="text-muted">
+                    Liên hệ: support@evsecondhand.com
+                  </p>
+                </Container>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <Login
+                  setIsLoggedIn={setIsLoggedIn}
+                  setUserInfo={setUserInfo}
+                />
+              }
+            />
             <Route path="/register" element={<Register />} />
-            <Route path="/verify-email" element={<VerifyEmail setIsLoggedIn={setIsLoggedIn} setUserInfo={setUserInfo} />} />
+            <Route
+              path="/verify-email"
+              element={
+                <VerifyEmail
+                  setIsLoggedIn={setIsLoggedIn}
+                  setUserInfo={setUserInfo}
+                />
+              }
+            />
           </Routes>
         </main>
+        <footer className="footer text-center">
+          <Container>
+            <p className="mb-0">
+              © 2025 EV Secondhand Marketplace - Nền tảng xe điện cũ hàng đầu
+              Việt Nam
+            </p>
+          </Container>
+        </footer>
       </Router>
     </AuthContext.Provider>
   );
