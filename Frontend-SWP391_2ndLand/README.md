@@ -1,11 +1,19 @@
-# React + Vite
+# 🚗 SWP391 - 2ndLand EV Marketplace Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend React application cho nền tảng mua bán xe điện và pin cũ SWP391.
 
-Currently, two official plugins are available:
+## ⚡ Tech Stack
+- **React + Vite** - Fast development và build
+- **React Router** - Client-side routing  
+- **Bootstrap** - UI components
+- **Lucide React** - Modern icons
+- **Cloudinary** - Image upload và management
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🖼️ Cloudinary Integration
+Dự án đã tích hợp Cloudinary để upload ảnh:
+- **Cloud Name:** `SWP391`
+- **Upload Preset:** `swp391_upload` (cần setup trong dashboard)
+- Xem file `CLOUDINARY_SETUP_GUIDE.md` để biết chi tiết setup
 
 ## Expanding the ESLint configuration
 

@@ -8,6 +8,8 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 import Profile from "./pages/profile/Profile";
 import CarListings from "./pages/listings/CarListings";
 import PinListings from "./pages/listings/PinListings";
+import CreateListing from "./pages/listings/CreateListing";
+import ListingDetail from "./pages/listings/ListingDetail";
 import { useState, useEffect } from "react";
 import { Container, Spinner } from "react-bootstrap"; // Add Spinner for loading
 import api from "./api/axios";
@@ -66,6 +68,21 @@ function App() {
                         <Route path="/" element={<Home />} />
                         <Route path="/battery" element={<PinListings />} />
                         <Route path="/cars" element={<CarListings />} />
+                        <Route path="/post-listing" element={
+                            isLoggedIn ? (
+                                <CreateListing />
+                            ) : (
+                                <Navigate to="/login" replace />
+                            )
+                        } />
+                        <Route path="/listings/create" element={
+                            isLoggedIn ? (
+                                <CreateListing />
+                            ) : (
+                                <Navigate to="/login" replace />
+                            )
+                        } />
+                        <Route path="/listings/:id" element={<ListingDetail />} />
                         <Route path="/support" element={
                             <Container className="py-5 text-center">
                                 <h2 className="fw-bold text-warning mb-4">Hỗ Trợ Khách Hàng</h2>
