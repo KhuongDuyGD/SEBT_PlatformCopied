@@ -13,5 +13,5 @@ public record CreateListingFormDTO(
         String description,
         Double price,
         String category,
-        Location location,
+        Location location
 ){}
