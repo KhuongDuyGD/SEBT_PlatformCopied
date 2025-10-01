@@ -247,138 +247,212 @@ Tài liệu này mô tả chi tiết các API endpoints của 3 controllers chí
 
 **Authorization**: Cần session hợp lệ với userId
 
-**Request Body** (`CreateListingFormDTO`):
+**Content-Type**: `multipart/form-data`
+
+**Request Parts**:
+- `createListingForm` (JSON string): Thông tin chi tiết về listing
+- `listingImages` (File[]): Danh sách ảnh sản phẩm (bắt buộc, ít nhất 1 ảnh)
+- `thumbnailImage` (File): Ảnh thumbnail chính (bắt buộc)
+
+**CreateListingForm JSON Structure**:
 ```json
 {
   "title": "string (required) - Tiêu đề listing",
   "product": {
     "ev": {
-      "type": "VehicleType enum (required) - Loại xe: CAR, MOTORCYCLE, BICYCLE, SCOOTER",
-      "name": "string (required) - Tên xe",
-      "model": "string (required) - Model xe", 
-      "brand": "string (required) - Thương hiệu xe",
-      "year": "integer (required) - Năm sản xuất",
-      "mileage": "integer (required) - Số km đã đi",
-      "batteryCapacity": "double (required) - Dung lượng pin (kWh)",
-      "conditionStatus": "VehicleCondition enum (required) - Tình trạng: NEW, LIKE_NEW, GOOD, FAIR, POOR"
+      "type": "VehicleType enum (optional) - Loại xe: CAR, MOTORCYCLE, BICYCLE, SCOOTER",
+      "name": "string (optional) - Tên xe",
+      "model": "string (optional) - Model xe", 
+      "brand": "string (optional) - Thương hiệu xe",
+      "year": "integer (optional) - Năm sản xuất",
+      "mileage": "integer (optional) - Số km đã đi",
+      "batteryCapacity": "double (optional) - Dung lượng pin (kWh)",
+      "conditionStatus": "VehicleCondition enum (optional) - Tình trạng: NEW, LIKE_NEW, GOOD, FAIR, POOR"
     },
     "battery": {
-      "brand": "string (required) - Thương hiệu pin",
-      "model": "string (required) - Model pin",
-      "capacity": "double (required) - Dung lượng pin",
-      "healthPercentage": "integer (required) - % sức khỏe pin (0-100)",
-      "compatibleVehicles": "string (required) - Các xe tương thích",
-      "conditionStatus": "BatteryCondition enum (required) - Tình trạng: NEW, GOOD, DEGRADED, NEEDS_REPLACEMENT"
+      "brand": "string (optional) - Thương hiệu pin",
+      "model": "string (optional) - Model pin",
+      "capacity": "double (optional) - Dung lượng pin",
+      "healthPercentage": "integer (optional) - % sức khỏe pin (0-100)",
+      "compatibleVehicles": "string (optional) - Các xe tương thích",
+      "conditionStatus": "BatteryCondition enum (optional) - Tình trạng: NEW, GOOD, DEGRADED, NEEDS_REPLACEMENT"
     }
   },
   "listingType": "ListingType enum (required) - Loại listing: NORMAL, PREMIUM, FEATURED",
-  "mainImage": "string (optional) - URL ảnh chính",
-  "listingImages": [
-    {
-      "imageUrl": "string (required) - URL ảnh sản phẩm"
-    }
-  ],
   "description": "string (optional) - Mô tả chi tiết sản phẩm",
   "price": "double (required) - Giá bán",
   "category": "string (required) - Danh mục sản phẩm",
   "location": {
     "province": "string (required) - Tỉnh/Thành phố",
     "district": "string (required) - Quận/Huyện", 
-    "details": "string (required) - Địa chỉ chi tiết, tối đa 255 ký tự"
+    "details": "string (required) - Địa chỉ chi tiết"
   }
 }
 ```
 
-**Example Request**:
-```json
-{
-  "title": "Xe điện VinFast VF8 2023 như mới",
-  "product": {
-    "ev": {
-      "type": "CAR",
-      "name": "VinFast VF8",
-      "model": "VF8 Plus",
-      "brand": "VinFast",
-      "year": 2023,
-      "mileage": 5000,
-      "batteryCapacity": 87.7,
-      "conditionStatus": "LIKE_NEW"
+**Example Request (Multipart Form)**:
+```
+POST /api/listings/create
+Content-Type: multipart/form-data
+
+Parts:
+- createListingForm: {
+    "title": "Xe điện VinFast VF8 2023 như mới",
+    "product": {
+      "ev": {
+        "type": "CAR",
+        "name": "VinFast VF8",
+        "model": "VF8 Plus",
+        "brand": "VinFast",
+        "year": 2023,
+        "mileage": 5000,
+        "batteryCapacity": 87.7,
+        "conditionStatus": "LIKE_NEW"
+      },
+      "battery": {
+        "brand": "CATL",
+        "model": "LFP Battery Pack",
+        "capacity": 87.7,
+        "healthPercentage": 95,
+        "compatibleVehicles": "VinFast VF8, VF9",
+        "conditionStatus": "GOOD"
+      }
     },
-    "battery": {
-      "brand": "CATL",
-      "model": "LFP Battery",
-      "capacity": 87.7,
-      "healthPercentage": 95,
-      "compatibleVehicles": "VinFast VF8, VF9",
-      "conditionStatus": "GOOD"
+    "listingType": "NORMAL",
+    "description": "Xe điện VinFast VF8 2023 tình trạng như mới, chạy 5000km. Pin CATL còn 95% dung lượng.",
+    "price": 1200000000.0,
+    "category": "Ô tô điện",
+    "location": {
+      "province": "TP. Hồ Chí Minh",
+      "district": "Quận 1",
+      "details": "123 Nguyen Hue Street, Ben Nghe Ward, District 1"
     }
-  },
-  "listingType": "NORMAL",
-  "mainImage": "https://example.com/main-image.jpg",
-  "listingImages": [
-    {
-      "imageUrl": "https://example.com/image1.jpg"
-    },
-    {
-      "imageUrl": "https://example.com/image2.jpg"
-    }
-  ],
-  "description": "Xe điện VinFast VF8 2023 tình trạng như mới, chạy 5000km. Pin CATL còn 95% dung lượng. Xe được bảo dưỡng định kỳ tại hãng.",
-  "price": 1200000000.0,
-  "category": "Ô tô điện",
-  "location": {
-    "province": "TP. Hồ Chí Minh",
-    "district": "Quận 1",
-    "details": "123 Nguyen Hue Street, Ben Nghe Ward, District 1, Ho Chi Minh City"
   }
-}
+- listingImages: [image1.jpg, image2.jpg, image3.jpg]  // Array of image files
+- thumbnailImage: thumbnail.jpg  // Single thumbnail image file
 ```
 
 **Response**:
 - **200 OK**: Tạo listing thành công
-  ```json
+  ```
   "Create listing request successfully"
   ```
-- **400 Bad Request**: Tạo listing thất bại (validation error, missing fields)
-  ```json
+- **400 Bad Request**: Validation errors
+  ```
+  "Create listing form is required"
+  "At least one listing image is required"
+  "Thumbnail image is required"
   "Create listing request failed"
   ```
-- **401 Unauthorized**: Không có session hoặc session không hợp lệ
-  ```json
-  "No active session. Please login first."
+- **401 Unauthorized**: Session issues
   ```
-  hoặc
-  ```json
+  "No active session. Please login first."
   "Invalid session. Please login again."
   ```
-- **500 Internal Server Error**: Lỗi server
-  ```json
+- **500 Internal Server Error**: Server errors
+  ```
   "Internal server error: {error_message}"
   ```
 
 **Business Logic**:
-- Tự động tạo `PostRequestEntity` khi tạo listing
-- Tự động lưu `LocationEntity` với thông tin vị trí
-- Lưu danh sách `ListingImageEntity` từ listingImages
-- Tạo `ProductEntity` với thông tin EV và Battery
-- Thiết lập trạng thái mặc định: `status = SUSPENDED`, `listingType = NORMAL`
-- Tự động set timestamps: `createdAt`, `updatedAt`
+- **Image Upload**: Ảnh được tự động upload lên Cloudinary
+  - `listingImages` được upload vào folder "listings"
+  - `thumbnailImage` được upload vào folder "thumbnails"
+  - Trả về Image objects với URL và metadata
+- **Validation**: 
+  - Kiểm tra session hợp lệ
+  - Bắt buộc có createListingForm, listingImages, và thumbnailImage
+  - CreateListingFormDTO được parse từ JSON string
+- **Database Operations**:
+  - Tự động tạo các entity liên quan (Product, Location, PostRequest)
+  - Lưu URLs của ảnh đã upload
+  - Set userId từ session làm seller
 
 **Validation Rules**:
-- `title`: bắt buộc, tối đa 400 ký tự
-- `price`: bắt buộc, số dương
-- `healthPercentage`: từ 0-100
-- `year`: năm hợp lệ
-- `mileage`: số không âm
-- `location.details`: tối đa 255 ký tự
-- `sell_Id` phải khớp với userId từ session
+- **Required Fields**: 
+  - `title`, `price`, `category`, `listingType`
+  - `location.province`, `location.district`, `location.details`
+  - `listingImages` (ít nhất 1 ảnh)
+  - `thumbnailImage`
+- **Optional Fields**: 
+  - Tất cả fields trong `product.ev` và `product.battery`
+  - `description`
+- **File Requirements**:
+  - Hỗ trợ: JPG, JPEG, PNG, GIF, WEBP, BMP
+  - Kích thước tối đa: 10MB/ảnh
+  - Số lượng ảnh listing: không giới hạn (khuyến nghị 3-10 ảnh)
 
-**Lưu ý**:
-- HTTP method hiện tại là PUT (có thể cần đổi thành POST)
-- Cần session hợp lệ để xác định người bán
-- Hệ thống sử dụng cascade để tự động lưu các entity liên quan
-- Ảnh được lưu dưới dạng URL, cần upload ảnh trước khi gọi API này
+**Integration với Cloudinary**:
+- **Upload Process**: 
+  1. Upload tất cả `listingImages` song song lên folder "listings"
+  2. Upload `thumbnailImage` lên folder "thumbnails"
+  3. Nhận về Image objects chứa URL, publicId, và metadata
+  4. Lưu Image objects vào database cùng với listing
+- **Error Handling**: Nếu upload ảnh thất bại, toàn bộ request sẽ fail
+- **Folder Structure**:
+  ```
+  📁 cloudinary_root/
+  ├── 📁 listings/     # Ảnh chi tiết sản phẩm
+  └── 📁 thumbnails/   # Ảnh thumbnail chính
+  ```
 
+**Frontend Integration Guide**:
+```javascript
+// Tạo FormData cho multipart request
+const formData = new FormData();
+
+// Thêm JSON data
+const listingData = {
+  title: "Xe điện VinFast VF8 2023",
+  product: {
+    ev: {
+      type: "CAR",
+      name: "VinFast VF8",
+      // ... other fields
+    }
+  },
+  listingType: "NORMAL",
+  price: 1200000000,
+  category: "Ô tô điện",
+  location: {
+    province: "TP. Hồ Chí Minh",
+    district: "Quận 1", 
+    details: "123 Nguyen Hue Street"
+  }
+};
+
+formData.append('createListingForm', JSON.stringify(listingData));
+
+// Thêm ảnh listings
+listingImages.forEach(image => {
+  formData.append('listingImages', image);
+});
+
+// Thêm thumbnail
+formData.append('thumbnailImage', thumbnailImage);
+
+// Gửi request
+fetch('/api/listings/create', {
+  method: 'PUT',
+  body: formData,
+  credentials: 'include' // Để gửi session cookies
+})
+.then(response => response.text())
+.then(data => console.log(data));
+```
+
+**Lưu ý quan trọng**:
+1. **HTTP Method**: Sử dụng PUT thay vì POST (có thể cần review)
+2. **Content-Type**: Bắt buộc phải là `multipart/form-data`
+3. **Session**: Cần login trước và gửi session cookies
+4. **JSON Parsing**: `createListingForm` phải là valid JSON string
+5. **File Upload**: Ảnh được upload trước khi tạo listing record
+6. **Error Recovery**: Nếu có lỗi, ảnh đã upload có thể cần cleanup manual
+
+**Performance Considerations**:
+- Upload nhiều ảnh có thể mất thời gian, cần implement progress indicator
+- Consider image compression trước khi upload
+- Validate file size và type ở frontend để giảm failed requests
 ---
 
 ## Các DTO và Models cần tham khảo
