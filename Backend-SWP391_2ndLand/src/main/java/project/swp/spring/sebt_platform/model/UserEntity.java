@@ -3,8 +3,8 @@ package project.swp.spring.sebt_platform.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
-import java.util.List;
 import project.swp.spring.sebt_platform.model.enums.UserStatus;
 import project.swp.spring.sebt_platform.model.enums.UserRole;
 
@@ -25,6 +25,7 @@ public class UserEntity {
     @Column(name = "username", length = 50, nullable = false, unique = true, columnDefinition = "NVARCHAR(50)")
     private String username;
 
+    @JsonIgnore
     @Column(name = "password", length = 255, nullable = false, columnDefinition = "VARCHAR(255)")
     private String password;
 
@@ -33,6 +34,9 @@ public class UserEntity {
 
     @Column(name = "phone_number", length = 15, columnDefinition = "VARCHAR(15)")
     private String phoneNumber;
+
+    @Column(name = "public_id", length = 255, unique = true, columnDefinition = "VARCHAR(255)")
+    private String publicId;
 
     @Column(name = "avatar", columnDefinition = "NVARCHAR(MAX)")
     private String avatar = "http://localhost:8080/images/avatar_classic.jpg";
@@ -48,6 +52,7 @@ public class UserEntity {
     @Column(name = "personal_pins", columnDefinition = "NVARCHAR(MAX)")
     private String personalPins;
 
+    @JsonIgnore
     @Column(name = "salt", length = 32, columnDefinition = "VARCHAR(32)")
     private String salt;
 
@@ -59,28 +64,8 @@ public class UserEntity {
     @Column(name = "updated_at", nullable = false, columnDefinition = "DATETIME2")
     private LocalDateTime updatedAt;
 
-    // Relationships
-
-    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ListingEntity> listings;
-
-    @OneToMany(mappedBy = "buyer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ContractEntity> buyerContracts;
-
-    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ContractEntity> sellerContracts;
-
-    @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ReviewEntity> givenReviews;
-
-    @OneToMany(mappedBy = "reviewedUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ReviewEntity> receivedReviews;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<FavoriteEntity> favorites;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ComplaintEntity> complaints;
+    // Remove bidirectional relationships to avoid deep nesting
+    // These relationships should be handled through repository queries when needed
 
     // Constructors
     public UserEntity() {
@@ -196,59 +181,16 @@ public class UserEntity {
         this.updatedAt = updatedAt;
     }
 
-    public List<ListingEntity> getListings() {
-        return listings;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserEntity)) return false;
+        UserEntity that = (UserEntity) o;
+        return id != null && id.equals(that.id);
     }
 
-    public void setListings(List<ListingEntity> listings) {
-        this.listings = listings;
-    }
-
-    public List<ContractEntity> getBuyerContracts() {
-        return buyerContracts;
-    }
-
-    public void setBuyerContracts(List<ContractEntity> buyerContracts) {
-        this.buyerContracts = buyerContracts;
-    }
-
-    public List<ContractEntity> getSellerContracts() {
-        return sellerContracts;
-    }
-
-    public void setSellerContracts(List<ContractEntity> sellerContracts) {
-        this.sellerContracts = sellerContracts;
-    }
-
-    public List<ReviewEntity> getGivenReviews() {
-        return givenReviews;
-    }
-
-    public void setGivenReviews(List<ReviewEntity> givenReviews) {
-        this.givenReviews = givenReviews;
-    }
-
-    public List<ReviewEntity> getReceivedReviews() {
-        return receivedReviews;
-    }
-
-    public void setReceivedReviews(List<ReviewEntity> receivedReviews) {
-        this.receivedReviews = receivedReviews;
-    }
-
-    public List<FavoriteEntity> getFavorites() {
-        return favorites;
-    }
-
-    public void setFavorites(List<FavoriteEntity> favorites) {
-        this.favorites = favorites;
-    }
-
-    public List<ComplaintEntity> getComplaints() {
-        return complaints;
-    }
-
-    public void setComplaints(List<ComplaintEntity> complaints) {
-        this.complaints = complaints;
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

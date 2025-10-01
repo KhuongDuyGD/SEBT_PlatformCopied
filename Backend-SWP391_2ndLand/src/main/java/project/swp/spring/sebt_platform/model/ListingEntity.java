@@ -3,12 +3,12 @@ package project.swp.spring.sebt_platform.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import project.swp.spring.sebt_platform.model.enums.ListingStatus;
 import project.swp.spring.sebt_platform.model.enums.ListingType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "listings",
@@ -29,7 +29,7 @@ public class ListingEntity {
     @JoinColumn(name = "seller_id", nullable = false)
     private UserEntity seller;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "product_id", nullable = false)
     private ProductEntity product;
 
@@ -67,21 +67,8 @@ public class ListingEntity {
     @Column(name = "updated_at", nullable = false, columnDefinition = "DATETIME2")
     private LocalDateTime updatedAt;
 
-    // Relationships
-    @OneToOne(mappedBy = "listing", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private LocationEntity location;
-
-    @OneToMany(mappedBy = "listing", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<ListingImageEntity> images;
-
-    @OneToOne(mappedBy = "listing", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private PostRequestEntity postRequests;
-
-    @OneToMany(mappedBy = "listing", fetch = FetchType.LAZY)
-    private List<ContractEntity> contracts;
-
-    @OneToMany(mappedBy = "listing", fetch = FetchType.LAZY)
-    private List<FavoriteEntity> favorites;
+    // Remove OneToMany relationships to avoid deep nesting
+    // Use repository queries to fetch related data when needed
 
     // Constructors
     public ListingEntity() {}
@@ -198,43 +185,21 @@ public class ListingEntity {
         this.updatedAt = updatedAt;
     }
 
-    public LocationEntity getLocation() {
-        return location;
+    // Helper method to increment view count
+    public void incrementViewCount() {
+        this.viewsCount = (this.viewsCount == null ? 0 : this.viewsCount) + 1;
     }
 
-    public void setLocation(LocationEntity location) {
-        this.location = location;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ListingEntity)) return false;
+        ListingEntity that = (ListingEntity) o;
+        return id != null && id.equals(that.id);
     }
 
-    public List<ListingImageEntity> getImages() {
-        return images;
-    }
-
-    public void setImages(List<ListingImageEntity> images) {
-        this.images = images;
-    }
-
-    public PostRequestEntity getPostRequests() {
-        return postRequests;
-    }
-
-    public void setPostRequests(PostRequestEntity postRequests) {
-        this.postRequests = postRequests;
-    }
-
-    public List<ContractEntity> getContracts() {
-        return contracts;
-    }
-
-    public void setContracts(List<ContractEntity> contracts) {
-        this.contracts = contracts;
-    }
-
-    public List<FavoriteEntity> getFavorites() {
-        return favorites;
-    }
-
-    public void setFavorites(List<FavoriteEntity> favorites) {
-        this.favorites = favorites;
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

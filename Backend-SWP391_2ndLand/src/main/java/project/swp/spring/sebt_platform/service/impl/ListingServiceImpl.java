@@ -1,30 +1,50 @@
 package project.swp.spring.sebt_platform.service.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import project.swp.spring.sebt_platform.model.*;
-import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
-import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
-import project.swp.spring.sebt_platform.model.enums.ApprovalStatus;
-import project.swp.spring.sebt_platform.repository.PostRequestRepository;
-import project.swp.spring.sebt_platform.repository.UserRepository;
-import project.swp.spring.sebt_platform.service.ListingService;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import project.swp.spring.sebt_platform.dto.object.Image;
+import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
+import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
+import project.swp.spring.sebt_platform.model.*;
+import project.swp.spring.sebt_platform.model.enums.*;
+import project.swp.spring.sebt_platform.repository.*;
+import project.swp.spring.sebt_platform.service.ListingService;
 
 @Service
 public class ListingServiceImpl implements ListingService {
 
     private final PostRequestRepository postRequestRepository;
+    private final EvVehicleRepository evVehicleRepository;
+    private final BatteryRepository batteryRepository;
+    private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final ListingRepository listingRepository;
+    private final ListingImageRepository listingImageRepository;
+    private final LocationRepository locationRepository;
 
     @Autowired
-    public ListingServiceImpl(PostRequestRepository postRequestRepository, UserRepository userRepository) {
+    public ListingServiceImpl(PostRequestRepository postRequestRepository, 
+                             UserRepository userRepository,
+                             EvVehicleRepository evVehicleRepository,
+                             BatteryRepository batteryRepository,
+                             ProductRepository productRepository,
+                             ListingRepository listingRepository,
+                             ListingImageRepository listingImageRepository,
+                             LocationRepository locationRepository) {
         this.postRequestRepository = postRequestRepository;
         this.userRepository = userRepository;
+        this.listingRepository = listingRepository;
+        this.listingImageRepository = listingImageRepository;
+        this.locationRepository = locationRepository;
+        this.evVehicleRepository = evVehicleRepository;
+        this.batteryRepository = batteryRepository;
+        this.productRepository = productRepository;
     }
 
     @Override
@@ -34,7 +54,10 @@ public class ListingServiceImpl implements ListingService {
 
     @Override
     @Transactional
-    public boolean createListing(CreateListingFormDTO createListingForm,Long sellerId) {
+    public boolean createListing(CreateListingFormDTO createListingForm,
+                                 Long sellerId,
+                                 List<Image> imageUrls,
+                                 Image thumbnailUrl) {
         try {
             if (createListingForm == null) {
                 System.err.println("Create listing form is null");
@@ -57,27 +80,14 @@ public class ListingServiceImpl implements ListingService {
             }
 
             UserEntity user = userRepository.findById(sellerId).orElse(null);
-
             if (user == null) {
                 System.err.println("User not found with ID: " + sellerId);
                 return false;
             }
 
-            // Create ListingEntity and set its fields
-            ListingEntity listingEntity = new ListingEntity();
-            listingEntity.setTitle(createListingForm.title());
-            listingEntity.setDescription(createListingForm.description());
-            listingEntity.setListingType(createListingForm.listingType());
-            listingEntity.setMainImage(createListingForm.mainImage());
-            listingEntity.setPrice(BigDecimal.valueOf(createListingForm.price()));
-
-            listingEntity.setImages(new ArrayList<>());
-            listingEntity.setSeller(user);
-
-            // Create ProductEntity
+            // Create and save EV vehicle or Battery first
             ProductEntity productEntity = new ProductEntity();
 
-            // Set EV vehicle details if available - ADD NULL CHECK
             if (createListingForm.product().ev() != null) {
                 EvVehicleEntity evVehicleEntity = new EvVehicleEntity();
                 evVehicleEntity.setName(createListingForm.product().ev().name());
@@ -88,10 +98,12 @@ public class ListingServiceImpl implements ListingService {
                 evVehicleEntity.setConditionStatus(createListingForm.product().ev().conditionStatus());
                 evVehicleEntity.setMileage(createListingForm.product().ev().mileage());
                 evVehicleEntity.setType(createListingForm.product().ev().type());
+
+                // Save EV vehicle first
+                evVehicleEntity = evVehicleRepository.save(evVehicleEntity);
                 productEntity.setEvVehicle(evVehicleEntity);
             }
 
-            // Set battery details if available - ADD NULL CHECK
             if (createListingForm.product().battery() != null) {
                 BatteryEntity batteryEntity = new BatteryEntity();
                 batteryEntity.setBrand(createListingForm.product().battery().brand());
@@ -100,47 +112,71 @@ public class ListingServiceImpl implements ListingService {
                 batteryEntity.setCapacity(BigDecimal.valueOf(createListingForm.product().battery().capacity()));
                 batteryEntity.setCompatibleVehicles(createListingForm.product().battery().compatibleVehicles());
                 batteryEntity.setConditionStatus(createListingForm.product().battery().conditionStatus());
+
+                // Save battery first
+                batteryEntity = batteryRepository.save(batteryEntity);
                 productEntity.setBattery(batteryEntity);
             }
 
-            // Set bidirectional relationship between listing and product
-            listingEntity.setProduct(productEntity);
-            productEntity.setListing(listingEntity);
+            // Save product
+            productEntity = productRepository.save(productEntity);
 
-            // Create LocationEntity and set its fields
+            // Create and save listing
+            ListingEntity listingEntity = new ListingEntity();
+            listingEntity.setTitle(createListingForm.title());
+            listingEntity.setDescription(createListingForm.description());
+            listingEntity.setListingType(createListingForm.listingType());
+            listingEntity.setPrice(BigDecimal.valueOf(createListingForm.price()));
+            listingEntity.setSeller(user);
+            listingEntity.setProduct(productEntity);
+
+            // Set main image (thumbnail)
+            if (thumbnailUrl != null) {
+                listingEntity.setMainImage(thumbnailUrl.getUrl());
+            } else {
+                System.err.println("Thumbnail URL is null");
+                return false;
+            }
+
+            // Save listing first to get ID
+            listingEntity = listingRepository.save(listingEntity);
+
+            // Save listing images
+            if (imageUrls != null && !imageUrls.isEmpty()) {
+                List<ListingImageEntity> listingImageEntities = new ArrayList<>();
+                for (Image imageUrl : imageUrls) {
+                    ListingImageEntity listingImageEntity = new ListingImageEntity();
+                    listingImageEntity.setImageUrl(imageUrl.getUrl());
+                    listingImageEntity.setPublicId(imageUrl.getPublicId());
+                    listingImageEntity.setListing(listingEntity);
+                    listingImageEntities.add(listingImageEntity);
+                }
+                listingImageRepository.saveAll(listingImageEntities);
+            } else {
+                System.err.println("Image URLs list is null or empty");
+                return false;
+            }
+
+            // Create and save location
             LocationEntity locationEntity = new LocationEntity();
             locationEntity.setProvince(createListingForm.location().province());
             locationEntity.setDistrict(createListingForm.location().district());
             locationEntity.setDetails(createListingForm.location().details());
-
-            listingEntity.setLocation(locationEntity);
             locationEntity.setListing(listingEntity);
+            locationRepository.save(locationEntity);
 
-            // Set listing images with bidirectional relationships - ADD NULL CHECK
-            if (createListingForm.listingImages() != null && !createListingForm.listingImages().isEmpty()) {
-                for (var img : createListingForm.listingImages()) {
-                    ListingImageEntity listingImageEntity = new ListingImageEntity();
-                    listingImageEntity.setImageUrl(img.imageUrl());
-                    listingImageEntity.setListing(listingEntity);
-                    listingEntity.getImages().add(listingImageEntity);
-                }
-            }
-
-            // Create PostRequestEntity with bidirectional relationship
+            // Create and save post request
             PostRequestEntity postRequestEntity = new PostRequestEntity();
             postRequestEntity.setStatus(ApprovalStatus.PENDING);
             postRequestEntity.setListing(listingEntity);
-            listingEntity.setPostRequests(postRequestEntity);
-
-            // Save only PostRequestEntity - cascade will handle the rest
             postRequestRepository.save(postRequestEntity);
+
             return true;
 
         } catch (Exception e) {
             System.err.println("Error in create listing: " + e.getMessage());
-            e.printStackTrace();
+            // Use proper logging instead of printStackTrace
             return false;
         }
     }
-
 }

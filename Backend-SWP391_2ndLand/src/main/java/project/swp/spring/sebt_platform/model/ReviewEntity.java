@@ -9,8 +9,7 @@ import java.time.LocalDateTime;
 @Table(name = "reviews",
     indexes = {
         @Index(name = "idx_reviews_reviewer_id", columnList = "reviewer_id"),
-        @Index(name = "idx_reviews_reviewed_user_id", columnList = "reviewed_user_id"),
-        @Index(name = "idx_reviews_transaction_id", columnList = "transaction_id")
+        @Index(name = "idx_reviews_reviewed_user_id", columnList = "reviewed_user_id")
     }
 )
 public class ReviewEntity {
@@ -25,10 +24,6 @@ public class ReviewEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewed_user_id", nullable = false)
     private UserEntity reviewedUser;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "transaction_id")
-    private TransactionEntity transaction;
 
     @Column(name = "rating", nullable = false)
     private Integer rating; // 1-5 rating as per ERD note
@@ -49,10 +44,9 @@ public class ReviewEntity {
         this.rating = rating;
     }
 
-    public ReviewEntity(UserEntity reviewer, UserEntity reviewedUser, TransactionEntity transaction, Integer rating, String reviewText) {
+    public ReviewEntity(UserEntity reviewer, UserEntity reviewedUser, Integer rating, String reviewText) {
         this.reviewer = reviewer;
         this.reviewedUser = reviewedUser;
-        this.transaction = transaction;
         this.rating = rating;
         this.reviewText = reviewText;
     }
@@ -80,14 +74,6 @@ public class ReviewEntity {
 
     public void setReviewedUser(UserEntity reviewedUser) {
         this.reviewedUser = reviewedUser;
-    }
-
-    public TransactionEntity getTransaction() {
-        return transaction;
-    }
-
-    public void setTransaction(TransactionEntity transaction) {
-        this.transaction = transaction;
     }
 
     public Integer getRating() {

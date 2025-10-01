@@ -8,7 +8,6 @@ import project.swp.spring.sebt_platform.model.enums.PaymentMethod;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "contracts",
@@ -75,15 +74,8 @@ public class ContractEntity {
     @Column(name = "updated_at", nullable = false, columnDefinition = "DATETIME2")
     private LocalDateTime updatedAt;
 
-    // Relationships
-    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ContractSignatureEntity> signatures;
-
-    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ContractRevisionEntity> revisions;
-
-    @OneToOne(mappedBy = "contract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private TransactionEntity transaction;
+    // Remove OneToMany relationships to avoid deep nesting
+    // Use repository queries to fetch signatures when needed
 
     // Constructors
     public ContractEntity() {}
@@ -211,27 +203,25 @@ public class ContractEntity {
         this.updatedAt = updatedAt;
     }
 
-    public List<ContractSignatureEntity> getSignatures() {
-        return signatures;
+    // Helper methods
+    public boolean isFullySigned() {
+        return Boolean.TRUE.equals(buyerSigned) && Boolean.TRUE.equals(sellerSigned);
     }
 
-    public void setSignatures(List<ContractSignatureEntity> signatures) {
-        this.signatures = signatures;
+    public boolean canBeExecuted() {
+        return isFullySigned() && status == ContractStatus.ACTIVE;
     }
 
-    public List<ContractRevisionEntity> getRevisions() {
-        return revisions;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ContractEntity)) return false;
+        ContractEntity that = (ContractEntity) o;
+        return id != null && id.equals(that.id);
     }
 
-    public void setRevisions(List<ContractRevisionEntity> revisions) {
-        this.revisions = revisions;
-    }
-
-    public TransactionEntity getTransaction() {
-        return transaction;
-    }
-
-    public void setTransaction(TransactionEntity transaction) {
-        this.transaction = transaction;
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

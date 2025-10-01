@@ -20,7 +20,7 @@ public class MailServiceImpl implements MailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    @Async
+    @Async ("emailExecutor")
     @Override
     public void sendVerificationEmail(String toEmail, String verificationToken) {
         try {
