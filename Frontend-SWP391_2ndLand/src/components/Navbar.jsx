@@ -2,7 +2,17 @@
 
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Navbar, Nav, Container, NavDropdown, Button, Modal, Spinner, Toast, ToastContainer } from "react-bootstrap";
+import {
+  Navbar,
+  Nav,
+  Container,
+  NavDropdown,
+  Button,
+  Modal,
+  Spinner,
+  Toast,
+  ToastContainer,
+} from "react-bootstrap";
 import api from "../api/axios"; // Import api (adjust path if needed, ví dụ: "../../api/axios")
 import "./MegaMenu.css"; // Import custom CSS
 
@@ -10,7 +20,7 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
   // Thêm setUserInfo vào props
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // State để quản lý modal logout
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -25,32 +35,31 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
   // Xử lý xác nhận đăng xuất
   const confirmLogout = async () => {
     setIsLoggingOut(true);
-    
+
     try {
       // Gọi API đăng xuất
       await api.post("/auth/logout");
-      
+
       // Xóa tất cả dữ liệu session và storage
       sessionStorage.clear();
       localStorage.removeItem("isLoggedIn");
       localStorage.removeItem("userInfo");
       localStorage.removeItem("registerEmail");
       localStorage.removeItem("tempPassword");
-      
+
       // Cập nhật state
       setIsLoggedIn(false);
       setUserInfo(null);
-      
+
       // Đóng modal và hiển thị thông báo thành công
       setShowLogoutModal(false);
       setToastMessage("Đăng xuất thành công! Hẹn gặp lại bạn.");
       setShowToast(true);
-      
+
       // Chuyển về trang chủ sau khi hiển thị toast
       setTimeout(() => {
         navigate("/");
       }, 500);
-      
     } catch (error) {
       console.error("Logout failed", error);
       // Vẫn thực hiện logout phía frontend nếu API lỗi
@@ -59,15 +68,15 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
       localStorage.removeItem("userInfo");
       localStorage.removeItem("registerEmail");
       localStorage.removeItem("tempPassword");
-      
+
       setIsLoggedIn(false);
       setUserInfo(null);
       setShowLogoutModal(false);
-      
+
       // Hiển thị toast thông báo (ngay cả khi API lỗi)
       setToastMessage("Đã đăng xuất khỏi tài khoản.");
       setShowToast(true);
-      
+
       setTimeout(() => {
         navigate("/");
       }, 500);
@@ -115,38 +124,57 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
                 <span className="submenu-title">Xe ▸</span>
                 <ul className="submenu">
                   <li>
-                    <Link to="/products/xe-dien" className="dropdown-item">
-                      Xe điện
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/products/xe-may-dien" className="dropdown-item">
+                    <Link
+                      to="/listings?category=xe-may-dien"
+                      className="dropdown-item"
+                    >
                       Xe máy điện
                     </Link>
                   </li>
                   <li>
-                    <Link to="/products/xe-dap-dien" className="dropdown-item">
+                    <Link
+                      to="/listings?category=xe-dap-dien"
+                      className="dropdown-item"
+                    >
                       Xe đạp điện
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/listings?category=o-to-dien"
+                      className="dropdown-item"
+                    >
+                      Ô tô điện
                     </Link>
                   </li>
                 </ul>
               </NavDropdown.Item>
+
               <NavDropdown.Item className="dropdown-submenu">
                 <span className="submenu-title">Pin ▸</span>
                 <ul className="submenu">
                   <li>
-                    <Link to="/products/pin-xe" className="dropdown-item">
-                      Pin xe điện
+                    <Link
+                      to="/listings?category=pin&type=xe-may"
+                      className="dropdown-item"
+                    >
+                      Pin xe máy
                     </Link>
                   </li>
                   <li>
-                    <Link to="/products/pin-du-phong" className="dropdown-item">
-                      Pin dự phòng
+                    <Link
+                      to="/listings?category=pin&type=xe-dap"
+                      className="dropdown-item"
+                    >
+                      Pin xe đạp
                     </Link>
                   </li>
                   <li>
-                    <Link to="/products/pin-cu" className="dropdown-item">
-                      Pin second-hand
+                    <Link
+                      to="/listings?category=pin&type=o-to"
+                      className="dropdown-item"
+                    >
+                      Pin ô tô
                     </Link>
                   </li>
                 </ul>
@@ -222,8 +250,8 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
       </Container>
 
       {/* Modal xác nhận đăng xuất */}
-      <Modal 
-        show={showLogoutModal} 
+      <Modal
+        show={showLogoutModal}
         onHide={cancelLogout}
         centered
         backdrop="static"
@@ -231,24 +259,31 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
       >
         <Modal.Header className="border-0 pb-2">
           <Modal.Title className="w-100 text-center">
-            <i className="fas fa-sign-out-alt text-warning me-2" style={{fontSize: '1.5rem'}}></i>
+            <i
+              className="fas fa-sign-out-alt text-warning me-2"
+              style={{ fontSize: "1.5rem" }}
+            ></i>
             <span className="fw-bold">Xác nhận đăng xuất</span>
           </Modal.Title>
         </Modal.Header>
-        
+
         <Modal.Body className="text-center py-4">
           <div className="mb-3">
-            <i className="fas fa-question-circle text-primary" style={{fontSize: '3rem'}}></i>
+            <i
+              className="fas fa-question-circle text-primary"
+              style={{ fontSize: "3rem" }}
+            ></i>
           </div>
           <h5 className="mb-3">Bạn có chắc chắn muốn đăng xuất?</h5>
           <p className="text-muted mb-0">
-            Bạn sẽ cần đăng nhập lại để sử dụng các tính năng của EV Secondhand Marketplace.
+            Bạn sẽ cần đăng nhập lại để sử dụng các tính năng của EV Secondhand
+            Marketplace.
           </p>
         </Modal.Body>
-        
+
         <Modal.Footer className="border-0 pt-0 justify-content-center">
-          <Button 
-            variant="outline-secondary" 
+          <Button
+            variant="outline-secondary"
             onClick={cancelLogout}
             disabled={isLoggingOut}
             className="px-4 py-2 fw-semibold"
@@ -256,8 +291,8 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
             <i className="fas fa-times me-2"></i>
             Hủy
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={confirmLogout}
             disabled={isLoggingOut}
             className="px-4 py-2 fw-semibold ms-2"
@@ -279,8 +314,8 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
 
       {/* Toast notification cho logout */}
       <ToastContainer position="top-end" className="p-3">
-        <Toast 
-          show={showToast} 
+        <Toast
+          show={showToast}
           onClose={() => setShowToast(false)}
           delay={3000}
           autohide
@@ -290,9 +325,7 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
             <i className="fas fa-check-circle text-success me-2"></i>
             <strong className="me-auto">EV Secondhand Marketplace</strong>
           </Toast.Header>
-          <Toast.Body className="text-white">
-            {toastMessage}
-          </Toast.Body>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
         </Toast>
       </ToastContainer>
     </Navbar>
