@@ -35,9 +35,6 @@ public class UserEntity {
     @Column(name = "phone_number", length = 15, columnDefinition = "VARCHAR(15)")
     private String phoneNumber;
 
-    @Column(name = "public_id", length = 255, unique = true, columnDefinition = "VARCHAR(255)")
-    private String publicId;
-
     @Column(name = "avatar", columnDefinition = "NVARCHAR(MAX)")
     private String avatar = "http://localhost:8080/images/avatar_classic.jpg";
 

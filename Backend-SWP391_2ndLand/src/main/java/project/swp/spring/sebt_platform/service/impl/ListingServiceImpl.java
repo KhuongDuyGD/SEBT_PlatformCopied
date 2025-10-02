@@ -5,34 +5,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import project.swp.spring.sebt_platform.dto.object.Image;
+import project.swp.spring.sebt_platform.dto.object.*;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
-import project.swp.spring.sebt_platform.model.BatteryEntity;
-import project.swp.spring.sebt_platform.model.EvVehicleEntity;
-import project.swp.spring.sebt_platform.model.ListingEntity;
-import project.swp.spring.sebt_platform.model.ListingImageEntity;
-import project.swp.spring.sebt_platform.model.LocationEntity;
-import project.swp.spring.sebt_platform.model.PostRequestEntity;
-import project.swp.spring.sebt_platform.model.ProductEntity;
-import project.swp.spring.sebt_platform.model.UserEntity;
-import project.swp.spring.sebt_platform.model.enums.ApprovalStatus;
-import project.swp.spring.sebt_platform.repository.BatteryRepository;
-import project.swp.spring.sebt_platform.repository.EvVehicleRepository;
-import project.swp.spring.sebt_platform.repository.ListingImageRepository;
-import project.swp.spring.sebt_platform.repository.ListingRepository;
-import project.swp.spring.sebt_platform.repository.LocationRepository;
-import project.swp.spring.sebt_platform.repository.PostRequestRepository;
-import project.swp.spring.sebt_platform.repository.ProductRepository;
-import project.swp.spring.sebt_platform.repository.UserRepository;
+import project.swp.spring.sebt_platform.model.*;
+import project.swp.spring.sebt_platform.model.enums.*;
+import project.swp.spring.sebt_platform.repository.*;
 import project.swp.spring.sebt_platform.service.ListingService;
 
 @Service
 public class ListingServiceImpl implements ListingService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ListingServiceImpl.class);
 
     private final PostRequestRepository postRequestRepository;
     private final EvVehicleRepository evVehicleRepository;
@@ -42,6 +33,7 @@ public class ListingServiceImpl implements ListingService {
     private final ListingRepository listingRepository;
     private final ListingImageRepository listingImageRepository;
     private final LocationRepository locationRepository;
+    private final FavoriteRepository favoriteRepository;
 
     @Autowired
     public ListingServiceImpl(PostRequestRepository postRequestRepository, 
@@ -51,7 +43,8 @@ public class ListingServiceImpl implements ListingService {
                              ProductRepository productRepository,
                              ListingRepository listingRepository,
                              ListingImageRepository listingImageRepository,
-                             LocationRepository locationRepository) {
+                             LocationRepository locationRepository,
+                              FavoriteRepository favoriteRepository) {
         this.postRequestRepository = postRequestRepository;
         this.userRepository = userRepository;
         this.listingRepository = listingRepository;
@@ -60,62 +53,49 @@ public class ListingServiceImpl implements ListingService {
         this.evVehicleRepository = evVehicleRepository;
         this.batteryRepository = batteryRepository;
         this.productRepository = productRepository;
+        this.favoriteRepository = favoriteRepository;
     }
 
     @Override
-    public List<ListingCartResponseDTO> getListingsByKeyWord(String keyWord) {
-        return List.of();
+    public List<ListingCartResponseDTO> getListingsByKeyWord(String keyWord, Long userId, Pageable pageable) {
+       return null;
     }
 
     @Override
     @Transactional
     public boolean createListing(CreateListingFormDTO createListingForm,
-                                 Long sellerId,
-                                 List<Image> imageUrls,
-                                 Image thumbnailUrl) {
+                                 Long sellerId) {
         try {
-            System.out.println("🔥 [SERVICE DEBUG] Bắt đầu createListing service...");
-            System.out.println("📝 [SERVICE DEBUG] Params - sellerId: " + sellerId);
-            System.out.println("📝 [SERVICE DEBUG] Params - imageUrls count: " + (imageUrls != null ? imageUrls.size() : "null"));
-            System.out.println("📝 [SERVICE DEBUG] Params - thumbnailUrl: " + (thumbnailUrl != null ? "present" : "null"));
-            System.out.println("📝 [SERVICE DEBUG] Params - createListingForm: " + createListingForm);
-            // Bước 1: Validate đầu vào
             if (createListingForm == null) {
-                System.err.println("❌ [SERVICE DEBUG] Create listing form is null");
+                logger.error("Create listing form is null");
                 return false;
             }
 
             if (createListingForm.location() == null) {
-                System.err.println("❌ [SERVICE DEBUG] Location is null");
+                logger.error("Location is null");
                 return false;
             }
 
             if (createListingForm.product() == null) {
-                System.err.println("❌ [SERVICE DEBUG] Product is null");
+                logger.error("Product is null");
                 return false;
             }
 
             if (createListingForm.product().ev() == null && createListingForm.product().battery() == null) {
-                System.err.println("❌ [SERVICE DEBUG] Both EV vehicle and Battery details are null");
+                logger.error("Both EV vehicle and Battery details are null");
                 return false;
             }
-            System.out.println("✅ [SERVICE DEBUG] Validation passed");
 
-            // Bước 2: Tìm user trong database
-            System.out.println("🔄 [SERVICE DEBUG] Tìm user với ID: " + sellerId);
             UserEntity user = userRepository.findById(sellerId).orElse(null);
             if (user == null) {
-                System.err.println("❌ [SERVICE DEBUG] User not found with ID: " + sellerId);
+                logger.error("User not found with ID: " + sellerId);
                 return false;
             }
-            System.out.println("✅ [SERVICE DEBUG] User found: " + user.getUsername());
 
-            // Bước 3: Tạo product entity (EV hoặc Battery)
-            System.out.println("🔄 [SERVICE DEBUG] Tạo ProductEntity...");
+            // Create and save EV vehicle or Battery first
             ProductEntity productEntity = new ProductEntity();
 
             if (createListingForm.product().ev() != null) {
-                System.out.println("🚗 [SERVICE DEBUG] Tạo EV Vehicle...");
                 EvVehicleEntity evVehicleEntity = new EvVehicleEntity();
                 evVehicleEntity.setName(createListingForm.product().ev().name());
                 evVehicleEntity.setBrand(createListingForm.product().ev().brand());
@@ -157,41 +137,33 @@ public class ListingServiceImpl implements ListingService {
             listingEntity.setSeller(user);
             listingEntity.setProduct(productEntity);
 
-            // Bước 1: Lưu ảnh thumbnail chính cho listing từ Cloudinary URL
-            String mainImageUrl = createListingForm.mainImageUrl();
-            if (mainImageUrl != null && !mainImageUrl.isEmpty()) {
-                // Extract public ID từ Cloudinary URL để có thể xóa sau này nếu cần
-                String publicId = extractPublicIdFromCloudinaryUrl(mainImageUrl);
-                listingEntity.setThumbnailPublicId(publicId);
-                listingEntity.setThumbnailImage(mainImageUrl);
-                System.out.println("✅ [SERVICE DEBUG] Main image URL được thiết lập: " + mainImageUrl);
+            // Set main image (thumbnail)
+            if (createListingForm.mainImageUrl() != null) {
+                listingEntity.setThumbnailImage(createListingForm.mainImageUrl());
             } else {
-                System.err.println("❌ [SERVICE DEBUG] Main image URL trống - không thể tạo listing");
+                logger.error("Thumbnail URL is null");
                 return false;
             }
 
-            // Bước 2: Lưu listing trước để có ID (cần thiết cho các entity liên quan)
+            // Save listing first to get ID
             listingEntity = listingRepository.save(listingEntity);
 
-            // Bước 3: Lưu các ảnh chi tiết của listing từ Cloudinary URLs
-            List<String> imageUrlsList = createListingForm.imageUrls();
-            if (imageUrlsList != null && !imageUrlsList.isEmpty()) {
+            // Save listing images
+            if (createListingForm.imageUrls() != null && !createListingForm.imageUrls().isEmpty()) {
                 List<ListingImageEntity> listingImageEntities = new ArrayList<>();
-                for (String imageUrl : imageUrlsList) {
+                for (String imageUrl : createListingForm.imageUrls()) {
                     ListingImageEntity listingImageEntity = new ListingImageEntity();
                     listingImageEntity.setImageUrl(imageUrl);
-                    listingImageEntity.setPublicId(extractPublicIdFromCloudinaryUrl(imageUrl));
                     listingImageEntity.setListing(listingEntity);
                     listingImageEntities.add(listingImageEntity);
                 }
                 listingImageRepository.saveAll(listingImageEntities);
-                System.out.println("✅ [SERVICE DEBUG] Lưu " + imageUrlsList.size() + " ảnh chi tiết thành công");
             } else {
-                System.err.println("❌ [SERVICE DEBUG] Danh sách ảnh listing trống");
+                logger.error("Image URLs list is null or empty");
                 return false;
             }
 
-            // Bước 4: Tạo và lưu thông tin địa điểm cho listing
+            // Create and save location
             LocationEntity locationEntity = new LocationEntity();
             locationEntity.setProvince(createListingForm.location().province());
             locationEntity.setDistrict(createListingForm.location().district());
@@ -199,47 +171,153 @@ public class ListingServiceImpl implements ListingService {
             locationEntity.setListing(listingEntity);
             locationRepository.save(locationEntity);
 
-            // Bước 5: TẠO YÊU CẦU XÉT DUYỆT - đây là bước quan trọng nhất
-            // Listing sẽ ở trạng thái PENDING và chỉ hiển thị khi admin APPROVE
+            // Create and save post request
             PostRequestEntity postRequestEntity = new PostRequestEntity();
-            postRequestEntity.setStatus(ApprovalStatus.PENDING); // Chờ admin xét duyệt
+            postRequestEntity.setStatus(ApprovalStatus.PENDING);
             postRequestEntity.setListing(listingEntity);
             postRequestRepository.save(postRequestEntity);
 
             return true;
 
         } catch (Exception e) {
-            System.err.println("❌ LỖI trong quá trình tạo listing và yêu cầu xét duyệt: " + e.getMessage());
-            e.printStackTrace(); // In chi tiết lỗi để debug
-            // Trong môi trường production nên sử dụng proper logging (log4j, slf4j)
+            logger.error("Error in create listing: " + e.getMessage(), e);
+            // Use proper logging instead of printStackTrace
             return false;
         }
     }
 
     @Override
-    public List<ListingCartResponseDTO> getAllActiveListingCarts() {
-
-        return List.of();
-    }
-
-    @Override
     public ListingDetailResponseDTO getListingDetailById(Long listingId) {
-        return null;
+        ListingEntity listing = listingRepository.findById(listingId).orElse(null);
+        List<ListingImageEntity> listingImageEntities = listingImageRepository.findByListingId(listingId);
+        ListingDetailResponseDTO detailDTO = new ListingDetailResponseDTO();
+
+        if (listing == null) return null;
+
+        detailDTO.setTitle(listing.getTitle());
+        detailDTO.setDescription(listing.getDescription());
+        detailDTO.setListingType(listing.getListingType());
+        detailDTO.setId(listing.getId());
+        detailDTO.setCreatedAt(listing.getCreatedAt().toString());
+        detailDTO.setUpdatedAt(listing.getUpdatedAt().toString());
+        detailDTO.setStatus(listing.getStatus().toString());
+        detailDTO.setListingType(listing.getListingType());
+        detailDTO.setPrice(listing.getPrice().doubleValue());
+        detailDTO.setThumbnail(listing.getThumbnailImage());
+
+        List<String> images = new ArrayList<>();
+        for (ListingImageEntity listingImageEntity : listingImageEntities) {
+            images.add(listingImageEntity.getImageUrl());
+        }
+
+        detailDTO.setImages(images);
+
+        ProductEntity product = listing.getProduct();
+        EvVehicleEntity evVehicleEntity = listing.getProduct().getEvVehicle();
+        BatteryEntity batteryEntity = listing.getProduct().getBattery();
+
+        Product productResp;
+        if (product.getEvVehicle() != null) {
+            productResp = new Product(new Ev( evVehicleEntity.getType(),
+                    evVehicleEntity.getName(),
+                    evVehicleEntity.getModel(),
+                    evVehicleEntity.getBrand(),
+                    evVehicleEntity.getYear(),
+                    evVehicleEntity.getMileage(),
+                    evVehicleEntity.getBatteryCapacity().doubleValue(),
+                    evVehicleEntity.getConditionStatus()),null);
+        }  else {
+            productResp = new Product(null,
+                    new Battery( batteryEntity.getBrand(),
+                            batteryEntity.getModel(),
+                            batteryEntity.getCapacity().doubleValue(),
+                            batteryEntity.getHealthPercentage(),
+                            batteryEntity.getCompatibleVehicles(),
+                            batteryEntity.getConditionStatus()
+                            ));
+        }
+
+        detailDTO.setProduct(productResp);
+
+        return detailDTO;
     }
 
     @Override
-    public List<ListingCartResponseDTO> getCarListingCarts() {
-        return List.of();
+    public List<ListingCartResponseDTO> getEvListingCarts(Long userId, Pageable pageable) {
+        try {
+            List<ListingEntity> listings = listingRepository.findCarListingsByStatus(ListingStatus.ACTIVE, pageable);
+            List<ListingCartResponseDTO> listingCarts = new ArrayList<>();
+            for (ListingEntity listing : listings) {
+                boolean isFavorited = userId != null &&
+                    favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
+                ListingCartResponseDTO cartDTO = new ListingCartResponseDTO(
+                        listing.getId(),
+                        listing.getTitle(),
+                        listing.getThumbnailImage(),
+                        listing.getPrice().doubleValue(),
+                        listing.getViewsCount(),
+                        listing.getSeller().getPhoneNumber(),
+                        isFavorited
+                );
+                listingCarts.add(cartDTO);
+            }
+            return listingCarts;
+        } catch (Exception e) {
+            logger.error("Error getting EV listing carts", e);
+            return new ArrayList<>();
+        }
     }
 
     @Override
-    public List<ListingCartResponseDTO> getPinListingCarts() {
-        return List.of();
+    public List<ListingCartResponseDTO> getBatteryListingCarts(Long userId, Pageable pageable) {
+        try {
+            List<ListingEntity> listings = listingRepository.findBatteryListingsByStatus(ListingStatus.ACTIVE, pageable);
+            List<ListingCartResponseDTO> listingCarts = new ArrayList<>();
+            for (ListingEntity listing : listings) {
+                boolean isFavorited = userId != null &&
+                    favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
+                ListingCartResponseDTO cartDTO = new ListingCartResponseDTO(
+                        listing.getId(),
+                        listing.getTitle(),
+                        listing.getThumbnailImage(),
+                        listing.getPrice().doubleValue(),
+                        listing.getViewsCount(),
+                        listing.getSeller().getPhoneNumber(),
+                        isFavorited
+                );
+                listingCarts.add(cartDTO);
+            }
+            return listingCarts;
+        } catch (Exception e) {
+            logger.error("Error getting battery listing carts", e);
+            return new ArrayList<>();
+        }
     }
 
+
     @Override
-    public List<ListingCartResponseDTO> getListingCartsBySeller(Long sellerId) {
-        return List.of();
+    public List<ListingCartResponseDTO> getListingCartsBySeller(Long sellerId, Pageable pageable) {
+        try {
+            List<ListingEntity> listings = listingRepository.findBySellerIdOrderByCreatedAtDesc(sellerId, pageable);
+            List<ListingCartResponseDTO> listingCarts = new ArrayList<>();
+            for (ListingEntity listing : listings) {
+                // For seller's own listings, they don't need favorite status (always false)
+                ListingCartResponseDTO cartDTO = new ListingCartResponseDTO(
+                        listing.getId(),
+                        listing.getTitle(),
+                        listing.getThumbnailImage(),
+                        listing.getPrice().doubleValue(),
+                        listing.getViewsCount(),
+                        listing.getSeller().getPhoneNumber(),
+                        false // Seller doesn't favorite their own listings
+                );
+                listingCarts.add(cartDTO);
+            }
+            return listingCarts;
+        } catch (Exception e) {
+            logger.error("Error getting listings by seller ID: " + sellerId, e);
+            return new ArrayList<>();
+        }
     }
 
     @Override
@@ -247,29 +325,23 @@ public class ListingServiceImpl implements ListingService {
         return 0;
     }
 
-    /**
-     * Helper method để extract public ID từ Cloudinary URL
-     * Ví dụ: https://res.cloudinary.com/demo/image/upload/v1234567890/sample.jpg -> sample
-     */
     private String extractPublicIdFromCloudinaryUrl(String cloudinaryUrl) {
         try {
             if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
                 return null;
             }
-            
-            // Tìm phần cuối của URL sau /upload/
+
             String[] parts = cloudinaryUrl.split("/upload/");
             if (parts.length < 2) {
                 return null;
             }
-            
-            // Lấy phần sau /upload/ và remove version number (vXXXXXXXX/)
+
             String afterUpload = parts[1];
             String[] segments = afterUpload.split("/");
-            
+
             // Nếu có version number, bỏ qua segment đầu
             int startIndex = (segments.length > 1 && segments[0].startsWith("v")) ? 1 : 0;
-            
+
             // Kết hợp các segment còn lại và remove file extension
             StringBuilder publicId = new StringBuilder();
             for (int i = startIndex; i < segments.length; i++) {
@@ -283,11 +355,11 @@ public class ListingServiceImpl implements ListingService {
                 }
                 publicId.append(segment);
             }
-            
+
             return publicId.toString();
         } catch (Exception e) {
-            System.err.println("❌ [SERVICE DEBUG] Lỗi extract publicId từ URL: " + cloudinaryUrl);
-            return cloudinaryUrl; // Fallback: return original URL
+
+            return cloudinaryUrl;
         }
     }
 
