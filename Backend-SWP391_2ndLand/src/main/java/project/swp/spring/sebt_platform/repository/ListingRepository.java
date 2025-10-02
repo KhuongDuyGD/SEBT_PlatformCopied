@@ -16,47 +16,35 @@ import project.swp.spring.sebt_platform.model.enums.VehicleType;
 @Repository
 public interface ListingRepository extends JpaRepository<ListingEntity, Long> {
 
-    // Tìm kiếm listing theo từ khóa trong title hoặc description
-    @Query("SELECT l FROM ListingEntity l WHERE " +
-           "(LOWER(l.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(l.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
-           "l.status = :status")
-    List<ListingEntity> findByKeywordAndStatus(@Param("keyword") String keyword, 
-                                               @Param("status") ListingStatus status);
+//   List<ListingEntity> findByKeywordAndStatus(String keyword, ListingStatus status);
 
-    // Lấy tất cả listing đang active, sắp xếp theo ngày tạo mới nhất
+    ListingEntity findById(long id);
+
     List<ListingEntity> findByStatusOrderByCreatedAtDesc(ListingStatus status);
 
-    // Lấy listing cho xe (car listings) - chỉ lấy những listing có sản phẩm là xe
-    @Query("SELECT l FROM ListingEntity l " +
-           "JOIN l.product p " +
-           "JOIN p.evVehicle ev " +
-           "WHERE l.status = :status AND ev.type = :vehicleType " +
-           "ORDER BY l.createdAt DESC")
-    List<ListingEntity> findCarListingsByStatus(@Param("status") ListingStatus status, 
-                                                @Param("vehicleType") VehicleType vehicleType);
+    @Query (
+        "SELECT l FROM ListingEntity l" +
+                " WHERE l.status = :status" +
+                " AND l.product.evVehicle IS NOT NULL" +
+                " ORDER BY l.createdAt DESC"
+    )
+    List<ListingEntity> findCarListingsByStatus(@Param("status") ListingStatus status,
+                                                Pageable pageable);
 
-    // Lấy pin listings - chỉ lấy những listing có sản phẩm là pin
-    @Query("SELECT l FROM ListingEntity l " +
-           "JOIN l.product p " +
-           "WHERE l.status = :status AND p.battery IS NOT NULL " +
-           "ORDER BY l.createdAt DESC")
-    List<ListingEntity> findPinListingsByStatus(@Param("status") ListingStatus status);
+    @Query (
+        "SELECT l FROM ListingEntity l" +
+                " WHERE l.status = :status" +
+                " AND l.product.battery IS NOT NULL" +
+                " ORDER BY l.createdAt DESC"
+    )
+    List<ListingEntity> findBatteryListingsByStatus(@Param("status") ListingStatus status,
+                                                Pageable pageable);
+
+
+    List<ListingEntity> findAllActiveByStatus(ListingStatus status,
+                                              Pageable pageable);
 
     // Lấy listing theo seller
-    List<ListingEntity> findBySellerIdOrderByCreatedAtDesc(Long sellerId);
+    List<ListingEntity> findBySellerIdOrderByCreatedAtDesc(Long sellerId, Pageable pageable);
 
-    // Tìm kiếm với phân trang
-    Page<ListingEntity> findByStatusOrderByCreatedAtDesc(ListingStatus status, Pageable pageable);
-
-    // Lấy listing theo brand của sản phẩm
-    @Query("SELECT l FROM ListingEntity l " +
-           "JOIN l.product p " +
-           "LEFT JOIN p.evVehicle ev " +
-           "LEFT JOIN p.battery b " +
-           "WHERE l.status = :status AND " +
-           "(LOWER(ev.brand) LIKE LOWER(CONCAT('%', :brand, '%')) OR " +
-           "LOWER(b.brand) LIKE LOWER(CONCAT('%', :brand, '%')))")
-    List<ListingEntity> findByProductBrandAndStatus(@Param("brand") String brand, 
-                                                    @Param("status") ListingStatus status);
 }
