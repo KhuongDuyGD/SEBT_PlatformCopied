@@ -3,7 +3,12 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
+  useNavigate
 } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Container, Spinner } from "react-bootstrap";
+
 import AppNavbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
@@ -11,28 +16,187 @@ import Register from "./pages/auth/Register";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import Profile from "./pages/profile/Profile";
 import CreateListing from "./pages/listings/CreateListing";
-import ListingPage from "./pages/listings/ListingPage"; // ✅ Thay mới
-// import ListingDetail from "./pages/listings/ListingDetail"; // ❌ comment tạm
+import ListingPage from "./pages/listings/ListingPage";
 
-import { useState, useEffect } from "react";
-import { Container, Spinner } from "react-bootstrap";
+//============================= ADMIN PAGES =============================
+import AdminDashboard from "./AdminDashboard";          // đảm bảo file này tồn tại
+import AdminLayout from "./components/AdminLayout";     // đảm bảo đúng đường dẫn
+//============================= ADMIN PAGES =============================
+
 import api from "./api/axios";
 import { AuthContext } from "./contexts/AuthContext";
 import "./App.css";
+
+// Placeholder cho các trang chưa làm
+const Placeholder = ({ title }) => (
+  <Container className="py-5 text-center">
+    <h2 className="fw-bold mb-4">{title}</h2>
+    <p className="text-muted">Tính năng đang được phát triển.</p>
+  </Container>
+);
+
+function AppContent({
+  isLoggedIn,
+  setIsLoggedIn,
+  userInfo,
+  setUserInfo,
+  handleLogout
+}) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Biến kiểm tra quyền admin (không normalize, chỉ đọc trực tiếp)
+  const isAdmin = userInfo?.role === "ADMIN";
+
+  const inAdmin = location.pathname.startsWith("/admin");
+
+
+  return (
+    <>
+      {!inAdmin && (
+        <AppNavbar
+          isLoggedIn={isLoggedIn}
+          userInfo={userInfo}
+          setIsLoggedIn={setIsLoggedIn}
+          setUserInfo={setUserInfo}
+        />
+      )}
+
+      <main>
+        <Routes>
+          {/* USER ROUTES */}
+          <Route path="/" element={<Home />} />
+          <Route path="/listings" element={<ListingPage />} />
+
+          <Route
+            path="/post-listing"
+            element={
+              isLoggedIn ? <CreateListing /> : <Navigate to="/login" replace />
+            }
+          />
+
+          <Route
+            path="/account"
+            element={
+              isLoggedIn ? <Profile /> : <Navigate to="/login" replace />
+            }
+          />
+
+          <Route
+            path="/orders"
+            element={<Placeholder title="Đơn Hàng Của Tôi" />}
+          />
+          <Route
+            path="/favorites"
+            element={<Placeholder title="Danh Sách Yêu Thích" />}
+          />
+          <Route path="/settings" element={<Placeholder title="Cài Đặt" />} />
+          <Route
+            path="/support"
+            element={<Placeholder title="Hỗ Trợ Khách Hàng" />}
+          />
+            <Route
+            path="/notifications"
+            element={<Placeholder title="Thông Báo" />}
+          />
+
+          <Route
+            path="/login"
+            element={
+              isLoggedIn
+                ? (isAdmin
+                    ? <Navigate to="/admin" replace />
+                    : <Navigate to="/" replace />)
+                : (
+                  <Login
+                    setIsLoggedIn={setIsLoggedIn}
+                    setUserInfo={setUserInfo}
+                  />
+                )
+            }
+          />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/verify-email"
+            element={
+              <VerifyEmail
+                setIsLoggedIn={setIsLoggedIn}
+                setUserInfo={setUserInfo}
+              />
+            }
+          />
+
+          {/* ADMIN ROUTES */}
+          <Route
+            path="/admin/*"
+            element={
+              (isLoggedIn && isAdmin) ? (
+                <AdminLayout
+                  userInfo={userInfo}
+                  onLogout={handleLogout}
+                />
+              ) : isLoggedIn ? (
+                <Navigate to="/" replace />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            {/*
+              Thêm các route admin khác khi bạn đã tạo file:
+              <Route path="listings" element={<AdminListings />} />
+              ...
+            */}
+          </Route>
+
+          {/* CATCH ALL */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+
+      {!inAdmin && (
+        <footer className="footer text-center">
+          <Container>
+            <p className="mb-0">
+              © 2025 EV Secondhand Marketplace - Nền tảng xe điện cũ hàng đầu
+              Việt Nam
+            </p>
+          </Container>
+        </footer>
+      )}
+    </>
+  );
+}
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Logout dùng chung
+  const handleLogout = useCallback(async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      /* ignore */
+    } finally {
+      sessionStorage.clear();
+      localStorage.removeItem("userInfo");
+      setIsLoggedIn(false);
+      setUserInfo(null);
+      window.location.href = "/login";
+    }
+  }, []);
+
   useEffect(() => {
-    const checkLoggedIn = async () => {
+    const init = async () => {
       try {
-        const response = await api.get("/auth/current-user");
-        setUserInfo(response.data);
+        const res = await api.get("/auth/current-user");
+        setUserInfo(res.data);
         setIsLoggedIn(true);
-      } catch (error) {
-        console.log("User chưa đăng nhập hoặc session hết hạn:", error.message);
+        localStorage.setItem("userInfo", JSON.stringify(res.data));
+      } catch (err) {
         setIsLoggedIn(false);
         setUserInfo(null);
         localStorage.removeItem("userInfo");
@@ -40,7 +204,7 @@ function App() {
         setLoading(false);
       }
     };
-    checkLoggedIn();
+    init();
   }, []);
 
   if (loading) {
@@ -57,113 +221,13 @@ function App() {
       value={{ isLoggedIn, setIsLoggedIn, userInfo, setUserInfo }}
     >
       <Router>
-        <AppNavbar
+        <AppContent
           isLoggedIn={isLoggedIn}
           setIsLoggedIn={setIsLoggedIn}
+          userInfo={userInfo}
           setUserInfo={setUserInfo}
+          handleLogout={handleLogout}
         />
-        <main>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/listings" element={<ListingPage />} />{" "}
-            {/* ✅ ListingPage */}
-            <Route
-              path="/post-listing"
-              element={
-                isLoggedIn ? (
-                  <CreateListing />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            {/* <Route path="/listings/:id" element={<ListingDetail />} /> */}
-            <Route
-              path="/support"
-              element={
-                <Container className="py-5 text-center">
-                  <h2 className="fw-bold text-warning mb-4">
-                    Hỗ Trợ Khách Hàng
-                  </h2>
-                  <p className="text-muted">
-                    Liên hệ: support@evsecondhand.com
-                  </p>
-                </Container>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <Container className="py-5 text-center">
-                  <h2 className="fw-bold text-info mb-4">Thông Báo</h2>
-                  <p className="text-muted">Bạn chưa có thông báo mới.</p>
-                </Container>
-              }
-            />
-            <Route
-              path="/account"
-              element={
-                isLoggedIn ? <Profile /> : <Navigate to="/login" replace />
-              }
-            />
-            <Route
-              path="/orders"
-              element={
-                <Container className="py-5 text-center">
-                  <h2 className="fw-bold mb-4">Đơn Hàng Của Tôi</h2>
-                  <p className="text-muted">Tính năng đang được phát triển.</p>
-                </Container>
-              }
-            />
-            <Route
-              path="/favorites"
-              element={
-                <Container className="py-5 text-center">
-                  <h2 className="fw-bold text-danger mb-4">
-                    Danh Sách Yêu Thích
-                  </h2>
-                  <p className="text-muted">Tính năng đang được phát triển.</p>
-                </Container>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <Container className="py-5 text-center">
-                  <h2 className="fw-bold mb-4">Cài Đặt</h2>
-                  <p className="text-muted">Tính năng đang được phát triển.</p>
-                </Container>
-              }
-            />
-            <Route
-              path="/login"
-              element={
-                <Login
-                  setIsLoggedIn={setIsLoggedIn}
-                  setUserInfo={setUserInfo}
-                />
-              }
-            />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/verify-email"
-              element={
-                <VerifyEmail
-                  setIsLoggedIn={setIsLoggedIn}
-                  setUserInfo={setUserInfo}
-                />
-              }
-            />
-          </Routes>
-        </main>
-        <footer className="footer text-center">
-          <Container>
-            <p className="mb-0">
-              © 2025 EV Secondhand Marketplace - Nền tảng xe điện cũ hàng đầu
-              Việt Nam
-            </p>
-          </Container>
-        </footer>
       </Router>
     </AuthContext.Provider>
   );
