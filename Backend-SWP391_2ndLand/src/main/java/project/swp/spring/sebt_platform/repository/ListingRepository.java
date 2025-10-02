@@ -16,35 +16,43 @@ import project.swp.spring.sebt_platform.model.enums.VehicleType;
 @Repository
 public interface ListingRepository extends JpaRepository<ListingEntity, Long> {
 
-//   List<ListingEntity> findByKeywordAndStatus(String keyword, ListingStatus status);
-
     ListingEntity findById(long id);
 
     List<ListingEntity> findByStatusOrderByCreatedAtDesc(ListingStatus status);
 
-    @Query (
-        "SELECT l FROM ListingEntity l" +
-                " WHERE l.status = :status" +
-                " AND l.product.evVehicle IS NOT NULL" +
-                " ORDER BY l.createdAt DESC"
-    )
-    List<ListingEntity> findCarListingsByStatus(@Param("status") ListingStatus status,
-                                                Pageable pageable);
+    // Query tìm kiếm theo keyword với pagination
+    Page<ListingEntity> findByTitleContainingIgnoreCaseAndStatus(String keyword, ListingStatus status, Pageable pageable);
 
-    @Query (
-        "SELECT l FROM ListingEntity l" +
-                " WHERE l.status = :status" +
-                " AND l.product.battery IS NOT NULL" +
-                " ORDER BY l.createdAt DESC"
-    )
-    List<ListingEntity> findBatteryListingsByStatus(@Param("status") ListingStatus status,
-                                                Pageable pageable);
+    // Query tìm car listings với pagination
+    @Query("SELECT l FROM ListingEntity l " +
+           "WHERE l.status = :status " +
+           "AND l.product.evVehicle IS NOT NULL " +
+           "ORDER BY l.createdAt DESC")
+    Page<ListingEntity> findCarListingsByStatus(@Param("status") ListingStatus status, Pageable pageable);
 
+    // Query tìm battery listings với pagination
+    @Query("SELECT l FROM ListingEntity l " +
+           "WHERE l.status = :status " +
+           "AND l.product.battery IS NOT NULL " +
+           "ORDER BY l.createdAt DESC")
+    Page<ListingEntity> findBatteryListingsByStatus(@Param("status") ListingStatus status, Pageable pageable);
 
-    List<ListingEntity> findAllActiveByStatus(ListingStatus status,
-                                              Pageable pageable);
+    // Query tìm listings theo seller với pagination
+    Page<ListingEntity> findBySellerIdOrderByCreatedAtDesc(Long sellerId, Pageable pageable);
 
-    // Lấy listing theo seller
-    List<ListingEntity> findBySellerIdOrderByCreatedAtDesc(Long sellerId, Pageable pageable);
+    // Query theo title
+    @Query("SELECT l FROM ListingEntity l " +
+           "WHERE l.status = 'ACTIVE' " +
+           "AND LOWER(l.title) LIKE LOWER(CONCAT('%', :title, '%'))")
+    List<ListingEntity> findByTitleContaining(@Param("title") String title);
 
+    List<ListingEntity> findByBrand(String brand);
+
+    List<ListingEntity> findByYear( Integer year);
+
+    // Query tất cả active listings (khi không có filter nào)
+    @Query("SELECT l FROM ListingEntity l " +
+           "WHERE l.status = 'ACTIVE' " +
+           "ORDER BY l.createdAt DESC")
+    List<ListingEntity> findAllActiveListings();
 }

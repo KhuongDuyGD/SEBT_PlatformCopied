@@ -2,9 +2,17 @@ package project.swp.spring.sebt_platform.service.impl;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.LinkedHashSet;
+import org.springframework.data.domain.PageImpl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,8 +65,36 @@ public class ListingServiceImpl implements ListingService {
     }
 
     @Override
-    public List<ListingCartResponseDTO> getListingsByKeyWord(String keyWord, Long userId, Pageable pageable) {
-       return null;
+    public Page<ListingCartResponseDTO> getListingsByKeyWord(String keyWord, Long userId, Pageable pageable) {
+        try {
+            if (keyWord == null || keyWord.trim().isEmpty()) {
+                logger.warn("Search keyword is null or empty");
+                return Page.empty(pageable);
+            }
+
+            // Sử dụng repository method trả về Page
+            Page<ListingEntity> listingsPage = listingRepository.findByTitleContainingIgnoreCaseAndStatus(
+                keyWord.trim(), ListingStatus.ACTIVE, pageable);
+
+            // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
+            return listingsPage.map(listing -> {
+                boolean isFavorited = userId != null &&
+                    favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
+
+                return new ListingCartResponseDTO(
+                        listing.getId(),
+                        listing.getTitle(),
+                        listing.getThumbnailImage(),
+                        listing.getPrice().doubleValue(),
+                        listing.getViewsCount(),
+                        listing.getSeller().getPhoneNumber(),
+                        isFavorited
+                );
+            });
+        } catch (Exception e) {
+            logger.error("Error searching listings by keyword: " + keyWord, e);
+            return Page.empty(pageable);
+        }
     }
 
     @Override
@@ -243,14 +279,17 @@ public class ListingServiceImpl implements ListingService {
     }
 
     @Override
-    public List<ListingCartResponseDTO> getEvListingCarts(Long userId, Pageable pageable) {
+    public Page<ListingCartResponseDTO> getEvListingCarts(Long userId, Pageable pageable) {
         try {
-            List<ListingEntity> listings = listingRepository.findCarListingsByStatus(ListingStatus.ACTIVE, pageable);
-            List<ListingCartResponseDTO> listingCarts = new ArrayList<>();
-            for (ListingEntity listing : listings) {
+            // Sử dụng repository method trả về Page
+            Page<ListingEntity> listingsPage = listingRepository.findCarListingsByStatus(ListingStatus.ACTIVE, pageable);
+
+            // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
+            return listingsPage.map(listing -> {
                 boolean isFavorited = userId != null &&
                     favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
-                ListingCartResponseDTO cartDTO = new ListingCartResponseDTO(
+
+                return new ListingCartResponseDTO(
                         listing.getId(),
                         listing.getTitle(),
                         listing.getThumbnailImage(),
@@ -259,24 +298,25 @@ public class ListingServiceImpl implements ListingService {
                         listing.getSeller().getPhoneNumber(),
                         isFavorited
                 );
-                listingCarts.add(cartDTO);
-            }
-            return listingCarts;
+            });
         } catch (Exception e) {
             logger.error("Error getting EV listing carts", e);
-            return new ArrayList<>();
+            return Page.empty(pageable);
         }
     }
 
     @Override
-    public List<ListingCartResponseDTO> getBatteryListingCarts(Long userId, Pageable pageable) {
+    public Page<ListingCartResponseDTO> getBatteryListingCarts(Long userId, Pageable pageable) {
         try {
-            List<ListingEntity> listings = listingRepository.findBatteryListingsByStatus(ListingStatus.ACTIVE, pageable);
-            List<ListingCartResponseDTO> listingCarts = new ArrayList<>();
-            for (ListingEntity listing : listings) {
+            // Sử dụng repository method trả về Page
+            Page<ListingEntity> listingsPage = listingRepository.findBatteryListingsByStatus(ListingStatus.ACTIVE, pageable);
+
+            // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
+            return listingsPage.map(listing -> {
                 boolean isFavorited = userId != null &&
                     favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
-                ListingCartResponseDTO cartDTO = new ListingCartResponseDTO(
+
+                return new ListingCartResponseDTO(
                         listing.getId(),
                         listing.getTitle(),
                         listing.getThumbnailImage(),
@@ -285,24 +325,23 @@ public class ListingServiceImpl implements ListingService {
                         listing.getSeller().getPhoneNumber(),
                         isFavorited
                 );
-                listingCarts.add(cartDTO);
-            }
-            return listingCarts;
+            });
         } catch (Exception e) {
             logger.error("Error getting battery listing carts", e);
-            return new ArrayList<>();
+            return Page.empty(pageable);
         }
     }
 
-
     @Override
-    public List<ListingCartResponseDTO> getListingCartsBySeller(Long sellerId, Pageable pageable) {
+    public Page<ListingCartResponseDTO> getListingCartsBySeller(Long sellerId, Pageable pageable) {
         try {
-            List<ListingEntity> listings = listingRepository.findBySellerIdOrderByCreatedAtDesc(sellerId, pageable);
-            List<ListingCartResponseDTO> listingCarts = new ArrayList<>();
-            for (ListingEntity listing : listings) {
+            // Sử dụng repository method trả về Page
+            Page<ListingEntity> listingsPage = listingRepository.findBySellerIdOrderByCreatedAtDesc(sellerId, pageable);
+
+            // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
+            return listingsPage.map(listing -> {
                 // For seller's own listings, they don't need favorite status (always false)
-                ListingCartResponseDTO cartDTO = new ListingCartResponseDTO(
+                return new ListingCartResponseDTO(
                         listing.getId(),
                         listing.getTitle(),
                         listing.getThumbnailImage(),
@@ -311,13 +350,11 @@ public class ListingServiceImpl implements ListingService {
                         listing.getSeller().getPhoneNumber(),
                         false // Seller doesn't favorite their own listings
                 );
-                listingCarts.add(cartDTO);
-            }
-            return listingCarts;
+            });
         } catch (Exception e) {
             logger.error("Error getting listings by seller ID: " + sellerId, e);
-            return new ArrayList<>();
         }
+        return Page.empty(pageable);
     }
 
     @Override
@@ -363,4 +400,132 @@ public class ListingServiceImpl implements ListingService {
         }
     }
 
+    @Override
+    public Page<ListingCartResponseDTO> searchListingsAdvanced(
+            String title,
+            String brand,
+            Integer year,
+            Long userId,
+            Pageable pageable) {
+
+        try {
+            logger.info("Advanced search - title: {}, brand: {}, year: {}", title, brand, year);
+
+            Set<ListingEntity> mergedResults = new LinkedHashSet<>();
+            boolean isFirstFilter = true;
+
+            // Bước 2: Query theo từng trường và merge bằng Set
+
+            // Filter theo title
+            if (title != null && !title.trim().isEmpty()) {
+                List<ListingEntity> titleResults = listingRepository.findByTitleContaining(title.trim());
+                logger.debug("Title filter found {} results", titleResults.size());
+
+                if (isFirstFilter) {
+                    mergedResults.addAll(titleResults);
+                    isFirstFilter = false;
+                } else {
+                    // Intersection - chỉ giữ những item có trong cả 2 set
+                    mergedResults.retainAll(new HashSet<>(titleResults));
+                }
+            }
+
+            // Filter theo brand
+            if (brand != null && !brand.trim().isEmpty()) {
+                List<ListingEntity> brandResults = listingRepository.findByBrand(brand.trim());
+                logger.debug("Brand filter found {} results", brandResults.size());
+
+                if (isFirstFilter) {
+                    mergedResults.addAll(brandResults);
+                    isFirstFilter = false;
+                } else {
+                    mergedResults.retainAll(new HashSet<>(brandResults));
+                }
+            }
+
+            // Filter theo year
+            if (year != null) {
+                List<ListingEntity> yearResults = listingRepository.findByYear(year);
+                logger.debug("Year filter found {} results", yearResults.size());
+
+                if (isFirstFilter) {
+                    mergedResults.addAll(yearResults);
+                    isFirstFilter = false;
+                } else {
+                    mergedResults.retainAll(new HashSet<>(yearResults));
+                }
+            }
+
+            // Bước 3: Nếu không có filter nào, lấy tất cả active listings
+            if (isFirstFilter) {
+                mergedResults.addAll(listingRepository.findAllActiveListings());
+                logger.debug("No filters applied, getting all active listings: {}", mergedResults.size());
+            }
+
+            logger.info("Merged results total: {}", mergedResults.size());
+
+            // Bước 4: Convert Set thành List để sort
+            List<ListingEntity> sortedList = new ArrayList<>(mergedResults);
+
+            // Bước 5: Sort by createdAt DESC (mới nhất trước)
+            sortedList.sort(Comparator.comparing(ListingEntity::getCreatedAt,
+                Comparator.nullsLast(Comparator.reverseOrder())));
+
+            // Bước 6: Convert entities thành DTOs
+            List<ListingCartResponseDTO> dtoList = sortedList.stream()
+                .map(listing -> convertToListingCartDTO(listing, userId))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+            // Bước 7: Manual pagination từ List đã sort
+            Page<ListingCartResponseDTO> pagedResult = createPageFromList(dtoList, pageable);
+
+            logger.info("Advanced search completed. Total results: {}, Page: {}/{}",
+                pagedResult.getTotalElements(), pageable.getPageNumber() + 1, pagedResult.getTotalPages());
+
+            return pagedResult;
+
+        } catch (Exception e) {
+            logger.error("Error in searchListingsAdvanced: ", e);
+            return Page.empty(pageable);
+        }
+    }
+
+    /**
+     * Convert ListingEntity thành ListingCartResponseDTO
+     */
+    private ListingCartResponseDTO convertToListingCartDTO(ListingEntity listing, Long userId) {
+        try {
+            boolean isFavorited = userId != null &&
+                favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
+
+            return new ListingCartResponseDTO(
+                listing.getId(),
+                listing.getTitle(),
+                listing.getThumbnailImage(),
+                listing.getPrice().doubleValue(),
+                listing.getViewsCount(),
+                listing.getSeller().getPhoneNumber(),
+                isFavorited
+            );
+        } catch (Exception e) {
+            logger.warn("Error converting listing {} to DTO: {}", listing.getId(), e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Tạo Page object từ List với manual pagination
+     */
+    private Page<ListingCartResponseDTO> createPageFromList(List<ListingCartResponseDTO> list, Pageable pageable) {
+        if (list == null) list = new ArrayList<>();
+
+        int total = list.size();
+        int start = Math.min((int) pageable.getOffset(), total);
+        int end = Math.min(start + pageable.getPageSize(), total);
+
+        List<ListingCartResponseDTO> pageContent = list.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, total);
+    }
 }
