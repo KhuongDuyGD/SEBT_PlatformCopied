@@ -92,6 +92,50 @@ function App() {
               }
             />
             <Route
+              path="/notifications"
+              element={
+                <Container className="py-5 text-center">
+                  <h2 className="fw-bold text-info mb-4">Thông Báo</h2>
+                  <p className="text-muted">Bạn chưa có thông báo mới.</p>
+                </Container>
+              }
+            />
+            <Route
+              path="/account"
+              element={
+                isLoggedIn ? <Profile /> : <Navigate to="/login" replace />
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <Container className="py-5 text-center">
+                  <h2 className="fw-bold mb-4">Đơn Hàng Của Tôi</h2>
+                  <p className="text-muted">Tính năng đang được phát triển.</p>
+                </Container>
+              }
+            />
+            <Route
+              path="/favorites"
+              element={
+                <Container className="py-5 text-center">
+                  <h2 className="fw-bold text-danger mb-4">
+                    Danh Sách Yêu Thích
+                  </h2>
+                  <p className="text-muted">Tính năng đang được phát triển.</p>
+                </Container>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <Container className="py-5 text-center">
+                  <h2 className="fw-bold mb-4">Cài Đặt</h2>
+                  <p className="text-muted">Tính năng đang được phát triển.</p>
+                </Container>
+              }
+            />
+            <Route
               path="/login"
               element={
                 <Login
