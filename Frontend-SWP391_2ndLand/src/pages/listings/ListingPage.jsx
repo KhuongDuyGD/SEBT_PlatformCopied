@@ -19,7 +19,7 @@ function ListingPage() {
   const initialType = params.get("type") || "";
 
   const [category, setCategory] = useState(initialCategory);
-  const [type, setType] = useState(initialType);
+  const [type] = useState(initialType);
   const [priceRange, setPriceRange] = useState([0, 100000000]); // 0-100 triệu default
   const [year, setYear] = useState("");
   const [listings, setListings] = useState([]);
