@@ -44,14 +44,14 @@ public class ListingServiceImpl implements ListingService {
     private final FavoriteRepository favoriteRepository;
 
     @Autowired
-    public ListingServiceImpl(PostRequestRepository postRequestRepository, 
-                             UserRepository userRepository,
-                             EvVehicleRepository evVehicleRepository,
-                             BatteryRepository batteryRepository,
-                             ProductRepository productRepository,
-                             ListingRepository listingRepository,
-                             ListingImageRepository listingImageRepository,
-                             LocationRepository locationRepository,
+    public ListingServiceImpl(PostRequestRepository postRequestRepository,
+                              UserRepository userRepository,
+                              EvVehicleRepository evVehicleRepository,
+                              BatteryRepository batteryRepository,
+                              ProductRepository productRepository,
+                              ListingRepository listingRepository,
+                              ListingImageRepository listingImageRepository,
+                              LocationRepository locationRepository,
                               FavoriteRepository favoriteRepository) {
         this.postRequestRepository = postRequestRepository;
         this.userRepository = userRepository;
@@ -74,12 +74,12 @@ public class ListingServiceImpl implements ListingService {
 
             // Sử dụng repository method trả về Page
             Page<ListingEntity> listingsPage = listingRepository.findByTitleContainingIgnoreCaseAndStatus(
-                keyWord.trim(), ListingStatus.ACTIVE, pageable);
+                    keyWord.trim(), ListingStatus.ACTIVE, pageable);
 
             // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
             return listingsPage.map(listing -> {
                 boolean isFavorited = userId != null &&
-                    favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
+                        favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
 
                 return new ListingCartResponseDTO(
                         listing.getId(),
@@ -223,9 +223,23 @@ public class ListingServiceImpl implements ListingService {
     }
 
     @Override
-    public ListingDetailResponseDTO getListingDetailById(Long listingId) {
+    public ListingDetailResponseDTO getListingDetailById(Long listingId, Long userId) {
         ListingEntity listing = listingRepository.findById(listingId).orElse(null);
         List<ListingImageEntity> listingImageEntities = listingImageRepository.findByListingId(listingId);
+        UserEntity user = userRepository.findById(userId).orElse(null);
+
+        if (listing == null || listing.getStatus() != ListingStatus.ACTIVE) {
+            logger.warn("Listing not found or inactive with ID: " + listingId);
+            return null;
+        }
+
+        // Increment views count
+        if(user != null && !Objects.equals(listing.getSeller().getId(), userId) && user.getRole() == UserRole.MEMBER) {
+            listing.setViewsCount(listing.getViewsCount() + 1);
+            listingRepository.save(listing);
+        }
+
+        // Convert to DTO
         ListingDetailResponseDTO detailDTO = new ListingDetailResponseDTO();
 
         if (listing == null) return null;
@@ -270,7 +284,7 @@ public class ListingServiceImpl implements ListingService {
                             batteryEntity.getHealthPercentage(),
                             batteryEntity.getCompatibleVehicles(),
                             batteryEntity.getConditionStatus()
-                            ));
+                    ));
         }
 
         detailDTO.setProduct(productResp);
@@ -287,7 +301,7 @@ public class ListingServiceImpl implements ListingService {
             // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
             return listingsPage.map(listing -> {
                 boolean isFavorited = userId != null &&
-                    favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
+                        favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
 
                 return new ListingCartResponseDTO(
                         listing.getId(),
@@ -314,7 +328,7 @@ public class ListingServiceImpl implements ListingService {
             // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
             return listingsPage.map(listing -> {
                 boolean isFavorited = userId != null &&
-                    favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
+                        favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
 
                 return new ListingCartResponseDTO(
                         listing.getId(),
@@ -405,6 +419,9 @@ public class ListingServiceImpl implements ListingService {
             String title,
             String brand,
             Integer year,
+            VehicleType vehicleType,
+            Double minPrice,
+            Double maxPrice,
             Long userId,
             Pageable pageable) {
 
@@ -414,7 +431,7 @@ public class ListingServiceImpl implements ListingService {
             Set<ListingEntity> mergedResults = new LinkedHashSet<>();
             boolean isFirstFilter = true;
 
-            // Bước 2: Query theo từng trường và merge bằng Set
+            // Query theo từng trường và merge bằng Set
 
             // Filter theo title
             if (title != null && !title.trim().isEmpty()) {
@@ -427,6 +444,35 @@ public class ListingServiceImpl implements ListingService {
                 } else {
                     // Intersection - chỉ giữ những item có trong cả 2 set
                     mergedResults.retainAll(new HashSet<>(titleResults));
+                }
+            }
+
+            // Filter theo vehicle type
+            if (vehicleType != null) {
+                List<ListingEntity> typeResults = listingRepository.findByVehicleType(vehicleType);
+                logger.debug("Vehicle type filter found {} results", typeResults.size());
+
+                if (isFirstFilter) {
+                    mergedResults.addAll(typeResults);
+                    isFirstFilter = false;
+                } else {
+                    mergedResults.retainAll(new HashSet<>(typeResults));
+                }
+            }
+
+            // Filter theo price range - Sửa: chuyển đổi từ Double sang BigDecimal
+            if (minPrice != null && maxPrice != null) {
+                List<ListingEntity> priceResults = listingRepository.findByPriceBetween(
+                        BigDecimal.valueOf(minPrice),
+                        BigDecimal.valueOf(maxPrice)
+                );
+                logger.debug("Price range filter found {} results", priceResults.size());
+
+                if (isFirstFilter) {
+                    mergedResults.addAll(priceResults);
+                    isFirstFilter = false;
+                } else {
+                    mergedResults.retainAll(new HashSet<>(priceResults));
                 }
             }
 
@@ -456,7 +502,7 @@ public class ListingServiceImpl implements ListingService {
                 }
             }
 
-            // Bước 3: Nếu không có filter nào, lấy tất cả active listings
+            // Nếu không có filter nào, lấy tất cả active listings
             if (isFirstFilter) {
                 mergedResults.addAll(listingRepository.findAllActiveListings());
                 logger.debug("No filters applied, getting all active listings: {}", mergedResults.size());
@@ -464,24 +510,24 @@ public class ListingServiceImpl implements ListingService {
 
             logger.info("Merged results total: {}", mergedResults.size());
 
-            // Bước 4: Convert Set thành List để sort
+            // Convert Set thành List để sort
             List<ListingEntity> sortedList = new ArrayList<>(mergedResults);
 
-            // Bước 5: Sort by createdAt DESC (mới nhất trước)
+            // Sort by createdAt DESC (mới nhất trước)
             sortedList.sort(Comparator.comparing(ListingEntity::getCreatedAt,
-                Comparator.nullsLast(Comparator.reverseOrder())));
+                    Comparator.nullsLast(Comparator.reverseOrder())));
 
-            // Bước 6: Convert entities thành DTOs
+            // Convert entities thành DTOs
             List<ListingCartResponseDTO> dtoList = sortedList.stream()
-                .map(listing -> convertToListingCartDTO(listing, userId))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                    .map(listing -> convertToListingCartDTO(listing, userId))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
 
-            // Bước 7: Manual pagination từ List đã sort
+            // Manual pagination từ List đã sort
             Page<ListingCartResponseDTO> pagedResult = createPageFromList(dtoList, pageable);
 
             logger.info("Advanced search completed. Total results: {}, Page: {}/{}",
-                pagedResult.getTotalElements(), pageable.getPageNumber() + 1, pagedResult.getTotalPages());
+                    pagedResult.getTotalElements(), pageable.getPageNumber() + 1, pagedResult.getTotalPages());
 
             return pagedResult;
 
@@ -491,22 +537,19 @@ public class ListingServiceImpl implements ListingService {
         }
     }
 
-    /**
-     * Convert ListingEntity thành ListingCartResponseDTO
-     */
     private ListingCartResponseDTO convertToListingCartDTO(ListingEntity listing, Long userId) {
         try {
             boolean isFavorited = userId != null &&
-                favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
+                    favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
 
             return new ListingCartResponseDTO(
-                listing.getId(),
-                listing.getTitle(),
-                listing.getThumbnailImage(),
-                listing.getPrice().doubleValue(),
-                listing.getViewsCount(),
-                listing.getSeller().getPhoneNumber(),
-                isFavorited
+                    listing.getId(),
+                    listing.getTitle(),
+                    listing.getThumbnailImage(),
+                    listing.getPrice().doubleValue(),
+                    listing.getViewsCount(),
+                    listing.getSeller().getPhoneNumber(),
+                    isFavorited
             );
         } catch (Exception e) {
             logger.warn("Error converting listing {} to DTO: {}", listing.getId(), e.getMessage());
@@ -514,9 +557,6 @@ public class ListingServiceImpl implements ListingService {
         }
     }
 
-    /**
-     * Tạo Page object từ List với manual pagination
-     */
     private Page<ListingCartResponseDTO> createPageFromList(List<ListingCartResponseDTO> list, Pageable pageable) {
         if (list == null) list = new ArrayList<>();
 
@@ -529,3 +569,4 @@ public class ListingServiceImpl implements ListingService {
         return new PageImpl<>(pageContent, pageable, total);
     }
 }
+

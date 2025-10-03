@@ -7,24 +7,27 @@ import java.util.List;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
+import project.swp.spring.sebt_platform.model.enums.VehicleType;
 
 public interface ListingService {
 
     Page<ListingCartResponseDTO> getListingsByKeyWord(String keyWord, Long userId, Pageable pageable);
 
-    // ✅ THÊM METHOD MỚI CHO ADVANCED SEARCH VỚI SET MERGE
     Page<ListingCartResponseDTO> searchListingsAdvanced(
-            String title, 
-            String brand, 
-            Integer year, 
-            Long userId, 
+            String title,
+            String brand,
+            Integer year,
+            VehicleType vehicleType,
+            Double minPrice,
+            Double maxPrice,
+            Long userId,
             Pageable pageable);
 
     boolean createListing(
             CreateListingFormDTO createListingForm,
             Long sellerId);
 
-    ListingDetailResponseDTO getListingDetailById(Long listingId);
+    ListingDetailResponseDTO getListingDetailById(Long listingId, Long userId);
 
     Page<ListingCartResponseDTO> getEvListingCarts(Long userId, Pageable pageable);
 

@@ -1,5 +1,6 @@
 package project.swp.spring.sebt_platform.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -25,34 +26,55 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long> {
 
     // Query tìm car listings với pagination
     @Query("SELECT l FROM ListingEntity l " +
-           "WHERE l.status = :status " +
-           "AND l.product.evVehicle IS NOT NULL " +
-           "ORDER BY l.createdAt DESC")
+            "WHERE l.status = :status " +
+            "AND l.product.evVehicle IS NOT NULL " +
+            "ORDER BY l.createdAt DESC")
     Page<ListingEntity> findCarListingsByStatus(@Param("status") ListingStatus status, Pageable pageable);
 
     // Query tìm battery listings với pagination
     @Query("SELECT l FROM ListingEntity l " +
-           "WHERE l.status = :status " +
-           "AND l.product.battery IS NOT NULL " +
-           "ORDER BY l.createdAt DESC")
+            "WHERE l.status = :status " +
+            "AND l.product.battery IS NOT NULL " +
+            "ORDER BY l.createdAt DESC")
     Page<ListingEntity> findBatteryListingsByStatus(@Param("status") ListingStatus status, Pageable pageable);
+
 
     // Query tìm listings theo seller với pagination
     Page<ListingEntity> findBySellerIdOrderByCreatedAtDesc(Long sellerId, Pageable pageable);
 
     // Query theo title
     @Query("SELECT l FROM ListingEntity l " +
-           "WHERE l.status = 'ACTIVE' " +
-           "AND LOWER(l.title) LIKE LOWER(CONCAT('%', :title, '%'))")
+            "WHERE l.status = 'ACTIVE' " +
+            "AND LOWER(l.title) LIKE LOWER(CONCAT('%', :title, '%'))")
     List<ListingEntity> findByTitleContaining(@Param("title") String title);
 
-    List<ListingEntity> findByBrand(String brand);
+    // Sửa: Query theo brand trong EvVehicle hoặc Battery
+    @Query("SELECT l FROM ListingEntity l " +
+            "WHERE l.status = 'ACTIVE' " +
+            "AND (l.product.evVehicle.brand = :brand OR l.product.battery.brand = :brand)")
+    List<ListingEntity> findByBrand(@Param("brand") String brand);
 
-    List<ListingEntity> findByYear( Integer year);
+    // Sửa: Query theo vehicleType trong EvVehicle
+    @Query("SELECT l FROM ListingEntity l " +
+            "WHERE l.status = 'ACTIVE' " +
+            "AND l.product.evVehicle.type = :vehicleType")
+    List<ListingEntity> findByVehicleType(@Param("vehicleType") VehicleType vehicleType);
+
+    // Sửa: Đổi từ Double sang BigDecimal và thêm @Query
+    @Query("SELECT l FROM ListingEntity l " +
+            "WHERE l.status = 'ACTIVE' " +
+            "AND l.price BETWEEN :minPrice AND :maxPrice")
+    List<ListingEntity> findByPriceBetween(@Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice);
+
+    // Sửa: Query theo year trong EvVehicle
+    @Query("SELECT l FROM ListingEntity l " +
+            "WHERE l.status = 'ACTIVE' " +
+            "AND l.product.evVehicle.year = :year")
+    List<ListingEntity> findByYear(@Param("year") Integer year);
 
     // Query tất cả active listings (khi không có filter nào)
     @Query("SELECT l FROM ListingEntity l " +
-           "WHERE l.status = 'ACTIVE' " +
-           "ORDER BY l.createdAt DESC")
+            "WHERE l.status = 'ACTIVE' " +
+            "ORDER BY l.createdAt DESC")
     List<ListingEntity> findAllActiveListings();
 }
