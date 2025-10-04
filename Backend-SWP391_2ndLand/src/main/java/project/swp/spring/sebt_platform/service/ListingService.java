@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 
+import project.swp.spring.sebt_platform.dto.object.Image;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
@@ -26,7 +27,8 @@ public interface ListingService {
 
     boolean createListing(
             CreateListingFormDTO createListingForm,
-            Long sellerId);
+            Long sellerId,
+            List<Image> listingImages);
 
     ListingDetailResponseDTO getListingDetailById(Long listingId, Long userId);
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { FileText, DollarSign } from 'lucide-react';
-import CloudinaryImageUpload from '../../CloudinaryImageUpload';
+import LocalImageUpload from '../../LocalImageUpload';
 
 // Added register + errors for react-hook-form binding
 export default function BasicInfoStep({ formData, onChange, onImagesUpload, onChangeMainImage, loading, register, errors }) {
@@ -65,9 +65,9 @@ export default function BasicInfoStep({ formData, onChange, onImagesUpload, onCh
         </div>
         <div className="form-group">
           <label className="form-label">Ảnh sản phẩm (chọn ảnh chính)</label>
-          <CloudinaryImageUpload
-            onImagesUpload={onImagesUpload}
-            currentImages={formData.images}
+          <LocalImageUpload
+            onFilesSelect={onImagesUpload}
+            currentFiles={formData.images}
             disabled={loading}
             className="mt-2"
             selectMain

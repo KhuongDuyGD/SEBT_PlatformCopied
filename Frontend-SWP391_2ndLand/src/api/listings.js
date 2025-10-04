@@ -1,9 +1,12 @@
 import api from './axios';
 
-// Create listing
-export const createListing = (payload, userId) => {
-  const headers = userId ? { 'X-User-ID': userId } : {};
-  return api.post('/listings/create', payload, { headers }); // trả nguyên response để dùng status
+// Create listing - GỬI MULTIPART/FORM-DATA với file ảnh
+export const createListing = (formData, userId) => {
+  const headers = {
+    'Content-Type': 'multipart/form-data',
+    ...(userId ? { 'X-User-ID': userId } : {})
+  };
+  return api.post('/listings/create', formData, { headers });
 };
 
 // Advanced search
