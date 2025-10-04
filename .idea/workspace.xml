@@ -4,33 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4fa67949-db7b-446f-b539-ae7cafb7c212" name="Changes" comment="modify doc">
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/.env" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/.env.example" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/DotEnvInitializer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/EnvVariableVerifier.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/resources/META-INF/spring.factories" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/components/LocalImageUpload.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/0edd23fc-4a4d-4357-ab3a-31f9b954094f.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/0edd23fc-4a4d-4357-ab3a-31f9b954094f.xml" afterDir="false" />
+    <list default="true" id="4fa67949-db7b-446f-b539-ae7cafb7c212" name="Changes" comment="fix cloud">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/ListingController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/ListingController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Battery.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Battery.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Ev.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Ev.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Location.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Location.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Product.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Product.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/request/CreateListingFormDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/request/CreateListingFormDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/ListingRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/ListingRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/ListingServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/ListingServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/api/listings.js" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/api/listings.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/components/CloudinaryImageUpload.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/components/CloudinaryImageUpload.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/components/CloudinaryImageUploadGallery.css" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/components/CloudinaryImageUploadGallery.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/components/listings/steps/BasicInfoStep.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/components/listings/steps/BasicInfoStep.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/hooks/useListingDraft.js" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/hooks/useListingDraft.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/pages/listings/CreateListing.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/pages/listings/CreateListing.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/utils/validation/listingSchema.js" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/utils/validation/listingSchema.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -175,6 +152,8 @@
       <workItem from="1759549330238" duration="8824000" />
       <workItem from="1759569177916" duration="5593000" />
       <workItem from="1759574816955" duration="66000" />
+      <workItem from="1759576107883" duration="183000" />
+      <workItem from="1759589001891" duration="1735000" />
     </task>
     <task id="LOCAL-00001" summary="add create listing">
       <option name="closed" value="true" />
@@ -240,7 +219,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759570915083</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="fix cloud">
+      <option name="closed" value="true" />
+      <created>1759576147290</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1759576147290</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -268,7 +255,8 @@
     <MESSAGE value="test cloud successfully" />
     <MESSAGE value="h" />
     <MESSAGE value="modify doc" />
-    <option name="LAST_COMMIT_MESSAGE" value="modify doc" />
+    <MESSAGE value="fix cloud" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix cloud" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

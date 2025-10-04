@@ -489,92 +489,78 @@ public class ListingServiceImpl implements ListingService {
             Pageable pageable) {
 
         try {
-            logger.info("Advanced search - title: {}, brand: {}, year: {}", title, brand, year);
+            logger.info("Advanced search - title: {}, brand: {}, year: {}, vehicleType: {}, minPrice: {}, maxPrice: {}",
+                    title, brand, year, vehicleType, minPrice, maxPrice);
 
-            Set<ListingEntity> mergedResults = new LinkedHashSet<>();
-            boolean isFirstFilter = true;
+            // Bắt đầu với tất cả active listings
+            Set<ListingEntity> results = new LinkedHashSet<>(listingRepository.findAllActiveListings());
+            logger.debug("Starting with {} active listings", results.size());
 
-            // Query theo từng trường và merge bằng Set
+            // Áp dụng từng filter như phép giao (intersection)
 
             // Filter theo title
             if (title != null && !title.trim().isEmpty()) {
                 List<ListingEntity> titleResults = listingRepository.findByTitleContaining(title.trim());
                 logger.debug("Title filter found {} results", titleResults.size());
-
-                if (isFirstFilter) {
-                    mergedResults.addAll(titleResults);
-                    isFirstFilter = false;
-                } else {
-                    // Intersection - chỉ giữ những item có trong cả 2 set
-                    mergedResults.retainAll(new HashSet<>(titleResults));
-                }
+                results.retainAll(new HashSet<>(titleResults));
+                logger.debug("After title filter: {} results remaining", results.size());
             }
 
             // Filter theo vehicle type
             if (vehicleType != null) {
                 List<ListingEntity> typeResults = listingRepository.findByVehicleType(vehicleType);
                 logger.debug("Vehicle type filter found {} results", typeResults.size());
-
-                if (isFirstFilter) {
-                    mergedResults.addAll(typeResults);
-                    isFirstFilter = false;
-                } else {
-                    mergedResults.retainAll(new HashSet<>(typeResults));
-                }
+                results.retainAll(new HashSet<>(typeResults));
+                logger.debug("After vehicle type filter: {} results remaining", results.size());
             }
 
-            // Filter theo price range - Sửa: chuyển đổi từ Double sang BigDecimal
+            // Filter theo price range
             if (minPrice != null && maxPrice != null) {
                 List<ListingEntity> priceResults = listingRepository.findByPriceBetween(
                         BigDecimal.valueOf(minPrice),
                         BigDecimal.valueOf(maxPrice)
                 );
                 logger.debug("Price range filter found {} results", priceResults.size());
-
-                if (isFirstFilter) {
-                    mergedResults.addAll(priceResults);
-                    isFirstFilter = false;
-                } else {
-                    mergedResults.retainAll(new HashSet<>(priceResults));
-                }
+                results.retainAll(new HashSet<>(priceResults));
+                logger.debug("After price range filter: {} results remaining", results.size());
+            } else if (minPrice != null) {
+                // Chỉ có min price
+                List<ListingEntity> priceResults = listingRepository.findByPriceGreaterThanEqual(
+                        BigDecimal.valueOf(minPrice)
+                );
+                logger.debug("Min price filter found {} results", priceResults.size());
+                results.retainAll(new HashSet<>(priceResults));
+                logger.debug("After min price filter: {} results remaining", results.size());
+            } else if (maxPrice != null) {
+                // Chỉ có max price
+                List<ListingEntity> priceResults = listingRepository.findByPriceLessThanEqual(
+                        BigDecimal.valueOf(maxPrice)
+                );
+                logger.debug("Max price filter found {} results", priceResults.size());
+                results.retainAll(new HashSet<>(priceResults));
+                logger.debug("After max price filter: {} results remaining", results.size());
             }
 
             // Filter theo brand
             if (brand != null && !brand.trim().isEmpty()) {
                 List<ListingEntity> brandResults = listingRepository.findByBrand(brand.trim());
                 logger.debug("Brand filter found {} results", brandResults.size());
-
-                if (isFirstFilter) {
-                    mergedResults.addAll(brandResults);
-                    isFirstFilter = false;
-                } else {
-                    mergedResults.retainAll(new HashSet<>(brandResults));
-                }
+                results.retainAll(new HashSet<>(brandResults));
+                logger.debug("After brand filter: {} results remaining", results.size());
             }
 
             // Filter theo year
             if (year != null) {
                 List<ListingEntity> yearResults = listingRepository.findByYear(year);
                 logger.debug("Year filter found {} results", yearResults.size());
-
-                if (isFirstFilter) {
-                    mergedResults.addAll(yearResults);
-                    isFirstFilter = false;
-                } else {
-                    mergedResults.retainAll(new HashSet<>(yearResults));
-                }
+                results.retainAll(new HashSet<>(yearResults));
+                logger.debug("After year filter: {} results remaining", results.size());
             }
 
-            // Nếu không có filter nào, lấy tất cả active listings
-            if (isFirstFilter) {
-                mergedResults.addAll(listingRepository.findAllActiveListings());
-                logger.debug("No filters applied, getting all active listings: {}", mergedResults.size());
-            }
-
-            logger.info("Merged results total: {}", mergedResults.size());
+            logger.info("Final intersection results: {} listings", results.size());
 
             // Convert Set thành List để sort
-            List<ListingEntity> sortedList = new ArrayList<>(mergedResults);
+            List<ListingEntity> sortedList = new ArrayList<>(results);
 
             // Sort by createdAt DESC (mới nhất trước)
             sortedList.sort(Comparator.comparing(ListingEntity::getCreatedAt,
