@@ -3,6 +3,7 @@ package project.swp.spring.sebt_platform.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,17 +11,17 @@ import project.swp.spring.sebt_platform.dto.request.UpdateProfileFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ErrorResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.SessionInfoResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.SuccessResponseDTO;
-import project.swp.spring.sebt_platform.service.UserService;
+import project.swp.spring.sebt_platform.service.MemberService;
 
 @RestController
 @RequestMapping("/api/members")
 public class MemberController {
 
-    private final UserService userService;
+    private final MemberService memberService;
 
     @Autowired
-    public MemberController(UserService userService) {
-        this.userService = userService;
+    public MemberController(MemberService memberService) {
+        this.memberService = memberService;
     }
 
     @PostMapping("/update-profile")
@@ -43,7 +44,7 @@ public class MemberController {
             }
 
             // Update profile
-            boolean updateResult = userService.updateProfile(updateProfileDTO, userId);
+            boolean updateResult = memberService.updateProfile(updateProfileDTO, userId);
 
             if (updateResult) {
                 return ResponseEntity.ok(new SuccessResponseDTO("Profile updated successfully"));
@@ -55,6 +56,25 @@ public class MemberController {
             System.err.println("Update profile error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponseDTO("Internal server error: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getPostResponse(HttpServletRequest request, @RequestParam int page, @RequestParam int size) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("role") == null || !session.getAttribute("role").equals("ADMIN")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Admin access required.");
+            }
+
+            Long userId = (Long) session.getAttribute("userId");
+            // Call your service method to get the paginated data
+            Pageable pageable = Pageable.ofSize(size).withPage(page);
+
+            var postResponses = memberService.getPostAnoucementResponse(userId, pageable);
+            return ResponseEntity.ok(postResponses);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
         }
     }
 
@@ -78,7 +98,7 @@ public class MemberController {
             }
 
             // Get user profile
-            var userProfile = userService.getUserProfileById(userId);
+            var userProfile = memberService.getUserProfileById(userId);
 
             if (userProfile == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)

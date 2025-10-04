@@ -26,7 +26,7 @@ import project.swp.spring.sebt_platform.model.enums.UserRole;
 import project.swp.spring.sebt_platform.model.enums.UserStatus;
 import project.swp.spring.sebt_platform.service.AuthService;
 import project.swp.spring.sebt_platform.service.MailService;
-import project.swp.spring.sebt_platform.service.UserService;
+import project.swp.spring.sebt_platform.service.MemberService;
 import project.swp.spring.sebt_platform.util.Utils;
 
 @RestController
@@ -37,7 +37,7 @@ public class AuthController {
     private AuthService authService;
 
     @Autowired
-    private UserService userService;
+    private MemberService memberService;
 
     @Autowired
     private MailService mailService;
@@ -71,7 +71,7 @@ public class AuthController {
             }
 
             // Check if email already exists
-            if (userService.findUserByEmail(user.email()) != null) {
+            if (memberService.findUserByEmail(user.email()) != null) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new ErrorResponseDTO("Email is already registered"));
             }

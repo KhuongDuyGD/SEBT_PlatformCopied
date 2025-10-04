@@ -1,22 +1,32 @@
 package project.swp.spring.sebt_platform.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.swp.spring.sebt_platform.dto.request.UpdateProfileFormDTO;
+import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
+import project.swp.spring.sebt_platform.model.PostResponseEntity;
 import project.swp.spring.sebt_platform.model.UserEntity;
+import project.swp.spring.sebt_platform.repository.PostResponseRepository;
 import project.swp.spring.sebt_platform.repository.UserRepository;
-import project.swp.spring.sebt_platform.service.UserService;
+import project.swp.spring.sebt_platform.service.MemberService;
+
+import java.time.LocalDateTime;
 
 @Service
-public class UserServiceImpl implements UserService {
+public class MemberServiceImpl implements MemberService {
 
     private final UserRepository userRepository;
 
+    private final PostResponseRepository postResponseRepository;
+
     @Autowired
-    public UserServiceImpl(UserRepository userRepository) {
+    public MemberServiceImpl(UserRepository userRepository, PostResponseRepository postResponseRepository) {
         this.userRepository = userRepository;
+        this.postResponseRepository = postResponseRepository;
     }
 
     @Override
@@ -112,5 +122,32 @@ public class UserServiceImpl implements UserService {
             e.printStackTrace();
             return false;
         }
+    }
+
+    @Override
+    public Page<PostAnoucementResponseDTO> getPostAnoucementResponse(Long userId, Pageable pageable) {
+        try {
+            Page<PostResponseEntity> responses = postResponseRepository.findAllBySellerId(userId, pageable);
+
+            Page<PostAnoucementResponseDTO> responseDTOs = responses.map(response -> {
+                PostAnoucementResponseDTO dto = new PostAnoucementResponseDTO();
+                dto.setPostResponseId(response.getPostRequest().getId());
+                dto.setListingId(response.getPostRequest().getListing().getId());
+                dto.setThumbnailUrl(response.getPostRequest().getListing().getThumbnailImage());
+                dto.setTitle(response.getPostRequest().getListing().getTitle());
+                dto.setApprovalStatus(response.getPostRequest().getStatus());
+                dto.setAdminFeedback(response.getPostRequest().getAdminNotes());
+                dto.setReviewedAt(response.getPostRequest().getReviewedAt());
+
+                dto.setPaymentQrCodeUrl(response.getPaymentQRCodeUrl());
+                dto.setPaymentStatus(response.getPaymentStatus());
+                dto.setAmount(response.getPostRequest().getListing().getPrice().doubleValue());
+                return dto;
+            });
+            return responseDTOs;
+        } catch (Exception e) {
+            System.err.println("Get post announcement response error: " + e.getMessage());
+        }
+        return null;
     }
 }
