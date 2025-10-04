@@ -459,74 +459,86 @@ public class ListingServiceImpl implements ListingService {
             Pageable pageable) {
 
         try {
-            logger.info("Advanced search - title: {}, brand: {}, year: {}", title, brand, year);
+            logger.info("Advanced search - title: {}, brand: {}, year: {}, vehicleType: {}, minPrice: {}, maxPrice: {}",
+                    title, brand, year, vehicleType, minPrice, maxPrice);
 
-            // Fast path: only vehicleType filter (common case from ListingPage sidebar)
-            boolean onlyVehicleType = vehicleType != null &&
-                    (title == null || title.isBlank()) &&
-                    (brand == null || brand.isBlank()) &&
-                    year == null &&
-                    minPrice == null && maxPrice == null;
+            // Bắt đầu với tất cả active listings
+            Set<ListingEntity> results = new LinkedHashSet<>(listingRepository.findAllActiveListings());
+            logger.debug("Starting with {} active listings", results.size());
 
-            if (onlyVehicleType) {
-                Page<ListingEntity> pageData = listingRepository.findByStatusAndVehicleType(ListingStatus.ACTIVE, vehicleType, pageable);
-                logger.info("[ADV_SEARCH_FAST_PATH] type={} activeCount={} pageContent={} page={} size={}",
-                        vehicleType,
-                        pageData.getTotalElements(),
-                        pageData.getContent().size(),
-                        pageable.getPageNumber(),
-                        pageable.getPageSize());
-                if (pageData.getContent().isEmpty()) {
-                    logger.warn("[ADV_SEARCH_FAST_PATH] No ACTIVE listings found for type={}. Potential causes: (1) All listings not ACTIVE (2) No data inserted (3) Enum mismatch.", vehicleType);
-                    try {
-                        List<ListingEntity> allType = listingRepository.findAllByVehicleTypeNoStatus(vehicleType);
-                        logger.warn("[ADV_SEARCH_FAST_PATH][DIAG] totalAnyStatus={} first5={} statuses={}", allType.size(),
-                                allType.stream().limit(5).map(ListingEntity::getId).collect(Collectors.toList()),
-                                allType.stream().limit(5).map(l -> l.getStatus()+":"+l.getId()).collect(Collectors.toList()));
-                    } catch (Exception diagEx) {
-                        logger.error("[ADV_SEARCH_FAST_PATH][DIAG] error while fetching all by type {}: {}", vehicleType, diagEx.getMessage());
-                    }
-                }
-                // Batch favorites
-                List<Long> ids = pageData.getContent().stream().map(ListingEntity::getId).toList();
-                Set<Long> favSet = (userId != null && !ids.isEmpty()) ? new java.util.HashSet<>(favoriteRepository.findFavoritedListingIds(userId, ids)) : java.util.Collections.<Long>emptySet();
-                return pageData.map(le -> convertToListingCartDTOWithFav(le, favSet.contains(le.getId())));
+            // Áp dụng từng filter như phép giao (intersection)
+
+            // Filter theo title
+            if (title != null && !title.trim().isEmpty()) {
+                List<ListingEntity> titleResults = listingRepository.findByTitleContaining(title.trim());
+                logger.debug("Title filter found {} results", titleResults.size());
+                results.retainAll(new HashSet<>(titleResults));
+                logger.debug("After title filter: {} results remaining", results.size());
             }
 
-            // Specification xây dựng động
-            Specification<ListingEntity> spec = (root, query, cb) -> cb.equal(root.get("status"), ListingStatus.ACTIVE);
-
-            if (title != null && !title.isBlank()) {
-                String t = title.trim().toLowerCase();
-                spec = spec.and((root, q, cb) -> cb.like(cb.lower(root.get("title")), "%" + t + "%"));
-            }
+            // Filter theo vehicle type
             if (vehicleType != null) {
-                spec = spec.and((root, q, cb) -> cb.equal(root.join("product").join("evVehicle").get("type"), vehicleType));
+                List<ListingEntity> typeResults = listingRepository.findByVehicleType(vehicleType);
+                logger.debug("Vehicle type filter found {} results", typeResults.size());
+                results.retainAll(new HashSet<>(typeResults));
+                logger.debug("After vehicle type filter: {} results remaining", results.size());
             }
-            if (brand != null && !brand.isBlank()) {
-                String b = brand.trim();
-                // brand có thể ở evVehicle hoặc battery
-                spec = spec.and((root, q, cb) -> {
-                    var evJoin = root.join("product").join("evVehicle", jakarta.persistence.criteria.JoinType.LEFT);
-                    var batJoin = root.join("product").join("battery", jakarta.persistence.criteria.JoinType.LEFT);
-                    return cb.or(
-                            cb.equal(evJoin.get("brand"), b),
-                            cb.equal(batJoin.get("brand"), b)
-                    );
-                });
+
+            // Filter theo price range
+            if (minPrice != null && maxPrice != null) {
+                List<ListingEntity> priceResults = listingRepository.findByPriceBetween(
+                        BigDecimal.valueOf(minPrice),
+                        BigDecimal.valueOf(maxPrice)
+                );
+                logger.debug("Price range filter found {} results", priceResults.size());
+                results.retainAll(new HashSet<>(priceResults));
+                logger.debug("After price range filter: {} results remaining", results.size());
+            } else if (minPrice != null) {
+                // Chỉ có min price
+                List<ListingEntity> priceResults = listingRepository.findByPriceGreaterThanEqual(
+                        BigDecimal.valueOf(minPrice)
+                );
+                logger.debug("Min price filter found {} results", priceResults.size());
+                results.retainAll(new HashSet<>(priceResults));
+                logger.debug("After min price filter: {} results remaining", results.size());
+            } else if (maxPrice != null) {
+                // Chỉ có max price
+                List<ListingEntity> priceResults = listingRepository.findByPriceLessThanEqual(
+                        BigDecimal.valueOf(maxPrice)
+                );
+                logger.debug("Max price filter found {} results", priceResults.size());
+                results.retainAll(new HashSet<>(priceResults));
+                logger.debug("After max price filter: {} results remaining", results.size());
+            }
+
+            // Filter theo brand
+            if (brand != null && !brand.trim().isEmpty()) {
+                List<ListingEntity> brandResults = listingRepository.findByBrand(brand.trim());
+                logger.debug("Brand filter found {} results", brandResults.size());
+                results.retainAll(new HashSet<>(brandResults));
+                logger.debug("After brand filter: {} results remaining", results.size());
             }
             if (year != null) {
-                spec = spec.and((root, q, cb) -> cb.equal(root.join("product").join("evVehicle").get("year"), year));
-            }
-            if (minPrice != null && maxPrice != null) {
-                spec = spec.and((root, q, cb) -> cb.between(root.get("price"), BigDecimal.valueOf(minPrice), BigDecimal.valueOf(maxPrice)));
+                List<ListingEntity> yearResults = listingRepository.findByYear(year);
+                logger.debug("Year filter found {} results", yearResults.size());
+                results.retainAll(new HashSet<>(yearResults));
+                logger.debug("After year filter: {} results remaining", results.size());
             }
 
-            Page<ListingEntity> resultPage = listingRepository.findAll(spec, pageable);
-            logger.info("[ADV_SEARCH_SPEC] total={} page={} size={} filtersApplied title?{} type?{} brand?{} year?{} priceRange?{}",
-                    resultPage.getTotalElements(), pageable.getPageNumber(), pageable.getPageSize(),
-                    title != null && !title.isBlank(), vehicleType != null, brand != null && !brand.isBlank(), year != null,
-                    (minPrice != null && maxPrice != null));
+            logger.info("Final intersection results: {} listings", results.size());
+
+            // Convert Set thành List để sort
+            List<ListingEntity> sortedList = new ArrayList<>(results);
+
+            // Sort by createdAt DESC (mới nhất trước)
+            sortedList.sort(Comparator.comparing(ListingEntity::getCreatedAt,
+                    Comparator.nullsLast(Comparator.reverseOrder())));
+
+            // Convert entities thành DTOs
+            List<ListingCartResponseDTO> dtoList = sortedList.stream()
+                    .map(listing -> convertToListingCartDTO(listing, userId))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
 
             List<Long> ids = resultPage.getContent().stream().map(ListingEntity::getId).toList();
             Set<Long> favSet = (userId != null && !ids.isEmpty()) ? new java.util.HashSet<>(favoriteRepository.findFavoritedListingIds(userId, ids)) : java.util.Collections.<Long>emptySet();

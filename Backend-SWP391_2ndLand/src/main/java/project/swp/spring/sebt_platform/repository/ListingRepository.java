@@ -67,6 +67,18 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
             "AND l.price BETWEEN :minPrice AND :maxPrice")
     List<ListingEntity> findByPriceBetween(@Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice);
 
+    // Query cho min price only
+    @Query("SELECT l FROM ListingEntity l " +
+            "WHERE l.status = 'ACTIVE' " +
+            "AND l.price >= :minPrice")
+    List<ListingEntity> findByPriceGreaterThanEqual(@Param("minPrice") BigDecimal minPrice);
+
+    // Query cho max price only
+    @Query("SELECT l FROM ListingEntity l " +
+            "WHERE l.status = 'ACTIVE' " +
+            "AND l.price <= :maxPrice")
+    List<ListingEntity> findByPriceLessThanEqual(@Param("maxPrice") BigDecimal maxPrice);
+
     // Sửa: Query theo year trong EvVehicle
     @Query("SELECT l FROM ListingEntity l " +
             "WHERE l.status = 'ACTIVE' " +
