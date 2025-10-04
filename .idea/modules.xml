@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Backend-SWP391_2ndLand/SEBT_platform.iml" filepath="$PROJECT_DIR$/Backend-SWP391_2ndLand/SEBT_platform.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/SWP391_2ndLand.iml" filepath="$PROJECT_DIR$/.idea/SWP391_2ndLand.iml" />
     </modules>
   </component>

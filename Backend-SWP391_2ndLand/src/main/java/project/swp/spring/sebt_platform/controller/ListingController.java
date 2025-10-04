@@ -1,8 +1,6 @@
 package project.swp.spring.sebt_platform.controller;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,10 +15,13 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.web.multipart.MultipartFile;
+import project.swp.spring.sebt_platform.dto.object.Image;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
+import project.swp.spring.sebt_platform.service.CloudinaryService;
 import project.swp.spring.sebt_platform.service.ListingService;
 
 /**
@@ -36,13 +37,17 @@ public class ListingController {
     @Autowired
     private ListingService listingService;
 
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
     /**
      * API tạo listing mới
      * POST /api/listings/create
+     * Nhận multipart/form-data với file ảnh và thông tin listing
      */
-    @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, Object>> createListingRequest(
-            @RequestBody CreateListingFormDTO createListingFormDTO,
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> createListing(
+            @ModelAttribute CreateListingFormDTO createListingFormDTO,
             HttpServletRequest request) {
 
         Map<String, Object> response = new HashMap<>();
@@ -69,49 +74,57 @@ public class ListingController {
                 }
             }
 
-
             if (userId == null) {
                 logger.warn("No user authentication found, using default user ID for testing");
                 userId = 1L; // Default user cho testing
             }
 
-            // Validate input
+            // Validate DTO
             if (createListingFormDTO == null) {
                 response.put("success", false);
                 response.put("message", "Dữ liệu listing không được để trống");
                 return ResponseEntity.badRequest().body(response);
             }
 
-
-            String mainImageUrl = createListingFormDTO.mainImageUrl();
-            if (mainImageUrl != null && !mainImageUrl.isEmpty() && !mainImageUrl.startsWith("http")) {
+            // Validate images
+            List<MultipartFile> images = createListingFormDTO.getImages();
+            if (images == null || images.isEmpty()) {
                 response.put("success", false);
-                response.put("message", "URL ảnh chính không hợp lệ");
+                response.put("message", "Vui lòng upload ít nhất một ảnh cho listing");
                 return ResponseEntity.badRequest().body(response);
             }
 
-            logger.info(" Creating listing for user ID: {}, title: '{}'", userId, createListingFormDTO.title());
+            logger.info("Creating listing for user ID: {}, title: '{}', images count: {}",
+                    userId, createListingFormDTO.getTitle(), images.size());
 
-            boolean createResult = listingService.createListing(createListingFormDTO, userId);
+            // Upload images to Cloudinary
+            List<Image> imageList = cloudinaryService.uploadMultipleImages(images, "listings");
+
+            if (imageList.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Upload ảnh thất bại");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            logger.info("Successfully uploaded {} images to Cloudinary", imageList.size());
+
+            // Call service to create listing
+            boolean createResult = listingService.createListing(createListingFormDTO, userId, imageList);
 
             if (createResult) {
                 response.put("success", true);
                 response.put("message", "Bài đăng đã được tạo thành công và đang chờ admin xét duyệt");
-                response.put("data", Map.of("userId", userId, "status", "PENDING"));
+                response.put("data", Map.of(
+                    "userId", userId,
+                    "status", "PENDING",
+                    "imagesUploaded", imageList.size()
+                ));
                 logger.info("Listing created successfully for user: {}", userId);
                 return ResponseEntity.ok(response);
             } else {
-                logger.warn("ListingService.createListing returned false. Possible validation/logged cause earlier. title='{}' userId={} mainImage={} imagesCount={}",
-                        createListingFormDTO.title(), userId, createListingFormDTO.mainImageUrl(),
-                        createListingFormDTO.imageUrls() != null ? createListingFormDTO.imageUrls().size() : 0);
+                logger.warn("ListingService.createListing returned false for user: {}", userId);
                 response.put("success", false);
-                response.put("message", "Tạo bài đăng thất bại (validation hoặc dữ liệu thiếu). Kiểm tra log server để biết chi tiết.");
-                response.put("debug", Map.of(
-                        "hasLocation", createListingFormDTO.location() != null,
-                        "hasProduct", createListingFormDTO.product() != null,
-                        "hasEv", createListingFormDTO.product() != null && createListingFormDTO.product().ev() != null,
-                        "hasBattery", createListingFormDTO.product() != null && createListingFormDTO.product().battery() != null
-                ));
+                response.put("message", "Tạo bài đăng thất bại. Vui lòng kiểm tra lại thông tin");
                 return ResponseEntity.badRequest().body(response);
             }
 
@@ -444,4 +457,3 @@ public class ListingController {
         );
     }
 }
-
