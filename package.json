@@ -1,4 +1,11 @@
 {
+  "name": "swp391-monorepo-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix Frontend-SWP391_2ndLand run dev",
+    "build": "npm --prefix Frontend-SWP391_2ndLand run build",
+    "preview": "npm --prefix Frontend-SWP391_2ndLand run preview"
+  },
   "dependencies": {
     "react-bootstrap-icons": "^1.11.6"
   }
