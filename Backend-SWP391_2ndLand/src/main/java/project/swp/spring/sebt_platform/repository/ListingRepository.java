@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,7 +16,7 @@ import project.swp.spring.sebt_platform.model.enums.ListingStatus;
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
 
 @Repository
-public interface ListingRepository extends JpaRepository<ListingEntity, Long> {
+public interface ListingRepository extends JpaRepository<ListingEntity, Long>, JpaSpecificationExecutor<ListingEntity> {
 
     ListingEntity findById(long id);
 
@@ -77,4 +78,13 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long> {
             "WHERE l.status = 'ACTIVE' " +
             "ORDER BY l.createdAt DESC")
     List<ListingEntity> findAllActiveListings();
+
+        // Pagination-friendly query when only filtering by vehicle type
+        @Query("SELECT l FROM ListingEntity l " +
+                        "WHERE l.status = :status AND l.product.evVehicle.type = :type ORDER BY l.createdAt DESC")
+        Page<ListingEntity> findByStatusAndVehicleType(@Param("status") ListingStatus status, @Param("type") VehicleType type, Pageable pageable);
+
+        // Diagnostic: fetch all listings for a vehicle type regardless of status (debug only)
+        @Query("SELECT l FROM ListingEntity l WHERE l.product.evVehicle.type = :type ORDER BY l.createdAt DESC")
+        List<ListingEntity> findAllByVehicleTypeNoStatus(@Param("type") VehicleType type);
 }

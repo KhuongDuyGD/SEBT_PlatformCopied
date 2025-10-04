@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import listingsApi from '../../api/listings';
 import { mapListingArray } from '../../utils/listingMapper';
@@ -26,17 +26,17 @@ export default function SearchResults() {
     return url;
   };
 
+  const abortRef = useRef();
   const fetchData = useCallback(async () => {
-    if (!keyword.trim()) {
-      setResults([]); setPagination(null); return;
-    }
+    if (!keyword.trim()) { setResults([]); setPagination(null); return; }
+    if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
+    abortRef.current = controller;
     try {
       setLoading(true); setError(null);
       const res = await listingsApi.keywordSearch(keyword, page, size, { signal: controller.signal });
       if (res?.success) {
-        const raw = Array.isArray(res.data) ? res.data : [];
-        const mapped = mapListingArray(raw);
+        const mapped = mapListingArray(Array.isArray(res.data) ? res.data : []);
         if (mapped.length && import.meta.env.DEV) console.debug('[SearchResults] sample item', mapped[0]);
         setResults(mapped);
         setPagination(res.pagination || null);
@@ -49,9 +49,7 @@ export default function SearchResults() {
         setError('Không thể tìm kiếm lúc này.');
         setResults([]); setPagination(null);
       }
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, [keyword, page, size]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -127,8 +125,8 @@ export default function SearchResults() {
           <Pagination
             disabled={loading}
             current={(pagination.currentPage ?? pagination.page ?? page) + 1}
-            total={pagination.totalPages ? pagination.totalPages * size : (pagination.totalElements || 0)}
-            pageSize={size}
+            total={pagination.totalElements || 0}
+            pageSize={pagination.size || size}
             showSizeChanger={false}
             onChange={(p)=> {
               const zero = p - 1;
