@@ -1,32 +1,81 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { AuthContext } from "../../contexts/AuthContext";
+import {
+  Modal,
+  Button,
+  Card,
+  Row,
+  Col,
+  Descriptions,
+  Image,
+  Typography,
+  Tag,
+  Space,
+  Spin,
+  Result,
+  Divider
+} from 'antd';
+
+const { Title, Text } = Typography;
 
 function ListingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isLoggedIn } = useContext(AuthContext) || {};
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   /**
    * Fetch chi tiết listing từ API
    */
   const fetchListingDetail = useCallback(async () => {
+    // Gate: require authentication to view detail
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await api.get(`/listings/${id}`);
-      
-      if (response.data) {
-        setListing(response.data);
+
+      // Đúng endpoint backend: GET /api/listings/detail/{listingId}
+      const response = await api.get(`/listings/detail/${id}`);
+
+      // Backend trả về envelope { success, data, message }
+      const payload = response.data;
+      if (payload?.success && payload.data) {
+        const data = payload.data;
+        // Chuẩn hóa một số field cho UI hiện tại
+        const normalized = {
+          id: data.id,
+            title: data.title,
+            description: data.description,
+            price: data.price,
+            listingType: data.listingType,
+            status: data.status,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
+            product: data.product,
+            location: data.location,
+            seller: data.seller,
+            thumbnail: data.thumbnail,
+            images: Array.isArray(data.images) ? data.images : [],
+        };
+        setListing(normalized);
       } else {
-        setError('Không tìm thấy listing này.');
+        setError(payload?.message || 'Không tìm thấy listing này.');
       }
     } catch (err) {
       console.error('Lỗi khi fetch listing detail:', err);
-      if (err.response?.status === 404) {
+      if (err.response?.status === 401) {
+        setShowAuthModal(true);
+        setError(null); // Ẩn error chung, hiển thị modal thay thế
+      } else if (err.response?.status === 404) {
         setError('Listing không tồn tại.');
       } else {
         setError('Không thể tải thông tin listing. Vui lòng thử lại sau.');
@@ -34,7 +83,7 @@ function ListingDetail() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, isLoggedIn]);
 
   useEffect(() => {
     if (id) {
@@ -74,251 +123,185 @@ function ListingDetail() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang tải thông tin listing...</p>
-        </div>
+      <div style={{ padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Spin size="large" />
+        <Text type="secondary" style={{ marginTop: 16 }}>Đang tải thông tin listing...</Text>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <div className="space-x-4">
-            <button 
-              onClick={fetchListingDetail}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Thử lại
-            </button>
-            <button 
-              onClick={() => navigate(-1)}
-              className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Quay lại
-            </button>
-          </div>
-        </div>
-      </div>
+      <Result
+        status="error"
+        title="Không thể tải listing"
+        subTitle={error}
+        extra={[
+          <Button key="retry" type="primary" onClick={fetchListingDetail}>Thử lại</Button>,
+          <Button key="back" onClick={() => navigate(-1)}>Quay lại</Button>
+        ]}
+      />
     );
   }
 
-  if (!listing) {
+  // If user is not logged in and auth modal is shown, render only the modal (avoid accessing listing=null)
+  if (showAuthModal) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <p className="text-gray-600">Không tìm thấy listing.</p>
-          <button 
-            onClick={() => navigate(-1)}
-            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mt-4"
-          >
-            Quay lại
-          </button>
-        </div>
-      </div>
+      <>
+        <Modal
+          open={showAuthModal}
+            onCancel={() => { setShowAuthModal(false); navigate(-1); }}
+          centered
+          title={<span>Yêu cầu đăng nhập</span>}
+          footer={null}
+          destroyOnClose
+        >
+          <Typography.Paragraph style={{ marginBottom: 24, textAlign: 'center' }}>
+            Bạn cần đăng nhập để xem chi tiết listing này.<br/>Vui lòng đăng nhập hoặc tạo tài khoản mới.
+          </Typography.Paragraph>
+          <Space wrap style={{ width: '100%', justifyContent: 'center' }} size="middle">
+            <Button onClick={() => { setShowAuthModal(false); navigate('/'); }}>Trang chủ</Button>
+            <Button type="primary" onClick={() => navigate('/login')}>Đăng nhập</Button>
+            <Button danger onClick={() => navigate('/register')}>Đăng ký</Button>
+          </Space>
+        </Modal>
+      </>
+    );
+  }
+
+  if (!listing && !showAuthModal && !loading && !error) {
+    return (
+      <Result
+        status="404"
+        title="404"
+        subTitle="Không tìm thấy listing."
+        extra={<Button onClick={() => navigate(-1)}>Quay lại</Button>}
+      />
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="mb-6">
-        <button 
-          onClick={() => navigate(-1)}
-          className="text-blue-600 hover:text-blue-800 flex items-center"
-        >
-          ← Quay lại
-        </button>
-      </div>
-
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6">
-          <h1 className="text-3xl font-bold mb-2">{listing.title}</h1>
-          <div className="flex items-center justify-between">
-            <p className="text-lg opacity-90">
-              Đăng bởi: {listing.seller?.username || 'Ẩn danh'}
-            </p>
-            <div className="text-right">
-              <p className="text-2xl font-bold">{formatPrice(listing.price)}</p>
-              <p className="text-sm opacity-75">
-                {listing.viewsCount || 0} lượt xem
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Ảnh chính */}
-            <div className="lg:col-span-2">
-              <div className="mb-6">
-                <img 
-                  src={listing.mainImage || "/images/default-listing.jpg"} 
-                  alt={listing.title}
-                  className="w-full h-96 object-cover rounded-lg shadow-md"
-                  onError={(e) => {
-                    e.target.src = "/images/default-listing.jpg";
-                  }}
-                />
-              </div>
-
-              {/* Mô tả */}
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-3">Mô tả</h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-700 whitespace-pre-wrap">
-                    {listing.description || "Chưa có mô tả chi tiết."}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Thông tin bên phải */}
-            <div className="space-y-6">
-              {/* Thông tin sản phẩm */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold mb-3">Thông tin sản phẩm</h3>
-                
-                {listing.product?.vehicle && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="font-medium">Loại:</span>
-                      <span>Xe {listing.product.vehicle.type}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Hãng:</span>
-                      <span>{listing.product.vehicle.brand}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Năm:</span>
-                      <span>{listing.product.vehicle.year}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Số km:</span>
-                      <span>{listing.product.vehicle.mileage?.toLocaleString()} km</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Pin:</span>
-                      <span>{listing.product.vehicle.batteryCapacity} kWh</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Tình trạng:</span>
-                      <span>{listing.product.vehicle.conditionStatus}</span>
-                    </div>
-                  </div>
+    <div style={{ maxWidth: 1240, margin: '0 auto', padding: '16px 20px 48px' }}>
+      <Button type="text" onClick={() => navigate(-1)} style={{ marginBottom: 8 }}>
+        ← Quay lại
+      </Button>
+      <Card
+        style={{
+          background: 'linear-gradient(135deg, #0d47a1 0%, #1976d2 70%, #42a5f5 100%)',
+          marginBottom: 24,
+          color: '#fff'
+        }}
+        bodyStyle={{ padding: 24 }}
+        bordered={false}
+      >
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} md={16}>
+            <Title level={2} style={{ margin: 0, color: '#fff' }}>{listing?.title}</Title>
+            <Space wrap size="small" style={{ marginTop: 12 }}>
+              <Tag color="geekblue" style={{ margin: 0 }}>ID #{listing?.id}</Tag>
+              <Tag color="default" style={{ margin: 0 }}>Người bán: {listing?.seller?.username || 'Ẩn danh'}</Tag>
+            </Space>
+          </Col>
+          <Col xs={24} md={8} style={{ textAlign: 'right' }}>
+            <Title level={3} style={{ margin: 0, color: '#fff' }}>{formatPrice(listing?.price)}</Title>
+            <Text style={{ color: 'rgba(255,255,255,0.85)' }}>{listing?.viewsCount || 0} lượt xem</Text>
+          </Col>
+        </Row>
+      </Card>
+      <Row gutter={[24, 24]}>
+        <Col xs={24} lg={16}>
+          <Card
+            title={<Text strong>Hình ảnh</Text>}
+            bodyStyle={{ padding: 16 }}
+            style={{ marginBottom: 24 }}
+          >
+            <Image.PreviewGroup>
+              <Row gutter={[8, 8]}>
+                <Col span={24}>
+                  <Image
+                    src={listing?.thumbnail || listing?.images?.[0] || '/images/default-listing.jpg'}
+                    alt={listing?.title || 'listing'}
+                    style={{ objectFit: 'cover', width: '100%', maxHeight: 420 }}
+                    fallback={'/images/default-listing.jpg'}
+                  />
+                </Col>
+                {listing?.images && listing.images.length > 1 && listing.images.slice(1, 9).map((img, idx) => (
+                  <Col key={idx} xs={6} sm={6} md={6} lg={6}>
+                    <Image
+                      src={img}
+                      alt={`thumb-${idx}`}
+                      style={{ objectFit: 'cover', width: '100%', height: 90 }}
+                      fallback={'/images/default-listing.jpg'}
+                    />
+                  </Col>
+                ))}
+              </Row>
+            </Image.PreviewGroup>
+          </Card>
+          <Card title={<Text strong>Mô tả</Text>} bodyStyle={{ paddingTop: 12 }} style={{ marginBottom: 24 }}>
+            <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>
+              {listing?.description || 'Chưa có mô tả chi tiết.'}
+            </Typography.Paragraph>
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          {listing?.product?.vehicle && (
+            <Card title="Thông tin xe" size="small" style={{ marginBottom: 20 }}>
+              <Descriptions column={1} colon size="small">
+                <Descriptions.Item label="Loại">Xe {listing.product.vehicle.type}</Descriptions.Item>
+                <Descriptions.Item label="Hãng">{listing.product.vehicle.brand}</Descriptions.Item>
+                <Descriptions.Item label="Năm">{listing.product.vehicle.year}</Descriptions.Item>
+                <Descriptions.Item label="Số km">{listing.product.vehicle.mileage?.toLocaleString()} km</Descriptions.Item>
+                <Descriptions.Item label="Pin">{listing.product.vehicle.batteryCapacity} kWh</Descriptions.Item>
+                <Descriptions.Item label="Tình trạng">{listing.product.vehicle.conditionStatus}</Descriptions.Item>
+              </Descriptions>
+            </Card>
+          )}
+          {listing?.product?.battery && (
+            <Card title="Thông tin pin" size="small" style={{ marginBottom: 20 }}>
+              <Descriptions column={1} colon size="small">
+                <Descriptions.Item label="Loại">Pin điện</Descriptions.Item>
+                <Descriptions.Item label="Hãng">{listing.product.battery.brand}</Descriptions.Item>
+                <Descriptions.Item label="Dung lượng">{listing.product.battery.capacity} kWh</Descriptions.Item>
+                <Descriptions.Item label="Độ khỏe">{listing.product.battery.healthPercentage}%</Descriptions.Item>
+                <Descriptions.Item label="Tình trạng">{listing.product.battery.conditionStatus}</Descriptions.Item>
+                {listing.product.battery.compatibleVehicles && (
+                  <Descriptions.Item label="Xe tương thích">{listing.product.battery.compatibleVehicles}</Descriptions.Item>
                 )}
-
-                {listing.product?.battery && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="font-medium">Loại:</span>
-                      <span>Pin điện</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Hãng:</span>
-                      <span>{listing.product.battery.brand}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Dung lượng:</span>
-                      <span>{listing.product.battery.capacity} kWh</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Độ khỏe:</span>
-                      <span>{listing.product.battery.healthPercentage}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Tình trạng:</span>
-                      <span>{listing.product.battery.conditionStatus}</span>
-                    </div>
-                    {listing.product.battery.compatibleVehicles && (
-                      <div className="flex justify-between">
-                        <span className="font-medium">Xe tương thích:</span>
-                        <span className="text-right">{listing.product.battery.compatibleVehicles}</span>
-                      </div>
-                    )}
-                  </div>
+              </Descriptions>
+            </Card>
+          )}
+          {listing?.location && (
+            <Card title="Vị trí" size="small" style={{ marginBottom: 20 }}>
+              <Descriptions column={1} colon size="small">
+                <Descriptions.Item label="Tỉnh/TP">{listing.location.province}</Descriptions.Item>
+                {listing.location.district && (
+                  <Descriptions.Item label="Quận/Huyện">{listing.location.district}</Descriptions.Item>
                 )}
-              </div>
-
-              {/* Thông tin vị trí */}
-              {listing.location && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-3">Vị trí</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="font-medium">Tỉnh/TP:</span>
-                      <span>{listing.location.province}</span>
-                    </div>
-                    {listing.location.district && (
-                      <div className="flex justify-between">
-                        <span className="font-medium">Quận/Huyện:</span>
-                        <span>{listing.location.district}</span>
-                      </div>
-                    )}
-                    {listing.location.details && (
-                      <div>
-                        <span className="font-medium">Chi tiết:</span>
-                        <p className="text-sm text-gray-600 mt-1">{listing.location.details}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                {listing.location.details && (
+                  <Descriptions.Item label="Chi tiết">{listing.location.details}</Descriptions.Item>
+                )}
+              </Descriptions>
+            </Card>
+          )}
+          <Card title="Khác" size="small" style={{ marginBottom: 20 }}>
+            <Descriptions column={1} colon size="small">
+              <Descriptions.Item label="Loại listing">{listing?.listingType}</Descriptions.Item>
+              <Descriptions.Item label="Trạng thái">{listing?.status}</Descriptions.Item>
+              <Descriptions.Item label="Ngày đăng">{formatDate(listing?.createdAt)}</Descriptions.Item>
+              {listing?.expiresAt && (
+                <Descriptions.Item label="Hết hạn">{formatDate(listing.expiresAt)}</Descriptions.Item>
               )}
-
-              {/* Thông tin khác */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold mb-3">Thông tin khác</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="font-medium">Loại listing:</span>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      listing.listingType === 'PREMIUM' ? 'bg-yellow-200 text-yellow-800' :
-                      listing.listingType === 'FEATURED' ? 'bg-purple-200 text-purple-800' :
-                      'bg-gray-200 text-gray-800'
-                    }`}>
-                      {listing.listingType}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Trạng thái:</span>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      listing.status === 'ACTIVE' ? 'bg-green-200 text-green-800' :
-                      listing.status === 'SOLD' ? 'bg-red-200 text-red-800' :
-                      'bg-yellow-200 text-yellow-800'
-                    }`}>
-                      {listing.status}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Ngày đăng:</span>
-                    <span>{formatDate(listing.createdAt)}</span>
-                  </div>
-                  {listing.expiresAt && (
-                    <div className="flex justify-between">
-                      <span className="font-medium">Hết hạn:</span>
-                      <span>{formatDate(listing.expiresAt)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Contact button */}
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
-                  Liên hệ người bán
-                </button>
-                <p className="text-xs text-gray-500 text-center mt-2">
-                  Click để xem thông tin liên hệ
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            </Descriptions>
+          </Card>
+          <Card size="small">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button type="primary" block>Liên hệ người bán</Button>
+              <Text type="secondary" style={{ display: 'block', textAlign: 'center' }}>Nhấn để xem thông tin liên hệ</Text>
+            </Space>
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 }

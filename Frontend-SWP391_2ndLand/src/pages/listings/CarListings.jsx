@@ -1,6 +1,7 @@
+// DEPRECATED: CarListings page logic đã được hợp nhất vào ListingPage thông qua query param
 import React, { useState, useEffect, useCallback } from "react";
 import ListingPage from "./ListingPage";
-import api from "../../api/axios";
+import listingsApi from "../../api/listings";
 
 function CarListings() {
   const [carListings, setCarListings] = useState([]);
@@ -15,32 +16,32 @@ function CarListings() {
       setLoading(true);
       setError(null);
       
-      const response = await api.get('/listings/cars');
-      
-      if (response.data && Array.isArray(response.data)) {
-        // Chuyển đổi dữ liệu từ API thành format phù hợp với ListingPage
-        const formattedListings = response.data.map(listing => ({
+      const response = await listingsApi.fetchEvListingCarts(0, 30); // lấy 30 đầu tiên cho page này
+      const data = response?.data || [];
+
+      if (Array.isArray(data)) {
+        const formattedListings = data.map(listing => ({
           id: listing.id,
-          image: listing.mainImage || "/images/default-car.jpg",
-          brand: listing.product?.vehicle?.brand + " " + listing.product?.vehicle?.name || listing.title,
-          location: listing.location?.province || "Không rõ",
-          km: listing.product?.vehicle?.mileage ? `${listing.product?.vehicle?.mileage.toLocaleString()} km` : "Không rõ",
-          left: calculateTimeLeft(listing.expiresAt),
+          image: listing.mainImageUrl || listing.mainImage || "/images/default-car.jpg",
+          brand: listing.brand || listing?.ev?.brand || listing.title,
+          location: listing.locationProvince || listing.location?.province || "Không rõ",
+          km: listing.mileage ? `${listing.mileage.toLocaleString()} km` : (listing.ev?.mileage ? `${listing.ev.mileage.toLocaleString()} km` : "Không rõ"),
+          left: '—',
           price: formatPrice(listing.price),
-          owner: listing.seller?.username || "Ẩn danh",
-          comments: 0, // Tạm thời để 0, sau này sẽ implement comment system
+          owner: listing.sellerName || listing.seller?.username || "Ẩn danh",
+          comments: 0,
           description: listing.description || "Chưa có mô tả",
           certified: listing.listingType === 'PREMIUM',
-          year: listing.product?.vehicle?.year,
-          condition: listing.product?.vehicle?.conditionStatus,
-          batteryCapacity: listing.product?.vehicle?.batteryCapacity,
+          year: listing.year || listing.ev?.year,
+          condition: listing.conditionStatus || listing.ev?.conditionStatus,
+          batteryCapacity: listing.batteryCapacity || listing.ev?.batteryCapacity,
           viewsCount: listing.viewsCount || 0,
           createdAt: listing.createdAt
         }));
         
         setCarListings(formattedListings);
       } else {
-        console.warn('API response không đúng format:', response.data);
+        console.warn('API response không đúng format:', response);
         setCarListings([]);
       }
     } catch (err) {

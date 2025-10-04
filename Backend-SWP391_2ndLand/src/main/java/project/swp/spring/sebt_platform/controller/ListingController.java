@@ -29,7 +29,9 @@ import project.swp.spring.sebt_platform.service.ListingService;
  */
 @RestController
 @RequestMapping("/api/listings")
-@CrossOrigin(origins = "*") //Thêm CORS support
+// Removed @CrossOrigin(origins = "*") to avoid wildcard + credentials conflict.
+// Global CORS configuration in CorsConfig now handles allowed origins with patterns
+// and returns a specific Origin header (required when allowCredentials(true)).
 public class ListingController {
 
     private static final Logger logger = LoggerFactory.getLogger(ListingController.class);
@@ -104,8 +106,17 @@ public class ListingController {
                 logger.info("Listing created successfully for user: {}", userId);
                 return ResponseEntity.ok(response);
             } else {
+                logger.warn("ListingService.createListing returned false. Possible validation/logged cause earlier. title='{}' userId={} mainImage={} imagesCount={}",
+                        createListingFormDTO.title(), userId, createListingFormDTO.mainImageUrl(),
+                        createListingFormDTO.imageUrls() != null ? createListingFormDTO.imageUrls().size() : 0);
                 response.put("success", false);
-                response.put("message", "Tạo bài đăng thất bại. Vui lòng thử lại");
+                response.put("message", "Tạo bài đăng thất bại (validation hoặc dữ liệu thiếu). Kiểm tra log server để biết chi tiết.");
+                response.put("debug", Map.of(
+                        "hasLocation", createListingFormDTO.location() != null,
+                        "hasProduct", createListingFormDTO.product() != null,
+                        "hasEv", createListingFormDTO.product() != null && createListingFormDTO.product().ev() != null,
+                        "hasBattery", createListingFormDTO.product() != null && createListingFormDTO.product().battery() != null
+                ));
                 return ResponseEntity.badRequest().body(response);
             }
 

@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
-import { Upload, Image, X, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import React, { useState, useCallback, useRef } from 'react';
+import { Upload, Image, X, AlertCircle, CheckCircle, Loader, Star } from 'lucide-react';
+import './CloudinaryImageUploadGallery.css';
 
 /**
  * Component upload nhiều ảnh đồng thời lên Cloudinary cho dự án SWP391
@@ -15,6 +16,9 @@ import { Upload, Image, X, AlertCircle, CheckCircle, Loader } from 'lucide-react
  * @param {Object} props - Props của component
  * @param {Function} props.onImagesUpload - Callback khi upload thành công (nhận array URLs)
  * @param {Array} props.currentImages - Array URLs ảnh hiện tại
+ * @param {boolean} props.selectMain - Cho phép chọn ảnh chính (default false)
+ * @param {number} props.mainIndex - Index ảnh chính hiện tại
+ * @param {Function} props.onChangeMain - Callback khi đổi ảnh chính
  * @param {string} props.className - CSS class tùy chọn
  * @param {boolean} props.disabled - Trạng thái disable
  * @param {number} props.maxFiles - Số lượng file tối đa (default: 10)
@@ -22,17 +26,35 @@ import { Upload, Image, X, AlertCircle, CheckCircle, Loader } from 'lucide-react
  * @param {boolean} props.allowMultiple - Cho phép chọn nhiều file (default: true)
  */
 const CloudinaryImageUpload = ({
-                                   onImagesUpload,
-                                   currentImages = [],
-                                   className = '',
-                                   disabled = false,
-                                   maxFiles = 10,
-                                   maxConcurrent = 3, // Giới hạn 3 upload đồng thời để tránh quá tải
-                                   allowMultiple = true
-                               }) => {
+    onImagesUpload,
+    currentImages = [],
+    className = '',
+    disabled = false,
+    maxFiles = 10,
+    maxConcurrent = 3, // Giới hạn 3 upload đồng thời
+    allowMultiple = true,
+    selectMain = false,
+    mainIndex = 0,
+    onChangeMain
+}) => {
     const [uploadQueue, setUploadQueue] = useState([]); // Queue các file đang chờ upload
     const [activeUploads, setActiveUploads] = useState(new Map()); // Map tracking active uploads
     const [uploadedImages, setUploadedImages] = useState(currentImages); // Array các ảnh đã upload
+    const startedUploadsRef = useRef(new Set()); // Track uploadIds đã bắt đầu để tránh double
+    const pendingUrlsRef = useRef(new Set()); // Track URL đã thêm để dedupe ngay cả khi callback lặp
+    const successTimestampsRef = useRef(new Map()); // uploadId -> timestamp for cleanup timing
+
+    // Đồng bộ khi prop currentImages thay đổi nhưng tránh gây double-add khi parent set ngay sau callback
+    React.useEffect(() => {
+        if (!Array.isArray(currentImages)) return;
+        // So sánh shallow nội dung để quyết định sync
+        const different = currentImages.length !== uploadedImages.length || currentImages.some((u, i) => uploadedImages[i] !== u);
+        if (different) {
+            setUploadedImages(currentImages);
+            // sync lại dedupe set
+            pendingUrlsRef.current = new Set(currentImages);
+        }
+    }, [currentImages, uploadedImages]);
     const [globalError, setGlobalError] = useState(null);
 
     // Cấu hình Cloudinary - SWP391 Project
@@ -128,8 +150,9 @@ const CloudinaryImageUpload = ({
                 // Update trạng thái thành công
                 setActiveUploads(prev => {
                     const updated = new Map(prev);
+                    const existing = updated.get(uploadId) || { file };
                     updated.set(uploadId, {
-                        file,
+                        ...existing,
                         status: 'success',
                         progress: 100,
                         error: null,
@@ -138,12 +161,18 @@ const CloudinaryImageUpload = ({
                     return updated;
                 });
 
-                // Thêm vào danh sách ảnh đã upload
-                setUploadedImages(prev => {
-                    const newImages = [...prev, data.secure_url];
-                    onImagesUpload(newImages); // Callback với danh sách mới
-                    return newImages;
-                });
+                // Dedupe theo URL
+                if (!pendingUrlsRef.current.has(data.secure_url)) {
+                    pendingUrlsRef.current.add(data.secure_url);
+                    successTimestampsRef.current.set(uploadId, Date.now());
+                    setUploadedImages(prev => {
+                        if (prev.includes(data.secure_url)) return prev;
+                        const newImages = [...prev, data.secure_url];
+                        // defer callback sau commit (setTimeout đảm bảo sau paint)
+                        setTimeout(() => onImagesUpload(newImages), 0);
+                        return newImages;
+                    });
+                }
 
                 return data.secure_url;
             } else {
@@ -188,8 +217,10 @@ const CloudinaryImageUpload = ({
             const filesToUpload = prev.slice(0, availableSlots);
             const remainingQueue = prev.slice(availableSlots);
 
-            // Bắt đầu upload các file
+            // Đánh dấu và khởi động upload (guard chống double)
             filesToUpload.forEach(({ file, uploadId }) => {
+                if (startedUploadsRef.current.has(uploadId)) return;
+                startedUploadsRef.current.add(uploadId);
                 uploadSingleFile(file, uploadId).catch(error => {
                     console.error(`Upload failed for ${uploadId}:`, error);
                 });
@@ -237,7 +268,7 @@ const CloudinaryImageUpload = ({
             uploadId: `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         }));
 
-        setUploadQueue(prev => [...prev, ...newQueueItems]);
+    setUploadQueue(prev => [...prev, ...newQueueItems]);
         setGlobalError(null);
 
         console.log(`📋 Added ${validFiles.length} files to upload queue`);
@@ -282,8 +313,21 @@ const CloudinaryImageUpload = ({
      */
     const removeUploadedImage = (indexToRemove) => {
         setUploadedImages(prev => {
+            const removedUrl = prev[indexToRemove];
             const newImages = prev.filter((_, index) => index !== indexToRemove);
-            onImagesUpload(newImages);
+            // Xóa khỏi pending set để nếu upload lại vẫn thêm được
+            if (removedUrl) pendingUrlsRef.current.delete(removedUrl);
+            // Deferred parent update để tránh warning
+            setTimeout(() => onImagesUpload(newImages), 0);
+            // Đồng thời dọn activeUploads entries có url trùng (đã success)
+            setActiveUploads(old => {
+                const cleaned = new Map();
+                for (const [id, info] of old.entries()) {
+                    if (info.url === removedUrl) continue; // skip removed
+                    cleaned.set(id, info);
+                }
+                return cleaned;
+            });
             return newImages;
         });
     };
@@ -315,10 +359,27 @@ const CloudinaryImageUpload = ({
     };
 
     // Tính toán trạng thái tổng quát
-    const totalUploading = Array.from(activeUploads.values()).filter(u => u.status === 'uploading').length;
+    const uploadsArray = Array.from(activeUploads.values());
+    const totalUploading = uploadsArray.filter(u => u.status === 'uploading').length;
     const totalQueue = uploadQueue.length;
-    const totalErrors = Array.from(activeUploads.values()).filter(u => u.status === 'error').length;
-    const isUploading = totalUploading > 0 || totalQueue > 0;
+    const totalErrors = uploadsArray.filter(u => u.status === 'error').length;
+    const onlySuccess = uploadsArray.length > 0 && totalUploading === 0 && totalErrors === 0;
+    const isUploading = totalUploading > 0 || totalQueue > 0 || totalErrors > 0; // không tính success-only
+
+    // Cleanup success-only rows sau 1.5s để không giữ lại UI "Thành công" quá lâu
+    React.useEffect(() => {
+        if (onlySuccess) {
+            const id = setTimeout(() => {
+                setActiveUploads(prev => {
+                    // Nếu vẫn không có uploading/error thì clear
+                    const stillHasActive = Array.from(prev.values()).some(v => v.status === 'uploading' || v.status === 'error');
+                    if (stillHasActive) return prev;
+                    return new Map();
+                });
+            }, 1500);
+            return () => clearTimeout(id);
+        }
+    }, [onlySuccess]);
 
     return (
         <div className={`cloudinary-multiupload-container ${className}`}>
@@ -386,7 +447,7 @@ const CloudinaryImageUpload = ({
             )}
 
             {/* Active Uploads Progress */}
-            {activeUploads.size > 0 && (
+            {activeUploads.size > 0 && !onlySuccess && (
                 <div className="active-uploads">
                     <h4 className="uploads-title">Tiến trình upload:</h4>
                     {Array.from(activeUploads.entries()).map(([uploadId, upload]) => (
@@ -445,31 +506,47 @@ const CloudinaryImageUpload = ({
             )}
 
             {/* Uploaded Images Gallery */}
-            {uploadedImages.length > 0 && (
-                <div className="uploaded-images-gallery">
-                    <h4 className="gallery-title">Ảnh đã upload ({uploadedImages.length}):</h4>
-                    <div className="images-grid">
-                        {uploadedImages.map((imageUrl, index) => (
-                            <div key={index} className="image-item">
-                                <img
-                                    src={imageUrl}
-                                    alt={`Uploaded ${index + 1}`}
-                                    className="gallery-image"
-                                />
-                                {!disabled && (
-                                    <button
-                                        onClick={() => removeUploadedImage(index)}
-                                        className="remove-image-btn"
-                                        title="Xóa ảnh"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                )}
+                        {uploadedImages.length > 0 && (
+                            <div className="uploaded-images-gallery">
+                                <h4 className="gallery-title">Ảnh đã upload ({uploadedImages.length}):</h4>
+                                <div className="images-grid">
+                                    {uploadedImages.map((imageUrl, index) => {
+                                        const isMain = selectMain && index === mainIndex;
+                                        return (
+                                            <div key={index} className={`image-item ${isMain ? 'is-main' : ''}`}>
+                                                <img
+                                                    src={imageUrl}
+                                                    alt={`Uploaded ${index + 1}`}
+                                                    className="gallery-image"
+                                                />
+                                                {!disabled && (
+                                                    <button
+                                                        onClick={() => removeUploadedImage(index)}
+                                                        className="remove-image-btn"
+                                                        title="Xóa ảnh"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                {selectMain && !disabled && (
+                                                    <button
+                                                        type="button"
+                                                        className={`set-main-btn ${isMain ? 'active' : ''}`}
+                                                        onClick={() => onChangeMain && onChangeMain(index)}
+                                                        title={isMain ? 'Ảnh chính' : 'Đặt làm ảnh chính'}
+                                                    >
+                                                        <Star className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                {isMain && (
+                                                    <div className="main-badge">Ảnh chính</div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+                        )}
 
             {/* Global Error */}
             {globalError && (

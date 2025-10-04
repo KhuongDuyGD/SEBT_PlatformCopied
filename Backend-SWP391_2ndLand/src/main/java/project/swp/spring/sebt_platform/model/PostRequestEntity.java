@@ -6,7 +6,7 @@ import project.swp.spring.sebt_platform.model.enums.ApprovalStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
+
 
 @Entity
 @Table(name = "post_requests",
@@ -27,6 +27,11 @@ public class PostRequestEntity {
     @Column(nullable = false, length = 20)
     private ApprovalStatus status = ApprovalStatus.PENDING;
 
+    // Database has NOT NULL column 'requested_date' (error was: Cannot insert NULL ...),
+    // but it wasn't mapped. Map it and initialize on persist.
+    @Column(name = "requested_date", nullable = false)
+    private LocalDate requestedDate;
+
     @Column(name = "admin_notes", columnDefinition = "TEXT")
     private String adminNotes;
 
@@ -36,6 +41,13 @@ public class PostRequestEntity {
 
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
+
+    @PrePersist
+    protected void onPersist() {
+        if (requestedDate == null) {
+            requestedDate = LocalDate.now();
+        }
+    }
 
     // Constructors
     public PostRequestEntity() {}
@@ -67,6 +79,14 @@ public class PostRequestEntity {
 
     public void setStatus(ApprovalStatus status) {
         this.status = status;
+    }
+
+    public LocalDate getRequestedDate() {
+        return requestedDate;
+    }
+
+    public void setRequestedDate(LocalDate requestedDate) {
+        this.requestedDate = requestedDate;
     }
 
     public String getAdminNotes() {

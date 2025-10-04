@@ -1,20 +1,11 @@
 // src/components/Navbar.jsx
 
-import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import {
-  Navbar,
-  Nav,
-  Container,
-  NavDropdown,
-  Button,
-  Modal,
-  Spinner,
-  Toast,
-  ToastContainer,
-} from "react-bootstrap";
-import api from "../api/axios"; // Import api (adjust path if needed, ví dụ: "../../api/axios")
-import "./MegaMenu.css"; // Import custom CSS
+import { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Layout, Input, Dropdown, Button, Avatar, Modal, Typography, Space, Badge, message } from 'antd';
+import { LogoutOutlined, SearchOutlined, CarOutlined, UserOutlined, AppstoreOutlined, BellOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import api from '../api/axios';
+import '../styles/header.css';
 
 function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
   // Thêm setUserInfo vào props
@@ -26,6 +17,40 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  // Global search state
+  const [searchValue, setSearchValue] = useState("");
+  const debounceRef = useRef(null);
+
+  // Khi điều hướng sang trang search mà có keyword trong URL -> sync vào input
+  useEffect(() => {
+    if (location.pathname.startsWith('/search')) {
+      const params = new URLSearchParams(location.search);
+      const kw = params.get('keyword') || '';
+      setSearchValue(kw);
+    }
+  }, [location.pathname, location.search]);
+
+  const submitSearch = (e) => {
+    e.preventDefault();
+    const kw = searchValue.trim();
+    if (!kw) return;
+    navigate(`/search?keyword=${encodeURIComponent(kw)}&page=0`);
+  };
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchValue(val);
+    // Optional auto navigate after debounce when on search page
+    if (location.pathname.startsWith('/search')) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        if (val.trim()) {
+          navigate(`/search?keyword=${encodeURIComponent(val.trim())}&page=0`);
+        }
+      }, 500);
+    }
+  };
 
   // Xử lý khi người dùng click nút đăng xuất
   const handleLogoutClick = () => {
@@ -92,243 +117,96 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
 
   const isActiveLink = (path) => location.pathname === path;
 
+  const categoryMenuItems = [
+    {
+      key: 'vehicles',
+      label: 'Xe điện',
+      icon: <CarOutlined />,
+      children: [
+        { key: 'xe-may-dien', label: <Link to="/listings?category=xe-may-dien">Xe máy điện</Link> },
+        { key: 'xe-dap-dien', label: <Link to="/listings?category=xe-dap-dien">Xe đạp điện</Link> },
+        { key: 'o-to-dien', label: <Link to="/listings?category=o-to-dien">Ô tô điện</Link> }
+      ]
+    },
+    {
+      key: 'batteries',
+      label: 'Pin',
+      icon: <ThunderboltOutlined />,
+      children: [
+        { key: 'pin-xe-may', label: <Link to="/listings?category=pin&type=xe-may">Pin xe máy</Link> },
+        { key: 'pin-xe-dap', label: <Link to="/listings?category=pin&type=xe-dap">Pin xe đạp</Link> },
+        { key: 'pin-o-to', label: <Link to="/listings?category=pin&type=o-to">Pin ô tô</Link> }
+      ]
+    }
+  ];
+
+  const accountMenuItems = [
+    { key: 'profile', label: <Link to="/account">Hồ Sơ Cá Nhân</Link> },
+    { key: 'orders', label: <Link to="/orders">Đơn Hàng Của Tôi</Link> },
+    { key: 'favorites', label: <Link to="/favorites">Yêu Thích</Link> },
+    { key: 'settings', label: <Link to="/settings">Cài Đặt</Link> },
+    { type: 'divider' },
+    { key: 'logout', icon: <LogoutOutlined style={{ color: '#ff4d4f' }} />, label: <span style={{ color: '#ff4d4f' }}>Đăng Xuất</span>, onClick: handleLogoutClick }
+  ];
+
   return (
-    <Navbar
-      expand="lg"
-      className="shadow-sm sticky-top app-navbar"
-      variant="dark"
-    >
-      <Container>
-        <Navbar.Brand as={Link} to="/" className="fw-bold fs-3 text-white">
-          <span>EV Secondhand Marketplace</span>
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="ms-auto align-items-center">
-            <Nav.Link
-              as={Link}
-              to="/"
-              className={`fw-semibold mx-2 nav-link-custom ${
-                isActiveLink("/") ? "active" : ""
-              }`}
+    <div className="app-header-gradient" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
+      <div className="app-header">
+        <div className="brand" onClick={() => navigate('/')}>⚡ EV Secondhand</div>
+        <div className="nav-search">
+          <form onSubmit={submitSearch} style={{ display: 'flex', gap: 8 }}>
+            <Input
+              size="middle"
+              allowClear
+              value={searchValue}
+              onChange={handleSearchChange}
+              placeholder="Tìm tiêu đề..."
+              prefix={<SearchOutlined style={{ color: '#6b86c9' }} />}
+              style={{ borderRadius: 8 }}
+            />
+          </form>
+        </div>
+        <div className="nav-spacer" />
+        <Space size={14} className="nav-actions">
+          <Dropdown
+            menu={{ items: categoryMenuItems }}
+            trigger={['hover']}
+          >
+            <Button type="text" icon={<AppstoreOutlined style={{ fontSize: 18 }} />} style={{ color: '#fff' }}>Danh mục</Button>
+          </Dropdown>
+          <Button type="text" style={{ color: '#fff' }} onClick={() => navigate('/support')}>Hỗ Trợ</Button>
+          <Badge count={3} size="small" offset={[0,3]}>
+            <Button type="text" style={{ color: '#fff' }} onClick={() => navigate('/notifications')} icon={<BellOutlined style={{ fontSize: 18 }} />} />
+          </Badge>
+          {isLoggedIn ? (
+            <Dropdown
+              menu={{ items: accountMenuItems }}
+              placement="bottomRight"
+              trigger={['click']}
             >
-              Trang Chủ
-            </Nav.Link>
+              <Avatar style={{ background: '#2f4fa5', cursor: 'pointer' }} icon={<UserOutlined />} />
+            </Dropdown>
+          ) : (
+            <Button onClick={() => navigate('/login')} type="primary" style={{ borderRadius: 20, fontWeight: 600 }}>Đăng Nhập</Button>
+          )}
+        </Space>
+      </div>
 
-            <NavDropdown
-              title={<span className="fw-semibold text-white">Danh mục</span>}
-              id="buy-dropdown"
-              className="mx-2 multi-level-dropdown"
-            >
-              <NavDropdown.Item className="dropdown-submenu">
-                <span className="submenu-title">Xe ▸</span>
-                <ul className="submenu">
-                  <li>
-                    <Link
-                      to="/listings?category=xe-may-dien"
-                      className="dropdown-item"
-                    >
-                      Xe máy điện
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/listings?category=xe-dap-dien"
-                      className="dropdown-item"
-                    >
-                      Xe đạp điện
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/listings?category=o-to-dien"
-                      className="dropdown-item"
-                    >
-                      Ô tô điện
-                    </Link>
-                  </li>
-                </ul>
-              </NavDropdown.Item>
-
-              <NavDropdown.Item className="dropdown-submenu">
-                <span className="submenu-title">Pin ▸</span>
-                <ul className="submenu">
-                  <li>
-                    <Link
-                      to="/listings?category=pin&type=xe-may"
-                      className="dropdown-item"
-                    >
-                      Pin xe máy
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/listings?category=pin&type=xe-dap"
-                      className="dropdown-item"
-                    >
-                      Pin xe đạp
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/listings?category=pin&type=o-to"
-                      className="dropdown-item"
-                    >
-                      Pin ô tô
-                    </Link>
-                  </li>
-                </ul>
-              </NavDropdown.Item>
-            </NavDropdown>
-
-            <Nav.Link
-              as={Link}
-              to="/support"
-              className={`fw-semibold mx-2 nav-link-custom ${
-                isActiveLink("/support") ? "active" : ""
-              }`}
-            >
-              Hỗ Trợ
-            </Nav.Link>
-
-            <Nav.Link
-              as={Link}
-              to="/notifications"
-              className={`fw-semibold mx-2 position-relative nav-link-custom ${
-                isActiveLink("/notifications") ? "active" : ""
-              }`}
-            >
-              Thông Báo
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">
-                3{" "}
-                {/* Sau này: replace bằng state fetch từ API /notifications/count */}
-              </span>
-            </Nav.Link>
-
-            {isLoggedIn ? (
-              <NavDropdown
-                title={
-                  <span className="text-white fw-semibold">👤 Tài Khoản</span>
-                }
-                id="basic-nav-dropdown"
-                className="mx-2"
-                menuVariant="light"
-              >
-                <NavDropdown.Item as={Link} to="/account">
-                  Hồ Sơ Cá Nhân
-                </NavDropdown.Item>
-                <NavDropdown.Item as={Link} to="/orders">
-                  Đơn Hàng Của Tôi
-                </NavDropdown.Item>
-                <NavDropdown.Item as={Link} to="/favorites">
-                  Yêu Thích
-                </NavDropdown.Item>
-                <NavDropdown.Item as={Link} to="/settings">
-                  Cài Đặt
-                </NavDropdown.Item>
-                <NavDropdown.Divider />
-                <NavDropdown.Item
-                  onClick={handleLogoutClick}
-                  className="text-danger fw-semibold"
-                >
-                  <i className="fas fa-sign-out-alt me-2"></i>
-                  Đăng Xuất
-                </NavDropdown.Item>
-              </NavDropdown>
-            ) : (
-              <Button
-                as={Link}
-                to="/login"
-                variant="light"
-                className="fw-bold ms-3 px-4 login-button"
-              >
-                Đăng Nhập
-              </Button>
-            )}
-          </Nav>
-        </Navbar.Collapse>
-      </Container>
-
-      {/* Modal xác nhận đăng xuất */}
       <Modal
-        show={showLogoutModal}
-        onHide={cancelLogout}
+        open={showLogoutModal}
+        onCancel={cancelLogout}
         centered
-        backdrop="static"
-        keyboard={false}
+        onOk={confirmLogout}
+        okText={isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
+        cancelText="Hủy"
+        okButtonProps={{ danger: true, loading: isLoggingOut }}
+        title="Xác nhận đăng xuất"
       >
-        <Modal.Header className="border-0 pb-2">
-          <Modal.Title className="w-100 text-center">
-            <i
-              className="fas fa-sign-out-alt text-warning me-2"
-              style={{ fontSize: "1.5rem" }}
-            ></i>
-            <span className="fw-bold">Xác nhận đăng xuất</span>
-          </Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body className="text-center py-4">
-          <div className="mb-3">
-            <i
-              className="fas fa-question-circle text-primary"
-              style={{ fontSize: "3rem" }}
-            ></i>
-          </div>
-          <h5 className="mb-3">Bạn có chắc chắn muốn đăng xuất?</h5>
-          <p className="text-muted mb-0">
-            Bạn sẽ cần đăng nhập lại để sử dụng các tính năng của EV Secondhand
-            Marketplace.
-          </p>
-        </Modal.Body>
-
-        <Modal.Footer className="border-0 pt-0 justify-content-center">
-          <Button
-            variant="outline-secondary"
-            onClick={cancelLogout}
-            disabled={isLoggingOut}
-            className="px-4 py-2 fw-semibold"
-          >
-            <i className="fas fa-times me-2"></i>
-            Hủy
-          </Button>
-          <Button
-            variant="danger"
-            onClick={confirmLogout}
-            disabled={isLoggingOut}
-            className="px-4 py-2 fw-semibold ms-2"
-          >
-            {isLoggingOut ? (
-              <>
-                <Spinner size="sm" className="me-2" />
-                Đang đăng xuất...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-sign-out-alt me-2"></i>
-                Đăng xuất
-              </>
-            )}
-          </Button>
-        </Modal.Footer>
+        <Typography.Paragraph>
+          Bạn có chắc chắn muốn đăng xuất? Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng đầy đủ tính năng.
+        </Typography.Paragraph>
       </Modal>
-
-      {/* Toast notification cho logout */}
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-          bg="success"
-        >
-          <Toast.Header>
-            <i className="fas fa-check-circle text-success me-2"></i>
-            <strong className="me-auto">EV Secondhand Marketplace</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
-    </Navbar>
+    </div>
   );
 }
 

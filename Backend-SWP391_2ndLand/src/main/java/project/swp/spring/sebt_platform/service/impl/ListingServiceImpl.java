@@ -101,125 +101,162 @@ public class ListingServiceImpl implements ListingService {
     @Transactional
     public boolean createListing(CreateListingFormDTO createListingForm,
                                  Long sellerId) {
-        try {
-            if (createListingForm == null) {
-                logger.error("Create listing form is null");
-                return false;
-            }
+        logger.info("[CREATE_LISTING] Start - sellerId={} title='{}' price={} mainImage={} imagesCount={} hasEV={} hasBattery={}",
+                sellerId,
+                createListingForm != null ? createListingForm.title() : null,
+                createListingForm != null ? createListingForm.price() : null,
+                createListingForm != null ? createListingForm.mainImageUrl() : null,
+                (createListingForm != null && createListingForm.imageUrls() != null) ? createListingForm.imageUrls().size() : 0,
+                (createListingForm != null && createListingForm.product() != null && createListingForm.product().ev() != null),
+                (createListingForm != null && createListingForm.product() != null && createListingForm.product().battery() != null)
+        );
 
-            if (createListingForm.location() == null) {
-                logger.error("Location is null");
-                return false;
-            }
-
-            if (createListingForm.product() == null) {
-                logger.error("Product is null");
-                return false;
-            }
-
-            if (createListingForm.product().ev() == null && createListingForm.product().battery() == null) {
-                logger.error("Both EV vehicle and Battery details are null");
-                return false;
-            }
-
-            UserEntity user = userRepository.findById(sellerId).orElse(null);
-            if (user == null) {
-                logger.error("User not found with ID: " + sellerId);
-                return false;
-            }
-
-            // Create and save EV vehicle or Battery first
-            ProductEntity productEntity = new ProductEntity();
-
-            if (createListingForm.product().ev() != null) {
-                EvVehicleEntity evVehicleEntity = new EvVehicleEntity();
-                evVehicleEntity.setName(createListingForm.product().ev().name());
-                evVehicleEntity.setBrand(createListingForm.product().ev().brand());
-                evVehicleEntity.setModel(createListingForm.product().ev().model());
-                evVehicleEntity.setYear(createListingForm.product().ev().year());
-                evVehicleEntity.setBatteryCapacity(BigDecimal.valueOf(createListingForm.product().ev().batteryCapacity()));
-                evVehicleEntity.setConditionStatus(createListingForm.product().ev().conditionStatus());
-                evVehicleEntity.setMileage(createListingForm.product().ev().mileage());
-                evVehicleEntity.setType(createListingForm.product().ev().type());
-
-                // Save EV vehicle first
-                evVehicleEntity = evVehicleRepository.save(evVehicleEntity);
-                productEntity.setEvVehicle(evVehicleEntity);
-            }
-
-            if (createListingForm.product().battery() != null) {
-                BatteryEntity batteryEntity = new BatteryEntity();
-                batteryEntity.setBrand(createListingForm.product().battery().brand());
-                batteryEntity.setModel(createListingForm.product().battery().model());
-                batteryEntity.setHealthPercentage(createListingForm.product().battery().healthPercentage());
-                batteryEntity.setCapacity(BigDecimal.valueOf(createListingForm.product().battery().capacity()));
-                batteryEntity.setCompatibleVehicles(createListingForm.product().battery().compatibleVehicles());
-                batteryEntity.setConditionStatus(createListingForm.product().battery().conditionStatus());
-
-                // Save battery first
-                batteryEntity = batteryRepository.save(batteryEntity);
-                productEntity.setBattery(batteryEntity);
-            }
-
-            // Save product
-            productEntity = productRepository.save(productEntity);
-
-            // Create and save listing
-            ListingEntity listingEntity = new ListingEntity();
-            listingEntity.setTitle(createListingForm.title());
-            listingEntity.setDescription(createListingForm.description());
-            listingEntity.setListingType(createListingForm.listingType());
-            listingEntity.setPrice(BigDecimal.valueOf(createListingForm.price()));
-            listingEntity.setSeller(user);
-            listingEntity.setProduct(productEntity);
-
-            // Set main image (thumbnail)
-            if (createListingForm.mainImageUrl() != null) {
-                listingEntity.setThumbnailImage(createListingForm.mainImageUrl());
-            } else {
-                logger.error("Thumbnail URL is null");
-                return false;
-            }
-
-            // Save listing first to get ID
-            listingEntity = listingRepository.save(listingEntity);
-
-            // Save listing images
-            if (createListingForm.imageUrls() != null && !createListingForm.imageUrls().isEmpty()) {
-                List<ListingImageEntity> listingImageEntities = new ArrayList<>();
-                for (String imageUrl : createListingForm.imageUrls()) {
-                    ListingImageEntity listingImageEntity = new ListingImageEntity();
-                    listingImageEntity.setImageUrl(imageUrl);
-                    listingImageEntity.setListing(listingEntity);
-                    listingImageEntities.add(listingImageEntity);
-                }
-                listingImageRepository.saveAll(listingImageEntities);
-            } else {
-                logger.error("Image URLs list is null or empty");
-                return false;
-            }
-
-            // Create and save location
-            LocationEntity locationEntity = new LocationEntity();
-            locationEntity.setProvince(createListingForm.location().province());
-            locationEntity.setDistrict(createListingForm.location().district());
-            locationEntity.setDetails(createListingForm.location().details());
-            locationEntity.setListing(listingEntity);
-            locationRepository.save(locationEntity);
-
-            // Create and save post request
-            PostRequestEntity postRequestEntity = new PostRequestEntity();
-            postRequestEntity.setStatus(ApprovalStatus.PENDING);
-            postRequestEntity.setListing(listingEntity);
-            postRequestRepository.save(postRequestEntity);
-
-            return true;
-
-        } catch (Exception e) {
-            logger.error("Error in create listing: " + e.getMessage(), e);
-            // Use proper logging instead of printStackTrace
+        if (createListingForm == null) {
+            logger.error("Create listing form is null");
             return false;
         }
+
+        if (createListingForm.location() == null) {
+            logger.error("Location is null");
+            return false;
+        }
+
+        if (createListingForm.product() == null) {
+            logger.error("Product is null");
+            return false;
+        }
+
+        if (createListingForm.product().ev() == null && createListingForm.product().battery() == null) {
+            logger.error("Both EV vehicle and Battery details are null");
+            return false;
+        }
+
+        UserEntity user = userRepository.findById(sellerId).orElse(null);
+        if (user == null) {
+            logger.error("User not found with ID: " + sellerId);
+            return false;
+        }
+
+        // Create and save EV vehicle or Battery first
+        ProductEntity productEntity = new ProductEntity();
+
+        if (createListingForm.product().ev() != null) {
+            Ev evDto = createListingForm.product().ev();
+            logger.debug("[CREATE_LISTING] EV DTO -> type={} name='{}' brand='{}' model='{}' year={} mileage={} batteryCapacity={} condition={}",
+                    evDto.type(), evDto.name(), evDto.brand(), evDto.model(), evDto.year(), evDto.mileage(), evDto.batteryCapacity(), evDto.conditionStatus());
+            // Defensive validation for required EV fields
+            if (evDto.name() == null || evDto.name().isBlank()) {
+                logger.error("EV name is null/blank");
+                return false;
+            }
+            if (evDto.brand() == null || evDto.brand().isBlank()) {
+                logger.error("EV brand is null/blank");
+                return false;
+            }
+            if (evDto.type() == null) {
+                logger.error("EV type is null");
+                return false;
+            }
+            if (evDto.year() == null) {
+                logger.error("EV year is null");
+                return false;
+            }
+            EvVehicleEntity evVehicleEntity = new EvVehicleEntity();
+            evVehicleEntity.setName(evDto.name());
+            evVehicleEntity.setBrand(evDto.brand());
+            evVehicleEntity.setModel(evDto.model());
+            evVehicleEntity.setYear(evDto.year());
+            if (evDto.batteryCapacity() > 0) {
+                evVehicleEntity.setBatteryCapacity(BigDecimal.valueOf(evDto.batteryCapacity()));
+            }
+            evVehicleEntity.setConditionStatus(evDto.conditionStatus() != null ? evDto.conditionStatus() : VehicleCondition.GOOD);
+            evVehicleEntity.setMileage(evDto.mileage() != null ? evDto.mileage() : 0);
+            evVehicleEntity.setType(evDto.type());
+            evVehicleEntity = evVehicleRepository.save(evVehicleEntity);
+            productEntity.setEvVehicle(evVehicleEntity);
+        }
+
+        if (createListingForm.product().battery() != null) {
+            Battery b = createListingForm.product().battery();
+            logger.debug("[CREATE_LISTING] Battery DTO -> brand={} model={} capacity={} health%={} condition={}",
+                    b.brand(), b.model(), b.capacity(), b.healthPercentage(), b.conditionStatus());
+            BatteryEntity batteryEntity = new BatteryEntity();
+            batteryEntity.setBrand(b.brand());
+            batteryEntity.setModel(b.model());
+            batteryEntity.setHealthPercentage(b.healthPercentage());
+            batteryEntity.setCapacity(BigDecimal.valueOf(b.capacity()));
+            batteryEntity.setCompatibleVehicles(b.compatibleVehicles());
+            batteryEntity.setConditionStatus(b.conditionStatus());
+            batteryEntity = batteryRepository.save(batteryEntity);
+            productEntity.setBattery(batteryEntity);
+        }
+
+    // Save product
+    productEntity = productRepository.save(productEntity);
+    logger.debug("[CREATE_LISTING] Saved product id={} evId={} batteryId={}", productEntity.getId(),
+        productEntity.getEvVehicle() != null ? productEntity.getEvVehicle().getId() : null,
+        productEntity.getBattery() != null ? productEntity.getBattery().getId() : null);
+
+        // Create and save listing
+        ListingEntity listingEntity = new ListingEntity();
+        listingEntity.setTitle(createListingForm.title());
+        listingEntity.setDescription(createListingForm.description());
+        if (createListingForm.listingType() != null) {
+            listingEntity.setListingType(createListingForm.listingType());
+        }
+        listingEntity.setPrice(BigDecimal.valueOf(createListingForm.price()));
+        listingEntity.setSeller(user);
+        listingEntity.setProduct(productEntity);
+    // DEV CHANGE (Patch A): set ACTIVE immediately so it appears in listing endpoints without admin approval.
+    // TODO: Revert to SUSPENDED (or PENDING flow) when implementing approval workflow.
+    listingEntity.setStatus(ListingStatus.ACTIVE);
+
+            // Set main image (thumbnail)
+        if (createListingForm.mainImageUrl() != null) {
+            listingEntity.setThumbnailImage(createListingForm.mainImageUrl());
+        } else {
+            logger.error("Thumbnail URL is null");
+            return false;
+        }
+
+        // Save listing first to get ID
+        listingEntity = listingRepository.save(listingEntity);
+        logger.debug("[CREATE_LISTING] Saved listing id={}", listingEntity.getId());
+
+            // Save listing images
+        if (createListingForm.imageUrls() != null && !createListingForm.imageUrls().isEmpty()) {
+            List<ListingImageEntity> listingImageEntities = new ArrayList<>();
+            for (String imageUrl : createListingForm.imageUrls()) {
+                ListingImageEntity listingImageEntity = new ListingImageEntity();
+                listingImageEntity.setImageUrl(imageUrl);
+                listingImageEntity.setListing(listingEntity);
+                listingImageEntities.add(listingImageEntity);
+            }
+            listingImageRepository.saveAll(listingImageEntities);
+            logger.debug("[CREATE_LISTING] Saved {} listing images", listingImageEntities.size());
+        } else {
+            logger.error("Image URLs list is null or empty");
+            return false;
+        }
+
+            // Create and save location
+        LocationEntity locationEntity = new LocationEntity();
+        locationEntity.setProvince(createListingForm.location().province());
+        locationEntity.setDistrict(createListingForm.location().district());
+        locationEntity.setDetails(createListingForm.location().details());
+        locationEntity.setListing(listingEntity);
+        locationRepository.save(locationEntity);
+        logger.debug("[CREATE_LISTING] Saved location id={}", locationEntity.getId());
+
+            // Create and save post request
+        PostRequestEntity postRequestEntity = new PostRequestEntity();
+        postRequestEntity.setStatus(ApprovalStatus.PENDING);
+        postRequestEntity.setListing(listingEntity);
+        postRequestRepository.save(postRequestEntity);
+        logger.debug("[CREATE_LISTING] Saved post request id={}", postRequestEntity.getId());
+
+        logger.info("[CREATE_LISTING] SUCCESS listingId={}", listingEntity.getId());
+        return true;
     }
 
     @Override

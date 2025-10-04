@@ -17,6 +17,10 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 import Profile from "./pages/profile/Profile";
 import CreateListing from "./pages/listings/CreateListing";
 import ListingPage from "./pages/listings/ListingPage";
+import MyListings from "./pages/listings/MyListings";
+import AdvancedSearchPage from "./pages/listings/AdvancedSearchPage";
+import SearchResults from "./pages/listings/SearchResults";
+import ListingDetail from "./pages/listings/ListingDetail";
 
 //============================= ADMIN PAGES =============================
 import AdminDashboard from "./AdminDashboard";          // đảm bảo file này tồn tại
@@ -26,6 +30,7 @@ import AdminLayout from "./components/AdminLayout";     // đảm bảo đúng �
 import api from "./api/axios";
 import { AuthContext } from "./contexts/AuthContext";
 import "./App.css";
+import "./styles/theme.css";
 
 // Placeholder cho các trang chưa làm
 const Placeholder = ({ title }) => (
@@ -67,6 +72,10 @@ function AppContent({
           {/* USER ROUTES */}
           <Route path="/" element={<Home />} />
           <Route path="/listings" element={<ListingPage />} />
+          <Route path="/listings/:id" element={<ListingDetail />} />
+          <Route path="/my-listings" element={isLoggedIn ? <MyListings /> : <Navigate to="/login" replace />} />
+          <Route path="/advanced-search" element={<AdvancedSearchPage />} />
+          <Route path="/search" element={<SearchResults />} />
 
           <Route
             path="/post-listing"
@@ -217,9 +226,7 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider
-      value={{ isLoggedIn, setIsLoggedIn, userInfo, setUserInfo }}
-    >
+    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, userInfo, setUserInfo }}>
       <Router>
         <AppContent
           isLoggedIn={isLoggedIn}

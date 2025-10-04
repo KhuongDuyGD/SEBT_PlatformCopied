@@ -23,6 +23,10 @@ public class ListingImageEntity {
     @Column(name = "image_url", columnDefinition = "TEXT", nullable = false)
     private String imageUrl;
 
+    // Mapping for display order (DB seems to enforce unique (listing_id, display_order) via index 'uk_listing_images_listing_display')
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder = 0;
+
     @Column(name = "public_id", columnDefinition = "VARCHAR(255)")
     private String publicId;
 
@@ -67,6 +71,14 @@ public class ListingImageEntity {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public Integer getDisplayOrder() {
+        return displayOrder;
+    }
+
+    public void setDisplayOrder(Integer displayOrder) {
+        this.displayOrder = displayOrder;
     }
 
     // Alias methods for compatibility với code hiện tại

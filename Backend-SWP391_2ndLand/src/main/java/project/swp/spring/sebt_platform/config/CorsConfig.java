@@ -9,12 +9,13 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins("http://localhost:5173")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
-                .allowedHeaders("*")
-                .exposedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600);
+    registry.addMapping("/**")
+        // Cho phép tất cả các port dev Vite (5173, 5174, ...) và có thể mở rộng thêm
+        .allowedOriginPatterns("http://localhost:*")
+        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
+        .allowedHeaders("*")
+        .exposedHeaders("*")
+        .allowCredentials(true)
+        .maxAge(3600);
     }
 }

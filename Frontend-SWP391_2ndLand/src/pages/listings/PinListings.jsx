@@ -1,3 +1,4 @@
+// DEPRECATED: PinListings page logic đã được hợp nhất vào ListingPage (category=pin)
 import React, { useState, useEffect, useCallback } from "react";
 import ListingPage from "./ListingPage";
 import api from "../../api/axios";
