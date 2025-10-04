@@ -2,14 +2,11 @@ package project.swp.spring.sebt_platform.service.impl;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.LinkedHashSet;
-import org.springframework.data.domain.PageImpl;
+import org.springframework.data.jpa.domain.Specification;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -77,20 +74,20 @@ public class ListingServiceImpl implements ListingService {
                     keyWord.trim(), ListingStatus.ACTIVE, pageable);
 
             // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
-            return listingsPage.map(listing -> {
-                boolean isFavorited = userId != null &&
-                        favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
+        List<Long> ids = listingsPage.getContent().stream().map(ListingEntity::getId).toList();
+        List<Long> favoritedIds = (userId != null && !ids.isEmpty()) ?
+            favoriteRepository.findFavoritedListingIds(userId, ids) : List.of();
+        Set<Long> favSet = new java.util.HashSet<>(favoritedIds);
 
-                return new ListingCartResponseDTO(
-                        listing.getId(),
-                        listing.getTitle(),
-                        listing.getThumbnailImage(),
-                        listing.getPrice().doubleValue(),
-                        listing.getViewsCount(),
-                        listing.getSeller().getPhoneNumber(),
-                        isFavorited
-                );
-            });
+        return listingsPage.map(listing -> new ListingCartResponseDTO(
+            listing.getId(),
+            listing.getTitle(),
+            listing.getThumbnailImage(),
+            listing.getPrice().doubleValue(),
+            listing.getViewsCount(),
+            listing.getSeller().getPhoneNumber(),
+            favSet.contains(listing.getId())
+        ));
         } catch (Exception e) {
             logger.error("Error searching listings by keyword: " + keyWord, e);
             return Page.empty(pageable);
@@ -139,7 +136,7 @@ public class ListingServiceImpl implements ListingService {
         // Create and save EV vehicle or Battery first
         ProductEntity productEntity = new ProductEntity();
 
-        if (createListingForm.getProduct().getEv() != null) {
+    if (createListingForm.getProduct().getEv() != null) {
             Ev evDto = createListingForm.getProduct().getEv();
             logger.debug("[CREATE_LISTING] EV DTO -> type={} name='{}' brand='{}' model='{}' year={} mileage={} batteryCapacity={} condition={}",
                     evDto.getType(), evDto.getName(), evDto.getBrand(), evDto.getModel(), evDto.getYear(), evDto.getMileage(), evDto.getBatteryCapacity(), evDto.getConditionStatus());
@@ -167,9 +164,12 @@ public class ListingServiceImpl implements ListingService {
             evVehicleEntity.setBrand(evDto.getBrand());
             evVehicleEntity.setModel(evDto.getModel());
             evVehicleEntity.setYear(evDto.getYear());
-            if (evDto.getBatteryCapacity() > 0) {
-                evVehicleEntity.setBatteryCapacity(BigDecimal.valueOf(evDto.getBatteryCapacity()));
+            // Battery capacity bắt buộc > 0
+            if (evDto.getBatteryCapacity() <= 0) {
+                logger.error("EV battery capacity <= 0");
+                return false;
             }
+            evVehicleEntity.setBatteryCapacity(BigDecimal.valueOf(evDto.getBatteryCapacity()));
             evVehicleEntity.setConditionStatus(evDto.getConditionStatus() != null ? evDto.getConditionStatus() : VehicleCondition.GOOD);
             evVehicleEntity.setMileage(evDto.getMileage() != null ? evDto.getMileage() : 0);
             evVehicleEntity.setType(evDto.getType());
@@ -278,7 +278,7 @@ public class ListingServiceImpl implements ListingService {
         // Convert to DTO
         ListingDetailResponseDTO detailDTO = new ListingDetailResponseDTO();
 
-        if (listing == null) return null;
+    // listing was already checked above for null & ACTIVE status
 
         detailDTO.setTitle(listing.getTitle());
         detailDTO.setDescription(listing.getDescription());
@@ -302,26 +302,41 @@ public class ListingServiceImpl implements ListingService {
         EvVehicleEntity evVehicleEntity = listing.getProduct().getEvVehicle();
         BatteryEntity batteryEntity = listing.getProduct().getBattery();
 
-        Product productResp;
-        if (product.getEvVehicle() != null) {
-            productResp = new Product(new Ev( evVehicleEntity.getType(),
-                    evVehicleEntity.getName(),
-                    evVehicleEntity.getModel(),
-                    evVehicleEntity.getBrand(),
-                    evVehicleEntity.getYear(),
-                    evVehicleEntity.getMileage(),
-                    evVehicleEntity.getBatteryCapacity().doubleValue(),
-                    evVehicleEntity.getConditionStatus()),null);
-        }  else {
-            productResp = new Product(null,
-                    new Battery( batteryEntity.getBrand(),
-                            batteryEntity.getModel(),
-                            batteryEntity.getCapacity().doubleValue(),
-                            batteryEntity.getHealthPercentage(),
-                            batteryEntity.getCompatibleVehicles(),
-                            batteryEntity.getConditionStatus()
-                    ));
-        }
+    // Build product response model with null-safety to avoid 500 errors (e.g. missing batteryCapacity)
+    Product productResp;
+    if (product != null && product.getEvVehicle() != null) {
+        // Safely extract fields
+        var cap = (evVehicleEntity.getBatteryCapacity() != null) ? evVehicleEntity.getBatteryCapacity().doubleValue() : 0d;
+        var mileage = evVehicleEntity.getMileage() != null ? evVehicleEntity.getMileage() : 0;
+        productResp = new Product(
+            new Ev(
+                evVehicleEntity.getType(),
+                evVehicleEntity.getName(),
+                evVehicleEntity.getModel(),
+                evVehicleEntity.getBrand(),
+                evVehicleEntity.getYear(),
+                mileage,
+                cap,
+                evVehicleEntity.getConditionStatus()
+            ),
+            null
+        );
+    } else if (product != null && product.getBattery() != null) {
+        var capacity = batteryEntity.getCapacity() != null ? batteryEntity.getCapacity().doubleValue() : 0d;
+        productResp = new Product(
+            null,
+            new Battery(
+                batteryEntity.getBrand(),
+                batteryEntity.getModel(),
+                capacity,
+                batteryEntity.getHealthPercentage(),
+                batteryEntity.getCompatibleVehicles(),
+                batteryEntity.getConditionStatus()
+            )
+        );
+    } else {
+        productResp = new Product(null, null); // Fallback unexpected case
+    }
 
         // Set location
         LocationEntity location = locationRepository.findByListingId(listingId);
@@ -360,22 +375,18 @@ public class ListingServiceImpl implements ListingService {
         try {
             // Sử dụng repository method trả về Page
             Page<ListingEntity> listingsPage = listingRepository.findCarListingsByStatus(ListingStatus.ACTIVE, pageable);
-
-            // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
-            return listingsPage.map(listing -> {
-                boolean isFavorited = userId != null &&
-                        favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
-
-                return new ListingCartResponseDTO(
-                        listing.getId(),
-                        listing.getTitle(),
-                        listing.getThumbnailImage(),
-                        listing.getPrice().doubleValue(),
-                        listing.getViewsCount(),
-                        listing.getSeller().getPhoneNumber(),
-                        isFavorited
-                );
-            });
+        List<Long> ids = listingsPage.getContent().stream().map(ListingEntity::getId).toList();
+        Set<Long> favSet = (userId != null && !ids.isEmpty()) ?
+            new java.util.HashSet<>(favoriteRepository.findFavoritedListingIds(userId, ids)) : java.util.Collections.<Long>emptySet();
+        return listingsPage.map(listing -> new ListingCartResponseDTO(
+            listing.getId(),
+            listing.getTitle(),
+            listing.getThumbnailImage(),
+            listing.getPrice().doubleValue(),
+            listing.getViewsCount(),
+            listing.getSeller().getPhoneNumber(),
+            favSet.contains(listing.getId())
+        ));
         } catch (Exception e) {
             logger.error("Error getting EV listing carts", e);
             return Page.empty(pageable);
@@ -387,22 +398,18 @@ public class ListingServiceImpl implements ListingService {
         try {
             // Sử dụng repository method trả về Page
             Page<ListingEntity> listingsPage = listingRepository.findBatteryListingsByStatus(ListingStatus.ACTIVE, pageable);
-
-            // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
-            return listingsPage.map(listing -> {
-                boolean isFavorited = userId != null &&
-                        favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
-
-                return new ListingCartResponseDTO(
-                        listing.getId(),
-                        listing.getTitle(),
-                        listing.getThumbnailImage(),
-                        listing.getPrice().doubleValue(),
-                        listing.getViewsCount(),
-                        listing.getSeller().getPhoneNumber(),
-                        isFavorited
-                );
-            });
+        List<Long> ids = listingsPage.getContent().stream().map(ListingEntity::getId).toList();
+        Set<Long> favSet = (userId != null && !ids.isEmpty()) ?
+            new java.util.HashSet<>(favoriteRepository.findFavoritedListingIds(userId, ids)) : java.util.Collections.<Long>emptySet();
+        return listingsPage.map(listing -> new ListingCartResponseDTO(
+            listing.getId(),
+            listing.getTitle(),
+            listing.getThumbnailImage(),
+            listing.getPrice().doubleValue(),
+            listing.getViewsCount(),
+            listing.getSeller().getPhoneNumber(),
+            favSet.contains(listing.getId())
+        ));
         } catch (Exception e) {
             logger.error("Error getting battery listing carts", e);
             return Page.empty(pageable);
@@ -439,43 +446,6 @@ public class ListingServiceImpl implements ListingService {
         return 0;
     }
 
-    private String extractPublicIdFromCloudinaryUrl(String cloudinaryUrl) {
-        try {
-            if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
-                return null;
-            }
-
-            String[] parts = cloudinaryUrl.split("/upload/");
-            if (parts.length < 2) {
-                return null;
-            }
-
-            String afterUpload = parts[1];
-            String[] segments = afterUpload.split("/");
-
-            // Nếu có version number, bỏ qua segment đầu
-            int startIndex = (segments.length > 1 && segments[0].startsWith("v")) ? 1 : 0;
-
-            // Kết hợp các segment còn lại và remove file extension
-            StringBuilder publicId = new StringBuilder();
-            for (int i = startIndex; i < segments.length; i++) {
-                if (i > startIndex) {
-                    publicId.append("/");
-                }
-                // Remove file extension from last segment
-                String segment = segments[i];
-                if (i == segments.length - 1 && segment.contains(".")) {
-                    segment = segment.substring(0, segment.lastIndexOf("."));
-                }
-                publicId.append(segment);
-            }
-
-            return publicId.toString();
-        } catch (Exception e) {
-
-            return cloudinaryUrl;
-        }
-    }
 
     @Override
     public Page<ListingCartResponseDTO> searchListingsAdvanced(
@@ -548,8 +518,6 @@ public class ListingServiceImpl implements ListingService {
                 results.retainAll(new HashSet<>(brandResults));
                 logger.debug("After brand filter: {} results remaining", results.size());
             }
-
-            // Filter theo year
             if (year != null) {
                 List<ListingEntity> yearResults = listingRepository.findByYear(year);
                 logger.debug("Year filter found {} results", yearResults.size());
@@ -572,13 +540,9 @@ public class ListingServiceImpl implements ListingService {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
-            // Manual pagination từ List đã sort
-            Page<ListingCartResponseDTO> pagedResult = createPageFromList(dtoList, pageable);
-
-            logger.info("Advanced search completed. Total results: {}, Page: {}/{}",
-                    pagedResult.getTotalElements(), pageable.getPageNumber() + 1, pagedResult.getTotalPages());
-
-            return pagedResult;
+            List<Long> ids = resultPage.getContent().stream().map(ListingEntity::getId).toList();
+            Set<Long> favSet = (userId != null && !ids.isEmpty()) ? new java.util.HashSet<>(favoriteRepository.findFavoritedListingIds(userId, ids)) : java.util.Collections.<Long>emptySet();
+            return resultPage.map(le -> convertToListingCartDTOWithFav(le, favSet.contains(le.getId())));
 
         } catch (Exception e) {
             logger.error("Error in searchListingsAdvanced: ", e);
@@ -586,36 +550,26 @@ public class ListingServiceImpl implements ListingService {
         }
     }
 
-    private ListingCartResponseDTO convertToListingCartDTO(ListingEntity listing, Long userId) {
-        try {
-            boolean isFavorited = userId != null &&
-                    favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
-
-            return new ListingCartResponseDTO(
-                    listing.getId(),
-                    listing.getTitle(),
-                    listing.getThumbnailImage(),
-                    listing.getPrice().doubleValue(),
-                    listing.getViewsCount(),
-                    listing.getSeller().getPhoneNumber(),
-                    isFavorited
-            );
-        } catch (Exception e) {
-            logger.warn("Error converting listing {} to DTO: {}", listing.getId(), e.getMessage());
-            return null;
+    private ListingCartResponseDTO convertToListingCartDTOWithFav(ListingEntity listing, boolean isFavorited) {
+        if (listing == null) {
+            return new ListingCartResponseDTO(null, "(null)", null, 0d, 0, null, false);
         }
+        double priceVal = 0d;
+        if (listing.getPrice() != null) {
+            try { priceVal = listing.getPrice().doubleValue(); } catch (Exception ex) { logger.warn("Price convert error listing {}: {}", listing.getId(), ex.getMessage()); }
+        }
+        String phone = null;
+        try { if (listing.getSeller() != null) phone = listing.getSeller().getPhoneNumber(); } catch (Exception ex) { logger.warn("Seller phone fetch failed listing {}: {}", listing.getId(), ex.getMessage()); }
+        return new ListingCartResponseDTO(
+                listing.getId(),
+                listing.getTitle(),
+                listing.getThumbnailImage(),
+                priceVal,
+                listing.getViewsCount(),
+                phone,
+                isFavorited
+        );
     }
 
-    private Page<ListingCartResponseDTO> createPageFromList(List<ListingCartResponseDTO> list, Pageable pageable) {
-        if (list == null) list = new ArrayList<>();
-
-        int total = list.size();
-        int start = Math.min((int) pageable.getOffset(), total);
-        int end = Math.min(start + pageable.getPageSize(), total);
-
-        List<ListingCartResponseDTO> pageContent = list.subList(start, end);
-
-        return new PageImpl<>(pageContent, pageable, total);
-    }
 }
 

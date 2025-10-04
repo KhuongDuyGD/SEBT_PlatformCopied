@@ -10,7 +10,11 @@ export const vehicleSchema = yup.object({
   model: yup.string().trim().nullable().default(null),
   year: yup.number().typeError('Năm không hợp lệ').min(2000,'>= 2000').max(CURRENT_YEAR + 1,'Quá lớn').required(),
   mileage: yup.number().transform(v=>isNaN(v)?0:v).min(0,'>=0').default(0),
-  batteryCapacity: yup.number().transform(v=>isNaN(v)?0:v).min(0,'>=0').default(0),
+  batteryCapacity: yup.number()
+    .typeError('Dung lượng pin không hợp lệ')
+    .transform(v=> (v === '' || isNaN(v)) ? 0 : v)
+    .positive('Dung lượng pin phải > 0')
+    .required('Dung lượng pin bắt buộc'),
   conditionStatus: yup.string().oneOf(['EXCELLENT','GOOD','FAIR','POOR','NEEDS_MAINTENANCE']).required()
 });
 
@@ -73,7 +77,7 @@ export const buildPayload = (values) => {
         brand: values.vehicle.brand,
         year: values.vehicle.year,
         mileage: values.vehicle.mileage || 0,
-        batteryCapacity: values.vehicle.batteryCapacity || 0,
+  batteryCapacity: values.vehicle.batteryCapacity, // đã validate >0 ở schema
         conditionStatus: values.vehicle.conditionStatus
       },
       battery: null

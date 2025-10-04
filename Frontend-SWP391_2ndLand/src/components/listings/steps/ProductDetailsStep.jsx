@@ -115,18 +115,20 @@ export default function ProductDetailsStep({ formData, onChange, register, error
             </div>
             <div className="form-row cols-2">
               <div className="form-group">
-                <label className="form-label">Dung lượng pin (kWh)</label>
+                <label className="form-label required">Dung lượng pin (kWh)</label>
                 <input
                   type="number"
                   name="vehicle.batteryCapacity"
                   value={formData.vehicle.batteryCapacity}
                   onChange={(e)=> { onChange(e); const r=getReg('vehicle.batteryCapacity'); r.onChange && r.onChange(e); }}
                   ref={getReg('vehicle.batteryCapacity').ref}
-                  min="0"
+                  min="0.1"
                   step="0.1"
-                  className="form-input"
+                  className={`form-input ${errors?.vehicle?.batteryCapacity ? 'input-error' : ''}`}
                   placeholder="75.3"
+                  required
                 />
+                {errors?.vehicle?.batteryCapacity && <p className="field-error">{errors.vehicle.batteryCapacity.message}</p>}
               </div>
               <div className="form-group">
                 <label className="form-label required">Tình trạng</label>

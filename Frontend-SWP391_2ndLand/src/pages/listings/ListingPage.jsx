@@ -39,7 +39,8 @@ function ListingPage() {
   const [category, setCategory] = useState(deriveInitial());
   // vehicleType: CAR | BIKE | MOTORBIKE (backend enum) when category === 'cars'
   const [vehicleType, setVehicleType] = useState(null);
-  const [priceRange, setPriceRange] = useState([0, 100000000]); // client-side only
+  // Mặc định tăng max price rất cao để không vô tình lọc mất các xe ô tô đắt tiền (trước đó 100,000,000 làm CAR biến mất)
+  const [priceRange, setPriceRange] = useState([0, 2000000000]); // 0 -> 2,000,000,000 (client-side filter)
   const [year, setYear] = useState(""); // client-side only
   const debounceRef = useRef(null);
   const [listings, setListings] = useState([]);
@@ -181,12 +182,12 @@ function ListingPage() {
                 }}
               />
             </Form.Item>
-            <Form.Item label={<span>Khoảng giá (VND) <Text type="secondary" style={{ fontSize: 12 }}>(client)</Text></span>}>
+            <Form.Item label={<span>Khoảng giá (VND) <Text type="secondary" style={{ fontSize: 12 }}>(lọc cục bộ trên trang)</Text></span>}>
               <Slider
                 range
                 min={0}
-                max={100_000_000}
-                step={500_000}
+                max={2_000_000_000}
+                step={10_000_000}
                 value={priceRange}
                 tooltip={{ formatter: (v) => v?.toLocaleString('vi-VN') }}
                 onChange={(vals) => {
@@ -198,14 +199,14 @@ function ListingPage() {
                   value={priceRange[0]}
                   min={0}
                   max={priceRange[1]}
-                  step={500_000}
+                  step={10_000_000}
                   onChange={(v)=> setPriceRange([v || 0, priceRange[1]])}
                 />
                 <InputNumber
                   value={priceRange[1]}
                   min={priceRange[0]}
-                  max={100_000_000}
-                  step={500_000}
+                  max={2_000_000_000}
+                  step={10_000_000}
                   onChange={(v)=> setPriceRange([priceRange[0], v || priceRange[1]])}
                 />
               </Space>

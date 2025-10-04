@@ -17,10 +17,10 @@ export const advancedSearchListings = (params = {}) => {
   return api.get(`/listings/advanced-search?${query}`).then(r => r.data);
 };
 
-// Keyword search
-export const keywordSearch = (keyword, page=0, size=12) => {
-  return api.get(`/listings/search?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`)
-    .then(r => r.data);
+// Keyword search (accept optional axios config: { signal } etc.)
+export const keywordSearch = (keyword, page=0, size=12, config={}) => {
+  return api.get(`/listings/search?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`,
+    config).then(r => r.data);
 };
 
 // EV listing carts
