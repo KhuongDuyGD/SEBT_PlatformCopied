@@ -9,27 +9,30 @@ import project.swp.spring.sebt_platform.model.enums.ListingType;
 
 public class CreateListingFormDTO {
     private String title;
-    private Product product;
+    private Product product = new Product(); // Initialize with empty object
     private ListingType listingType;
     private String description;
     private Double price;
     private String category;
-    private Location location;
+    private Location location = new Location(); // Initialize with empty object
     private List<MultipartFile> images; // Danh sách file ảnh, ảnh đầu tiên sẽ là thumbnail
 
     // Constructors
-    public CreateListingFormDTO() {}
+    public CreateListingFormDTO() {
+        this.product = new Product();
+        this.location = new Location();
+    }
 
     public CreateListingFormDTO(String title, Product product, ListingType listingType,
                                 String description, Double price, String category,
                                 Location location, List<MultipartFile> images) {
         this.title = title;
-        this.product = product;
+        this.product = product != null ? product : new Product();
         this.listingType = listingType;
         this.description = description;
         this.price = price;
         this.category = category;
-        this.location = location;
+        this.location = location != null ? location : new Location();
         this.images = images;
     }
 
@@ -37,7 +40,10 @@ public class CreateListingFormDTO {
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
-    public Product getProduct() { return product; }
+    public Product getProduct() {
+        if (product == null) product = new Product();
+        return product;
+    }
     public void setProduct(Product product) { this.product = product; }
 
     public ListingType getListingType() { return listingType; }
@@ -52,7 +58,10 @@ public class CreateListingFormDTO {
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
-    public Location getLocation() { return location; }
+    public Location getLocation() {
+        if (location == null) location = new Location();
+        return location;
+    }
     public void setLocation(Location location) { this.location = location; }
 
     public List<MultipartFile> getImages() { return images; }

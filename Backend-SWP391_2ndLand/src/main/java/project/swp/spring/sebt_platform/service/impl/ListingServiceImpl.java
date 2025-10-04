@@ -105,8 +105,8 @@ public class ListingServiceImpl implements ListingService {
                 sellerId,
                 createListingForm != null ? createListingForm.getTitle() : null,
                 createListingForm != null ? createListingForm.getPrice() : null,
-                (createListingForm != null && createListingForm.getProduct() != null && createListingForm.getProduct().ev() != null),
-                (createListingForm != null && createListingForm.getProduct() != null && createListingForm.getProduct().battery() != null),
+                (createListingForm != null && createListingForm.getProduct() != null && createListingForm.getProduct().getEv() != null),
+                (createListingForm != null && createListingForm.getProduct() != null && createListingForm.getProduct().getBattery() != null),
                 listingImages != null ? listingImages.size() : 0
         );
 
@@ -125,7 +125,7 @@ public class ListingServiceImpl implements ListingService {
             return false;
         }
 
-        if (createListingForm.getProduct().ev() == null && createListingForm.getProduct().battery() == null) {
+        if (createListingForm.getProduct().getEv() == null && createListingForm.getProduct().getBattery() == null) {
             logger.error("Both EV vehicle and Battery details are null");
             return false;
         }
@@ -139,55 +139,55 @@ public class ListingServiceImpl implements ListingService {
         // Create and save EV vehicle or Battery first
         ProductEntity productEntity = new ProductEntity();
 
-        if (createListingForm.getProduct().ev() != null) {
-            Ev evDto = createListingForm.getProduct().ev();
+        if (createListingForm.getProduct().getEv() != null) {
+            Ev evDto = createListingForm.getProduct().getEv();
             logger.debug("[CREATE_LISTING] EV DTO -> type={} name='{}' brand='{}' model='{}' year={} mileage={} batteryCapacity={} condition={}",
-                    evDto.type(), evDto.name(), evDto.brand(), evDto.model(), evDto.year(), evDto.mileage(), evDto.batteryCapacity(), evDto.conditionStatus());
+                    evDto.getType(), evDto.getName(), evDto.getBrand(), evDto.getModel(), evDto.getYear(), evDto.getMileage(), evDto.getBatteryCapacity(), evDto.getConditionStatus());
 
             // Defensive validation for required EV fields
-            if (evDto.name() == null || evDto.name().isBlank()) {
+            if (evDto.getName() == null || evDto.getName().isBlank()) {
                 logger.error("EV name is null/blank");
                 return false;
             }
-            if (evDto.brand() == null || evDto.brand().isBlank()) {
+            if (evDto.getBrand() == null || evDto.getBrand().isBlank()) {
                 logger.error("EV brand is null/blank");
                 return false;
             }
-            if (evDto.type() == null) {
+            if (evDto.getType() == null) {
                 logger.error("EV type is null");
                 return false;
             }
-            if (evDto.year() == null) {
+            if (evDto.getYear() == null) {
                 logger.error("EV year is null");
                 return false;
             }
 
             EvVehicleEntity evVehicleEntity = new EvVehicleEntity();
-            evVehicleEntity.setName(evDto.name());
-            evVehicleEntity.setBrand(evDto.brand());
-            evVehicleEntity.setModel(evDto.model());
-            evVehicleEntity.setYear(evDto.year());
-            if (evDto.batteryCapacity() > 0) {
-                evVehicleEntity.setBatteryCapacity(BigDecimal.valueOf(evDto.batteryCapacity()));
+            evVehicleEntity.setName(evDto.getName());
+            evVehicleEntity.setBrand(evDto.getBrand());
+            evVehicleEntity.setModel(evDto.getModel());
+            evVehicleEntity.setYear(evDto.getYear());
+            if (evDto.getBatteryCapacity() > 0) {
+                evVehicleEntity.setBatteryCapacity(BigDecimal.valueOf(evDto.getBatteryCapacity()));
             }
-            evVehicleEntity.setConditionStatus(evDto.conditionStatus() != null ? evDto.conditionStatus() : VehicleCondition.GOOD);
-            evVehicleEntity.setMileage(evDto.mileage() != null ? evDto.mileage() : 0);
-            evVehicleEntity.setType(evDto.type());
+            evVehicleEntity.setConditionStatus(evDto.getConditionStatus() != null ? evDto.getConditionStatus() : VehicleCondition.GOOD);
+            evVehicleEntity.setMileage(evDto.getMileage() != null ? evDto.getMileage() : 0);
+            evVehicleEntity.setType(evDto.getType());
             evVehicleEntity = evVehicleRepository.save(evVehicleEntity);
             productEntity.setEvVehicle(evVehicleEntity);
         }
 
-        if (createListingForm.getProduct().battery() != null) {
-            Battery b = createListingForm.getProduct().battery();
+        if (createListingForm.getProduct().getBattery() != null) {
+            Battery b = createListingForm.getProduct().getBattery();
             logger.debug("[CREATE_LISTING] Battery DTO -> brand={} model={} capacity={} health%={} condition={}",
-                    b.brand(), b.model(), b.capacity(), b.healthPercentage(), b.conditionStatus());
+                    b.getBrand(), b.getModel(), b.getCapacity(), b.getHealthPercentage(), b.getConditionStatus());
             BatteryEntity batteryEntity = new BatteryEntity();
-            batteryEntity.setBrand(b.brand());
-            batteryEntity.setModel(b.model());
-            batteryEntity.setHealthPercentage(b.healthPercentage());
-            batteryEntity.setCapacity(BigDecimal.valueOf(b.capacity()));
-            batteryEntity.setCompatibleVehicles(b.compatibleVehicles());
-            batteryEntity.setConditionStatus(b.conditionStatus());
+            batteryEntity.setBrand(b.getBrand());
+            batteryEntity.setModel(b.getModel());
+            batteryEntity.setHealthPercentage(b.getHealthPercentage());
+            batteryEntity.setCapacity(BigDecimal.valueOf(b.getCapacity()));
+            batteryEntity.setCompatibleVehicles(b.getCompatibleVehicles());
+            batteryEntity.setConditionStatus(b.getConditionStatus());
             batteryEntity = batteryRepository.save(batteryEntity);
             productEntity.setBattery(batteryEntity);
         }
@@ -239,9 +239,9 @@ public class ListingServiceImpl implements ListingService {
 
         // Create and save location
         LocationEntity locationEntity = new LocationEntity();
-        locationEntity.setProvince(createListingForm.getLocation().province());
-        locationEntity.setDistrict(createListingForm.getLocation().district());
-        locationEntity.setDetails(createListingForm.getLocation().details());
+        locationEntity.setProvince(createListingForm.getLocation().getProvince());
+        locationEntity.setDistrict(createListingForm.getLocation().getDistrict());
+        locationEntity.setDetails(createListingForm.getLocation().getDetails());
         locationEntity.setListing(listingEntity);
         locationRepository.save(locationEntity);
         logger.debug("[CREATE_LISTING] Saved location id={}", locationEntity.getId());

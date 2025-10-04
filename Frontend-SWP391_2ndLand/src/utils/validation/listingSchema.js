@@ -34,7 +34,14 @@ export const baseListingSchema = yup.object({
   description: yup.string().trim().nullable().default(null),
   price: yup.number().typeError('Giá phải là số').positive('Giá > 0').required('Giá bắt buộc'),
   productType: yup.string().oneOf(['VEHICLE','BATTERY']).required(),
-  images: yup.array().of(yup.string().url('URL ảnh không hợp lệ')).min(1,'Cần ít nhất 1 ảnh').max(10,'Tối đa 10 ảnh'),
+  images: yup.array().min(1,'Cần ít nhất 1 ảnh').max(10,'Tối đa 10 ảnh').test(
+    'is-file-or-url',
+    'Ảnh phải là File hoặc URL hợp lệ',
+    (value) => {
+      if (!value) return false;
+      return value.every(item => item instanceof File || (typeof item === 'string' && item.length > 0));
+    }
+  ),
   mainImageIndex: yup.number().min(0).default(0),
   vehicle: vehicleSchema.when('productType', {
     is: 'VEHICLE',

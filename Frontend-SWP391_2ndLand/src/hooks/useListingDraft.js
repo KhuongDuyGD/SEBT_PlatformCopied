@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Local autosave draft hook for CreateListing form (Phase 1 - localStorage only)
+ * NOTE: File objects (images) are NOT persisted - only form text data
  * @param {object} params
  * @param {function} params.watch - react-hook-form watch
  * @param {function} params.reset - react-hook-form reset
@@ -18,8 +19,21 @@ export function useListingDraft({ watch, reset, getCurrentStep, setCurrentStep, 
   const debounceTimer = useRef(null);
   const lastSerializedRef = useRef('');
 
-  const serialize = (payload) => {
-    try { return JSON.stringify(payload); } catch { return ''; }
+  /**
+   * Serialize form values - EXCLUDE images (File objects)
+   * Files cannot be stored in localStorage
+   */
+  const serializeForStorage = (values) => {
+    try {
+      const { images, ...rest } = values;
+      // Store everything except File objects
+      return JSON.stringify({
+        ...rest,
+        imagesCount: Array.isArray(images) ? images.length : 0 // Just store count for reference
+      });
+    } catch {
+      return '';
+    }
   };
 
   // Restore draft on mount
@@ -36,11 +50,13 @@ export function useListingDraft({ watch, reset, getCurrentStep, setCurrentStep, 
         setRestoreStatus('none');
         return;
       }
-      reset(parsed.values, { keepDefaultValues: true });
+      // Restore values but keep images empty (files can't be persisted)
+      const { imagesCount, ...restoredValues } = parsed.values;
+      reset({ ...restoredValues, images: [] }, { keepDefaultValues: true });
       if (parsed.meta?.step) setCurrentStep(parsed.meta.step);
       setLastSaved(parsed.updatedAt);
       setRestoreStatus('restored');
-      lastSerializedRef.current = serialize(parsed.values);
+      lastSerializedRef.current = serializeForStorage(restoredValues);
     } catch (e) {
       console.warn('Restore draft failed', e);
       setRestoreStatus('error');
@@ -56,9 +72,12 @@ export function useListingDraft({ watch, reset, getCurrentStep, setCurrentStep, 
         meta: { step: getCurrentStep() },
         values
       };
-      const serialized = serialize(values);
+      const serialized = serializeForStorage(values);
       if (serialized === lastSerializedRef.current) return; // no change
-      localStorage.setItem(draftKey, JSON.stringify(payload));
+      localStorage.setItem(draftKey, JSON.stringify({
+        ...payload,
+        values: JSON.parse(serialized) // Store the serializable part
+      }));
       lastSerializedRef.current = serialized;
       setLastSaved(payload.updatedAt);
     } catch (e) {
