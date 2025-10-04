@@ -29,9 +29,6 @@ import project.swp.spring.sebt_platform.service.ListingService;
  */
 @RestController
 @RequestMapping("/api/listings")
-// Removed @CrossOrigin(origins = "*") to avoid wildcard + credentials conflict.
-// Global CORS configuration in CorsConfig now handles allowed origins with patterns
-// and returns a specific Origin header (required when allowCredentials(true)).
 public class ListingController {
 
     private static final Logger logger = LoggerFactory.getLogger(ListingController.class);
@@ -53,7 +50,6 @@ public class ListingController {
         try {
             logger.info("Received create listing request from IP: {}", request.getRemoteAddr());
 
-            // 🔧 SỬA: Kiểm tra session đơn giản hơn và linh hoạt hơn
             HttpSession session = request.getSession(false);
             Long userId = null;
 
@@ -61,7 +57,6 @@ public class ListingController {
                 userId = (Long) session.getAttribute("userId");
             }
 
-            // 🔧 SỬA: Fallback authentication từ request header hoặc parameter
             if (userId == null) {
                 String userIdHeader = request.getHeader("X-User-ID");
                 if (userIdHeader != null) {
@@ -74,7 +69,7 @@ public class ListingController {
                 }
             }
 
-            // 🔧 SỬA: Fallback cuối cùng cho testing
+
             if (userId == null) {
                 logger.warn("No user authentication found, using default user ID for testing");
                 userId = 1L; // Default user cho testing
@@ -87,7 +82,7 @@ public class ListingController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // 🔧 SỬA: Validate ảnh linh hoạt hơn
+
             String mainImageUrl = createListingFormDTO.mainImageUrl();
             if (mainImageUrl != null && !mainImageUrl.isEmpty() && !mainImageUrl.startsWith("http")) {
                 response.put("success", false);
@@ -95,7 +90,7 @@ public class ListingController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            logger.info("📝 Creating listing for user ID: {}, title: '{}'", userId, createListingFormDTO.title());
+            logger.info(" Creating listing for user ID: {}, title: '{}'", userId, createListingFormDTO.title());
 
             boolean createResult = listingService.createListing(createListingFormDTO, userId);
 
@@ -182,7 +177,7 @@ public class ListingController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            logger.info("🔋 Getting battery listings - page: {}, size: {}", page, size);
+            logger.info("Getting battery listings - page: {}, size: {}", page, size);
 
             if (page < 0) page = 0;
             if (size <= 0 || size > 100) size = 12;
@@ -213,7 +208,7 @@ public class ListingController {
      * GET /api/listings/detail/{listingId}
      */
     @GetMapping("/detail/{listingId}")
-    public ResponseEntity<Map<String, Object>> getListingDetail(
+    public ResponseEntity<?> getListingDetail(
             @PathVariable Long listingId,
             HttpServletRequest request) {
 
@@ -256,7 +251,7 @@ public class ListingController {
      * GET /api/listings/search?keyword=xe&page=0&size=12
      */
     @GetMapping("/search")
-    public ResponseEntity<Map<String, Object>> searchListings(
+    public ResponseEntity<?> searchListings(
             @RequestParam String keyword,
             HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
@@ -303,7 +298,7 @@ public class ListingController {
      * GET /api/listings/advanced-search?title=xe&brand=vinfast&minPrice=100000&maxPrice=500000
      */
     @GetMapping("/advanced-search")
-    public ResponseEntity<Map<String, Object>> advancedSearchListings(
+    public ResponseEntity<?> advancedSearchListings(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String brand,
             @RequestParam(required = false) Double minPrice,
@@ -317,7 +312,7 @@ public class ListingController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            logger.info("🔎 Advanced search - title: '{}', brand: '{}', year: {}, vehicleType: {}, priceRange: {}-{}",
+            logger.info("Advanced search - title: '{}', brand: '{}', year: {}, vehicleType: {}, priceRange: {}-{}",
                     title, brand, year, vehicleType, minPrice, maxPrice);
 
             // Validate parameters
@@ -404,7 +399,7 @@ public class ListingController {
         }
     }
 
-    // 🔧 SỬA: Helper methods để tái sử dụng code
+
 
     /**
      * Lấy user ID từ request (session, header, hoặc fallback)

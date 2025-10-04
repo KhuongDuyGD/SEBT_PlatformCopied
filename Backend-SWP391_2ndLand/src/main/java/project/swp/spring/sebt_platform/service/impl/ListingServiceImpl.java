@@ -23,6 +23,7 @@ import project.swp.spring.sebt_platform.dto.object.*;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
+import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
 import project.swp.spring.sebt_platform.model.*;
 import project.swp.spring.sebt_platform.model.enums.*;
 import project.swp.spring.sebt_platform.repository.*;
@@ -322,6 +323,33 @@ public class ListingServiceImpl implements ListingService {
                             batteryEntity.getCompatibleVehicles(),
                             batteryEntity.getConditionStatus()
                     ));
+        }
+
+        // Set location
+        LocationEntity location = locationRepository.findByListingId(listingId);
+        if (location != null) {
+            detailDTO.setLocation(new Location(
+                    location.getProvince(),
+                    location.getDistrict(),
+                    location.getDetails()
+            ));
+        } else {
+            detailDTO.setLocation(null);
+        }
+
+        // Set seller info
+        UserEntity seller = listing.getSeller();
+        if (seller != null) {
+            detailDTO.setSeller(new Seller(
+                    seller.getId(),
+                    seller.getUsername(),
+                    seller.getEmail(),
+                    seller.getPhoneNumber(),
+                    seller.getAvatar()
+            ));
+        } else {
+            detailDTO.setSeller(null);
+
         }
 
         detailDTO.setProduct(productResp);
