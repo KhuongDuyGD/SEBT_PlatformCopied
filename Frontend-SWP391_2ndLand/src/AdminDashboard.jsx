@@ -43,8 +43,8 @@ const AdminDashboard = () => {
       <div className="row g-3 mb-4">
         <StatCard
           icon="bi bi-people"
-            label="Người dùng"
-            value={mockStats.totalUsers}
+          label="Người dùng"
+          value={mockStats.totalUsers}
           color="primary"
           sub="+58 trong 7 ngày"
         />
@@ -58,7 +58,7 @@ const AdminDashboard = () => {
         <StatCard
           icon="bi bi-currency-exchange"
           label="Doanh thu (tháng)"
-          value={(mockStats.monthlyRevenue/1_000_000).toFixed(1)}
+          value={(mockStats.monthlyRevenue / 1_000_000).toFixed(1)}
           suffix="triệu ₫"
           color="warning"
           sub="Tỷ lệ chuyển đổi " />
@@ -108,16 +108,15 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockTransactions.slice(0,5).map(t => (
+                  {mockTransactions.slice(0, 5).map(t => (
                     <tr key={t.id}>
                       <td className="fw-semibold">{t.id}</td>
                       <td>{t.listing}</td>
                       <td>{formatCurrency(t.amount)}</td>
                       <td><span className="text-secondary small">{formatCurrency(t.fee)}</span></td>
                       <td>
-                        <span className={`badge rounded-pill text-bg-${
-                          t.status === 'success' ? 'success' : t.status === 'pending' ? 'warning' : 'secondary'
-                        }`}>
+                        <span className={`badge rounded-pill text-bg-${t.status === 'success' ? 'success' : t.status === 'pending' ? 'warning' : 'secondary'
+                          }`}>
                           {t.status}
                         </span>
                       </td>
@@ -144,7 +143,7 @@ const AdminDashboard = () => {
                   <XAxis dataKey="type" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#198754" radius={[4,4,0,0]} />
+                  <Bar dataKey="count" fill="#198754" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -152,10 +151,10 @@ const AdminDashboard = () => {
           <div className="card-flex">
             <div className="d-flex justify-content-between align-items-center mb-2">
               <h6 className="mb-0 fw-semibold">Tin chờ duyệt</h6>
-              <a href="/admin/listings" className="small text-decoration-none">Tất cả →</a>
+              <a href="/admin/pending-listings" className="small text-decoration-none">Tất cả →</a>
             </div>
             <ul className="list-group list-group-flush">
-              {mockListings.filter(l => l.status === 'pending').slice(0,4).map(l => (
+              {mockListings.filter(l => l.status === 'pending').slice(0, 4).map(l => (
                 <li key={l.id} className="list-group-item px-0 d-flex flex-column">
                   <div className="d-flex justify-content-between">
                     <span className="fw-semibold small">{l.title}</span>

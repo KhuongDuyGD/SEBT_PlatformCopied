@@ -6,6 +6,7 @@ const menu = [
   { group: 'MAIN', items: [{ to: '/admin', label: 'Dashboard', icon: 'bi-speedometer2', end: true }] },
   {
     group: 'QUẢN LÝ', items: [
+      { to: '/admin/pending-listings', label: 'Xét duyệt tin', icon: 'bi-clock-history' },
       { to: '/admin/listings', label: 'Tin đăng', icon: 'bi-card-list' },
       { to: '/admin/transactions', label: 'Giao dịch', icon: 'bi-arrow-left-right' },
       { to: '/admin/users', label: 'Người dùng', icon: 'bi-people' },
