@@ -34,11 +34,11 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/approve-request/{post_request_id}")
-    public  ResponseEntity<?> getApproveRequests(HttpServletRequest request, @PathVariable Long postRequestId, @RequestParam int page, @RequestParam int size) {
+    @GetMapping("/approve-request/{postRequestId}")
+    public  ResponseEntity<?> getApproveRequests(HttpServletRequest request, @PathVariable Long postRequestId) {
         try {
             HttpSession session = request.getSession(false);
-            if (session == null || session.getAttribute("role") == null || !session.getAttribute("role").equals("ADMIN")) {
+            if (session == null || session.getAttribute("role") == null || !session.getAttribute("role").equals(UserRole.ADMIN)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Admin access required.");
             }
 
@@ -55,10 +55,10 @@ public class AdminController {
     }
 
     @GetMapping("/reject-request/{postRequestId}")
-    public  ResponseEntity<?> getRejectRequests(HttpServletRequest request, @PathVariable Long postRequestId, @RequestParam String reason, @RequestParam int page, @RequestParam int size) {
+    public  ResponseEntity<?> getRejectRequests(HttpServletRequest request, @PathVariable Long postRequestId, @RequestParam String reason) {
         try {
             HttpSession session = request.getSession(false);
-            if (session == null || session.getAttribute("role") == null || !session.getAttribute("role").equals("ADMIN")) {
+            if (session == null || session.getAttribute("role") == null || !session.getAttribute("role").equals(UserRole.ADMIN)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Admin access required.");
             }
 

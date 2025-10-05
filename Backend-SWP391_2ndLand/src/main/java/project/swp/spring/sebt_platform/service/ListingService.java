@@ -15,11 +15,16 @@ public interface ListingService {
 
     Page<ListingCartResponseDTO> getListingsByKeyWord(String keyWord, Long userId, Pageable pageable);
 
-    Page<ListingCartResponseDTO> searchListingsAdvanced(
-            String title,
-            String brand,
+    Page<ListingCartResponseDTO> filterEvListings(
             Integer year,
             VehicleType vehicleType,
+            Double minPrice,
+            Double maxPrice,
+            Long userId,
+            Pageable pageable);
+
+    Page<ListingCartResponseDTO> filterBatteryListings(
+            Integer year,
             Double minPrice,
             Double maxPrice,
             Long userId,

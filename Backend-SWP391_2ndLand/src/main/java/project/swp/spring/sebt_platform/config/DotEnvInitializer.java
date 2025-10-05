@@ -21,21 +21,40 @@ import java.util.Properties;
 public class DotEnvInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
     private static final Logger logger = LoggerFactory.getLogger(DotEnvInitializer.class);
-    private static final String ENV_FILE = ".env";
 
     @Override
     public void initialize(ConfigurableApplicationContext applicationContext) {
+        logger.info("======= DotEnvInitializer STARTED =======");
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
 
-        try {
-            File envFile = new File(ENV_FILE);
+        // Try multiple possible locations for .env file
+        String[] possiblePaths = {
+            ".env",                                    // Current directory
+            "../.env",                                 // Parent directory
+            "Backend-SWP391_2ndLand/.env",            // Relative from parent
+            System.getProperty("user.dir") + "/.env",  // User working directory
+            System.getProperty("user.dir") + "/../.env" // Parent of working directory
+        };
 
-            if (!envFile.exists()) {
-                logger.warn("File .env not found at: {}", envFile.getAbsolutePath());
-                logger.warn("Application will use default values from application.properties");
-                return;
+        File envFile = null;
+        for (String path : possiblePaths) {
+            File file = new File(path);
+            logger.info("Checking for .env at: {}", file.getAbsolutePath());
+            if (file.exists() && file.isFile()) {
+                envFile = file;
+                logger.info("✅ Found .env file at: {}", file.getAbsolutePath());
+                break;
             }
+        }
 
+        if (envFile == null) {
+            logger.error("❌ File .env NOT FOUND in any of the checked locations!");
+            logger.error("Current working directory: {}", System.getProperty("user.dir"));
+            logger.warn("Application will use default values from application.properties");
+            return;
+        }
+
+        try {
             logger.info("Loading environment variables from .env file...");
 
             Properties properties = new Properties();
@@ -45,27 +64,35 @@ public class DotEnvInitializer implements ApplicationContextInitializer<Configur
 
             Map<String, Object> envMap = new HashMap<>();
             properties.forEach((key, value) -> {
-                String keyStr = key.toString();
-                String valueStr = value.toString();
+                String keyStr = key.toString().trim();
+                String valueStr = value.toString().trim();
+                
+                // Remove quotes if present
+                if (valueStr.startsWith("\"") && valueStr.endsWith("\"")) {
+                    valueStr = valueStr.substring(1, valueStr.length() - 1);
+                }
+                
                 envMap.put(keyStr, valueStr);
 
                 // Log non-sensitive variables
                 if (!isSensitive(keyStr)) {
-                    logger.debug("Loaded: {} = {}", keyStr, valueStr);
+                    logger.info("Loaded: {} = {}", keyStr, valueStr);
                 } else {
-                    logger.debug("Loaded: {} = ****", keyStr);
+                    logger.info("Loaded: {} = ****", keyStr);
                 }
             });
 
             environment.getPropertySources()
                     .addFirst(new MapPropertySource("dotenv", envMap));
 
-            logger.info("Successfully loaded {} environment variables from .env", envMap.size());
+            logger.info("✅ Successfully loaded {} environment variables from .env", envMap.size());
 
         } catch (IOException e) {
-            logger.error("Error reading .env file: {}", e.getMessage());
+            logger.error("❌ Error reading .env file: {}", e.getMessage(), e);
             logger.warn("Application will continue with default values");
         }
+        
+        logger.info("======= DotEnvInitializer COMPLETED =======");
     }
 
     /**
@@ -75,8 +102,7 @@ public class DotEnvInitializer implements ApplicationContextInitializer<Configur
         String lowerKey = key.toLowerCase();
         return lowerKey.contains("password")
             || lowerKey.contains("secret")
-            || lowerKey.contains("key")
+            || lowerKey.contains("api_key")
             || lowerKey.contains("token");
     }
 }
-

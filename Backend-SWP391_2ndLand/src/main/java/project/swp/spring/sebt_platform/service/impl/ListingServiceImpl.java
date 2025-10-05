@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.LinkedHashSet;
+
 import org.springframework.data.domain.PageImpl;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -208,7 +209,7 @@ public class ListingServiceImpl implements ListingService {
         listingEntity.setPrice(BigDecimal.valueOf(createListingForm.getPrice()));
         listingEntity.setSeller(user);
         listingEntity.setProduct(productEntity);
-        listingEntity.setStatus(ListingStatus.ACTIVE);
+        listingEntity.setStatus(ListingStatus.SUSPENDED);
 
         // Set thumbnail - lấy ảnh đầu tiên từ listingImages làm thumbnail
         if (listingImages != null && !listingImages.isEmpty()) {
@@ -270,7 +271,7 @@ public class ListingServiceImpl implements ListingService {
         }
 
         // Increment views count
-        if(user != null && !Objects.equals(listing.getSeller().getId(), userId) && user.getRole() == UserRole.MEMBER) {
+        if (user != null && !Objects.equals(listing.getSeller().getId(), userId) && user.getRole() == UserRole.MEMBER) {
             listing.setViewsCount(listing.getViewsCount() + 1);
             listingRepository.save(listing);
         }
@@ -304,17 +305,17 @@ public class ListingServiceImpl implements ListingService {
 
         Product productResp;
         if (product.getEvVehicle() != null) {
-            productResp = new Product(new Ev( evVehicleEntity.getType(),
+            productResp = new Product(new Ev(evVehicleEntity.getType(),
                     evVehicleEntity.getName(),
                     evVehicleEntity.getModel(),
                     evVehicleEntity.getBrand(),
                     evVehicleEntity.getYear(),
                     evVehicleEntity.getMileage(),
                     evVehicleEntity.getBatteryCapacity().doubleValue(),
-                    evVehicleEntity.getConditionStatus()),null);
-        }  else {
+                    evVehicleEntity.getConditionStatus()), null);
+        } else {
             productResp = new Product(null,
-                    new Battery( batteryEntity.getBrand(),
+                    new Battery(batteryEntity.getBrand(),
                             batteryEntity.getModel(),
                             batteryEntity.getCapacity().doubleValue(),
                             batteryEntity.getHealthPercentage(),
@@ -359,7 +360,7 @@ public class ListingServiceImpl implements ListingService {
     public Page<ListingCartResponseDTO> getEvListingCarts(Long userId, Pageable pageable) {
         try {
             // Sử dụng repository method trả về Page
-            Page<ListingEntity> listingsPage = listingRepository.findCarListingsByStatus(ListingStatus.ACTIVE, pageable);
+            Page<ListingEntity> listingsPage = listingRepository.findEvListingsByStatus(ListingStatus.ACTIVE, pageable);
 
             // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
             return listingsPage.map(listing -> {
@@ -439,147 +440,65 @@ public class ListingServiceImpl implements ListingService {
         return 0;
     }
 
-    private String extractPublicIdFromCloudinaryUrl(String cloudinaryUrl) {
-        try {
-            if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
-                return null;
-            }
-
-            String[] parts = cloudinaryUrl.split("/upload/");
-            if (parts.length < 2) {
-                return null;
-            }
-
-            String afterUpload = parts[1];
-            String[] segments = afterUpload.split("/");
-
-            // Nếu có version number, bỏ qua segment đầu
-            int startIndex = (segments.length > 1 && segments[0].startsWith("v")) ? 1 : 0;
-
-            // Kết hợp các segment còn lại và remove file extension
-            StringBuilder publicId = new StringBuilder();
-            for (int i = startIndex; i < segments.length; i++) {
-                if (i > startIndex) {
-                    publicId.append("/");
-                }
-                // Remove file extension from last segment
-                String segment = segments[i];
-                if (i == segments.length - 1 && segment.contains(".")) {
-                    segment = segment.substring(0, segment.lastIndexOf("."));
-                }
-                publicId.append(segment);
-            }
-
-            return publicId.toString();
-        } catch (Exception e) {
-
-            return cloudinaryUrl;
-        }
-    }
-
     @Override
-    public Page<ListingCartResponseDTO> searchListingsAdvanced(
-            String title,
-            String brand,
+    public Page<ListingCartResponseDTO> filterEvListings(
             Integer year,
             VehicleType vehicleType,
             Double minPrice,
             Double maxPrice,
             Long userId,
             Pageable pageable) {
-
         try {
-            logger.info("Advanced search - title: {}, brand: {}, year: {}, vehicleType: {}, minPrice: {}, maxPrice: {}",
-                    title, brand, year, vehicleType, minPrice, maxPrice);
+            return listingRepository.filterEvListings(
+                    year,
+                    vehicleType,
+                    minPrice != null ? BigDecimal.valueOf(minPrice) : null,
+                    maxPrice != null ? BigDecimal.valueOf(maxPrice) : null,
+                    pageable
+            ).map(listing -> {
+                        boolean isFavorited = userId != null &&
+                                favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
 
-            // Bắt đầu với tất cả active listings
-            Set<ListingEntity> results = new LinkedHashSet<>(listingRepository.findAllActiveListings());
-            logger.debug("Starting with {} active listings", results.size());
+                        return new ListingCartResponseDTO(
+                                listing.getId(),
+                                listing.getTitle(),
+                                listing.getThumbnailImage(),
+                                listing.getPrice().doubleValue(),
+                                listing.getViewsCount(),
+                                listing.getSeller().getPhoneNumber(),
+                                isFavorited
+                        );
+                    }
+            );
+        } catch (Exception e) {
+            logger.error("Error in searchListingsAdvanced: ", e);
+            return Page.empty(pageable);
+        }
+    }
 
-            // Áp dụng từng filter như phép giao (intersection)
+    @Override
+    public Page<ListingCartResponseDTO> filterBatteryListings(Integer year, Double minPrice, Double maxPrice, Long userId, Pageable pageable) {
+        try {
+            return listingRepository.filterBatteryListings(
+                    year,
+                    minPrice != null ? BigDecimal.valueOf(minPrice) : null,
+                    maxPrice != null ? BigDecimal.valueOf(maxPrice) : null,
+                    pageable
+            ).map(listing -> {
+                        boolean isFavorited = userId != null &&
+                                favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
 
-            // Filter theo title
-            if (title != null && !title.trim().isEmpty()) {
-                List<ListingEntity> titleResults = listingRepository.findByTitleContaining(title.trim());
-                logger.debug("Title filter found {} results", titleResults.size());
-                results.retainAll(new HashSet<>(titleResults));
-                logger.debug("After title filter: {} results remaining", results.size());
-            }
-
-            // Filter theo vehicle type
-            if (vehicleType != null) {
-                List<ListingEntity> typeResults = listingRepository.findByVehicleType(vehicleType);
-                logger.debug("Vehicle type filter found {} results", typeResults.size());
-                results.retainAll(new HashSet<>(typeResults));
-                logger.debug("After vehicle type filter: {} results remaining", results.size());
-            }
-
-            // Filter theo price range
-            if (minPrice != null && maxPrice != null) {
-                List<ListingEntity> priceResults = listingRepository.findByPriceBetween(
-                        BigDecimal.valueOf(minPrice),
-                        BigDecimal.valueOf(maxPrice)
-                );
-                logger.debug("Price range filter found {} results", priceResults.size());
-                results.retainAll(new HashSet<>(priceResults));
-                logger.debug("After price range filter: {} results remaining", results.size());
-            } else if (minPrice != null) {
-                // Chỉ có min price
-                List<ListingEntity> priceResults = listingRepository.findByPriceGreaterThanEqual(
-                        BigDecimal.valueOf(minPrice)
-                );
-                logger.debug("Min price filter found {} results", priceResults.size());
-                results.retainAll(new HashSet<>(priceResults));
-                logger.debug("After min price filter: {} results remaining", results.size());
-            } else if (maxPrice != null) {
-                // Chỉ có max price
-                List<ListingEntity> priceResults = listingRepository.findByPriceLessThanEqual(
-                        BigDecimal.valueOf(maxPrice)
-                );
-                logger.debug("Max price filter found {} results", priceResults.size());
-                results.retainAll(new HashSet<>(priceResults));
-                logger.debug("After max price filter: {} results remaining", results.size());
-            }
-
-            // Filter theo brand
-            if (brand != null && !brand.trim().isEmpty()) {
-                List<ListingEntity> brandResults = listingRepository.findByBrand(brand.trim());
-                logger.debug("Brand filter found {} results", brandResults.size());
-                results.retainAll(new HashSet<>(brandResults));
-                logger.debug("After brand filter: {} results remaining", results.size());
-            }
-
-            // Filter theo year
-            if (year != null) {
-                List<ListingEntity> yearResults = listingRepository.findByYear(year);
-                logger.debug("Year filter found {} results", yearResults.size());
-                results.retainAll(new HashSet<>(yearResults));
-                logger.debug("After year filter: {} results remaining", results.size());
-            }
-
-            logger.info("Final intersection results: {} listings", results.size());
-
-            // Convert Set thành List để sort
-            List<ListingEntity> sortedList = new ArrayList<>(results);
-
-            // Sort by createdAt DESC (mới nhất trước)
-            sortedList.sort(Comparator.comparing(ListingEntity::getCreatedAt,
-                    Comparator.nullsLast(Comparator.reverseOrder())));
-
-            // Convert entities thành DTOs
-            List<ListingCartResponseDTO> dtoList = sortedList.stream()
-                    .map(listing -> convertToListingCartDTO(listing, userId))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-
-            // Manual pagination từ List đã sort
-            Page<ListingCartResponseDTO> pagedResult = createPageFromList(dtoList, pageable);
-
-            logger.info("Advanced search completed. Total results: {}, Page: {}/{}",
-                    pagedResult.getTotalElements(), pageable.getPageNumber() + 1, pagedResult.getTotalPages());
-
-            return pagedResult;
-
+                        return new ListingCartResponseDTO(
+                                listing.getId(),
+                                listing.getTitle(),
+                                listing.getThumbnailImage(),
+                                listing.getPrice().doubleValue(),
+                                listing.getViewsCount(),
+                                listing.getSeller().getPhoneNumber(),
+                                isFavorited
+                        );
+                    }
+            );
         } catch (Exception e) {
             logger.error("Error in searchListingsAdvanced: ", e);
             return Page.empty(pageable);
@@ -616,6 +535,44 @@ public class ListingServiceImpl implements ListingService {
         List<ListingCartResponseDTO> pageContent = list.subList(start, end);
 
         return new PageImpl<>(pageContent, pageable, total);
+    }
+
+    private String extractPublicIdFromCloudinaryUrl(String cloudinaryUrl) {
+        try {
+            if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
+                return null;
+            }
+
+            String[] parts = cloudinaryUrl.split("/upload/");
+            if (parts.length < 2) {
+                return null;
+            }
+
+            String afterUpload = parts[1];
+            String[] segments = afterUpload.split("/");
+
+            // Nếu có version number, bỏ qua segment đầu
+            int startIndex = (segments.length > 1 && segments[0].startsWith("v")) ? 1 : 0;
+
+            // Kết hợp các segment còn lại và remove file extension
+            StringBuilder publicId = new StringBuilder();
+            for (int i = startIndex; i < segments.length; i++) {
+                if (i > startIndex) {
+                    publicId.append("/");
+                }
+                // Remove file extension from last segment
+                String segment = segments[i];
+                if (i == segments.length - 1 && segment.contains(".")) {
+                    segment = segment.substring(0, segment.lastIndexOf("."));
+                }
+                publicId.append(segment);
+            }
+
+            return publicId.toString();
+        } catch (Exception e) {
+
+            return cloudinaryUrl;
+        }
     }
 }
 
