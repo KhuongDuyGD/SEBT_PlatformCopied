@@ -33,10 +33,11 @@ import project.swp.spring.sebt_platform.service.ListingService;
 public class ListingController {
 
     private static final Logger logger = LoggerFactory.getLogger(ListingController.class);
-    private static final Long DEFAULT_USER_ID = 1L;
 
-    @Autowired private ListingService listingService;
-    @Autowired private CloudinaryService cloudinaryService;
+    @Autowired
+    private ListingService listingService;
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     @InitBinder
     public void initBinder(WebDataBinder binder) {
@@ -73,7 +74,7 @@ public class ListingController {
             }
 
             logger.info("Creating listing - userId: {}, title: '{}', images: {}",
-                userId, dto.getTitle(), images.size());
+                    userId, dto.getTitle(), images.size());
 
             // Upload images to Cloudinary
             List<Image> imageList = cloudinaryService.uploadMultipleImages(images, "listings");
@@ -89,13 +90,13 @@ public class ListingController {
             if (success) {
                 logger.info("Listing created successfully for user: {}", userId);
                 return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Bài đăng đã được tạo thành công và đang chờ admin xét duyệt",
-                    "data", Map.of(
-                        "userId", userId,
-                        "status", "PENDING",
-                        "imagesUploaded", imageList.size()
-                    )
+                        "success", true,
+                        "message", "Bài đăng đã được tạo thành công và đang chờ admin xét duyệt",
+                        "data", Map.of(
+                                "userId", userId,
+                                "status", "PENDING",
+                                "imagesUploaded", imageList.size()
+                        )
                 ));
             } else {
                 logger.warn("createListing returned false for user: {}", userId);
@@ -105,15 +106,15 @@ public class ListingController {
         } catch (Exception e) {
             logger.error("Error creating listing: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "Lỗi server: " + e.getMessage(),
-                "error", e.getClass().getSimpleName()
+                    "success", false,
+                    "message", "Lỗi server: " + e.getMessage(),
+                    "error", e.getClass().getSimpleName()
             ));
         }
     }
 
     /**
-     * GET /api/listings/evCart - Danh sách xe điện
+     * GET /api/listings/evCart
      */
     @GetMapping("/evCart")
     public ResponseEntity<Map<String, Object>> getEvListingCarts(
@@ -124,15 +125,15 @@ public class ListingController {
         try {
             logger.info("Getting EV listings - page: {}, size: {}", page, size);
             return getListingCarts(request, page, size, "EV",
-                () -> listingService.getEvListingCarts(getUserIdFromRequest(request),
-                    PageRequest.of(validatePage(page), validateSize(size))));
+                    () -> listingService.getEvListingCarts(getUserIdFromRequest(request),
+                            PageRequest.of(validatePage(page), validateSize(size))));
         } catch (Exception e) {
             return handleError("Error getting EV listings", e);
         }
     }
 
     /**
-     * GET /api/listings/batteryCart - Danh sách pin
+     * GET /api/listings/batteryCart
      */
     @GetMapping("/batteryCart")
     public ResponseEntity<Map<String, Object>> getBatteryListingCarts(
@@ -143,15 +144,15 @@ public class ListingController {
         try {
             logger.info("Getting battery listings - page: {}, size: {}", page, size);
             return getListingCarts(request, page, size, "pin",
-                () -> listingService.getBatteryListingCarts(getUserIdFromRequest(request),
-                    PageRequest.of(validatePage(page), validateSize(size))));
+                    () -> listingService.getBatteryListingCarts(getUserIdFromRequest(request),
+                            PageRequest.of(validatePage(page), validateSize(size))));
         } catch (Exception e) {
             return handleError("Error getting battery listings", e);
         }
     }
 
     /**
-     * GET /api/listings/detail/{id} - Chi tiết listing
+     * GET /api/listings/detail/{id}
      */
     @GetMapping("/detail/{listingId}")
     public ResponseEntity<Map<String, Object>> getListingDetail(
@@ -166,16 +167,16 @@ public class ListingController {
             }
 
             ListingDetailResponseDTO detail = listingService.getListingDetailById(
-                listingId, getUserIdFromRequest(request));
+                    listingId, getUserIdFromRequest(request));
 
             if (detail == null) {
                 return ResponseEntity.notFound().build();
             }
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", detail,
-                "message", "Lấy chi tiết listing thành công"
+                    "success", true,
+                    "data", detail,
+                    "message", "Lấy chi tiết listing thành công"
             ));
 
         } catch (Exception e) {
@@ -184,7 +185,7 @@ public class ListingController {
     }
 
     /**
-     * GET /api/listings/search - Tìm kiếm theo keyword
+     * GET /api/listings/search
      */
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> searchListings(
@@ -202,15 +203,15 @@ public class ListingController {
 
             Pageable pageable = PageRequest.of(validatePage(page), validateSize(size));
             Page<ListingCartResponseDTO> results = listingService.getListingsByKeyWord(
-                keyword.trim(), getUserIdFromRequest(request), pageable);
+                    keyword.trim(), getUserIdFromRequest(request), pageable);
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", results.getContent(),
-                "pagination", createPaginationInfo(results),
-                "keyword", keyword.trim(),
-                "message", String.format("Tìm thấy %d kết quả cho '%s'",
-                    results.getTotalElements(), keyword.trim())
+                    "success", true,
+                    "data", results.getContent(),
+                    "pagination", createPaginationInfo(results),
+                    "keyword", keyword.trim(),
+                    "message", String.format("Tìm thấy %d kết quả cho '%s'",
+                            results.getTotalElements(), keyword.trim())
             ));
 
         } catch (Exception e) {
@@ -219,12 +220,10 @@ public class ListingController {
     }
 
     /**
-     * GET /api/listings/advanced-search - Tìm kiếm nâng cao
+     * GET /api/listings/ev-filter
      */
-    @GetMapping("/advanced-search")
-    public ResponseEntity<Map<String, Object>> advancedSearchListings(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String brand,
+    @GetMapping("/ev-filter")
+    public ResponseEntity<Map<String, Object>> filterEvlistingCart(
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) VehicleType vehicleType,
@@ -234,27 +233,62 @@ public class ListingController {
             @RequestParam(defaultValue = "12") int size) {
 
         try {
-            logger.info("Advanced search - title: '{}', brand: '{}', year: {}, type: {}, price: {}-{}",
-                title, brand, year, vehicleType, minPrice, maxPrice);
+            logger.info("Advanced search - year: {}, type: {}, price: {}-{}",
+                    year, vehicleType, minPrice, maxPrice);
 
             Pageable pageable = PageRequest.of(validatePage(page), validateSize(size));
-            Page<ListingCartResponseDTO> results = listingService.searchListingsAdvanced(
-                title, brand, year, vehicleType, minPrice, maxPrice,
-                getUserIdFromRequest(request), pageable);
+            Page<ListingCartResponseDTO> results = listingService.filterEvListings(
+                    year, vehicleType, minPrice, maxPrice,
+                    getUserIdFromRequest(request), pageable);
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", results.getContent(),
-                "pagination", createPaginationInfo(results),
-                "filters", Map.of(
-                    "title", title != null ? title : "",
-                    "brand", brand != null ? brand : "",
-                    "year", year != null ? year : 0,
-                    "vehicleType", vehicleType != null ? vehicleType.toString() : "",
-                    "minPrice", minPrice != null ? minPrice : 0,
-                    "maxPrice", maxPrice != null ? maxPrice : 0
-                ),
-                "message", String.format("Tìm thấy %d kết quả", results.getTotalElements())
+                    "success", true,
+                    "data", results.getContent(),
+                    "pagination", createPaginationInfo(results),
+                    "filters", Map.of(
+                            "year", year != null ? year : 0,
+                            "vehicleType", vehicleType != null ? vehicleType.toString() : "",
+                            "minPrice", minPrice != null ? minPrice : 0,
+                            "maxPrice", maxPrice != null ? maxPrice : 0
+                    ),
+                    "message", String.format("Tìm thấy %d kết quả", results.getTotalElements())
+            ));
+
+        } catch (Exception e) {
+            return handleError("Error in advanced search", e);
+        }
+    }
+
+    /**
+     * GET /api/listings/battery-filter
+     */
+    @GetMapping("/battery-filter")
+    public ResponseEntity<Map<String, Object>> filterBatteryListingCart(
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Integer year,
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        try {
+            logger.info("Advanced search - year: {}, price: {}-{}",
+                    year, minPrice, maxPrice);
+
+            Pageable pageable = PageRequest.of(validatePage(page), validateSize(size));
+            Page<ListingCartResponseDTO> results = listingService.filterBatteryListings(
+                    year, minPrice, maxPrice,
+                    getUserIdFromRequest(request), pageable);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "data", results.getContent(),
+                    "pagination", createPaginationInfo(results),
+                    "filters", Map.of(
+                            "year", year != null ? year : 0,
+                            "minPrice", minPrice != null ? minPrice : 0,
+                            "maxPrice", maxPrice != null ? maxPrice : 0
+                    ),
+                    "message", String.format("Tìm thấy %d kết quả", results.getTotalElements())
             ));
 
         } catch (Exception e) {
@@ -277,8 +311,8 @@ public class ListingController {
             Long userId = getUserIdFromRequest(request);
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "success", false,
-                    "message", "Cần đăng nhập để xem danh sách của bạn"
+                        "success", false,
+                        "message", "Cần đăng nhập để xem danh sách của bạn"
                 ));
             }
 
@@ -286,10 +320,10 @@ public class ListingController {
             Page<ListingCartResponseDTO> myListings = listingService.getListingCartsBySeller(userId, pageable);
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", myListings.getContent(),
-                "pagination", createPaginationInfo(myListings),
-                "message", String.format("Bạn có %d bài đăng", myListings.getTotalElements())
+                    "success", true,
+                    "data", myListings.getContent(),
+                    "pagination", createPaginationInfo(myListings),
+                    "message", String.format("Bạn có %d bài đăng", myListings.getTotalElements())
             ));
 
         } catch (Exception e) {
@@ -309,10 +343,10 @@ public class ListingController {
         Page<ListingCartResponseDTO> carts = supplier.get();
 
         return ResponseEntity.ok(Map.of(
-            "success", true,
-            "data", carts.getContent(),
-            "pagination", createPaginationInfo(carts),
-            "message", String.format("Tìm thấy %d %s", carts.getTotalElements(), type)
+                "success", true,
+                "data", carts.getContent(),
+                "pagination", createPaginationInfo(carts),
+                "message", String.format("Tìm thấy %d %s", carts.getTotalElements(), type)
         ));
     }
 
@@ -343,14 +377,14 @@ public class ListingController {
      */
     private Map<String, Object> createPaginationInfo(Page<?> page) {
         return Map.of(
-            "currentPage", page.getNumber(),
-            "totalPages", page.getTotalPages(),
-            "totalElements", page.getTotalElements(),
-            "size", page.getSize(),
-            "hasNext", page.hasNext(),
-            "hasPrevious", page.hasPrevious(),
-            "isFirst", page.isFirst(),
-            "isLast", page.isLast()
+                "currentPage", page.getNumber(),
+                "totalPages", page.getTotalPages(),
+                "totalElements", page.getTotalElements(),
+                "size", page.getSize(),
+                "hasNext", page.hasNext(),
+                "hasPrevious", page.hasPrevious(),
+                "isFirst", page.isFirst(),
+                "isLast", page.isLast()
         );
     }
 
@@ -359,8 +393,8 @@ public class ListingController {
      */
     private ResponseEntity<Map<String, Object>> buildErrorResponse(String message) {
         return ResponseEntity.badRequest().body(Map.of(
-            "success", false,
-            "message", message
+                "success", false,
+                "message", message
         ));
     }
 
@@ -370,9 +404,9 @@ public class ListingController {
     private ResponseEntity<Map<String, Object>> handleError(String logMessage, Exception e) {
         logger.error("{}: {}", logMessage, e.getMessage(), e);
         return ResponseEntity.internalServerError().body(Map.of(
-            "success", false,
-            "message", "Lỗi server: " + e.getMessage(),
-            "data", Collections.emptyList()
+                "success", false,
+                "message", "Lỗi server: " + e.getMessage(),
+                "data", Collections.emptyList()
         ));
     }
 
