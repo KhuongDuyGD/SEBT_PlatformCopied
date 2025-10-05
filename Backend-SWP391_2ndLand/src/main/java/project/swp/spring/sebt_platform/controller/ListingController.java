@@ -59,8 +59,8 @@ public class ListingController {
             // Get user ID from session/header or fallback
             Long userId = getUserIdFromRequest(request);
             if (userId == null) {
-                logger.warn("No user authentication, using default user ID");
-                userId = DEFAULT_USER_ID;
+                logger.warn("No user authentication");
+                return buildErrorResponse("vui lòng đăng nhập để tạo bài đăng");
             }
 
             // Validate
