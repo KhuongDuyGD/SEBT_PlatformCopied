@@ -303,7 +303,7 @@ function CreateListing() {
                         {/* Navigation */}
                         <div className="navigation-buttons">
                             <button type="button" onClick={prevStep} disabled={currentStep === 1}
-                                className={`nav-button nav-button-back ${currentStep === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    className={`nav-button nav-button-back ${currentStep === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                 <ChevronLeft className="w-5 h-5 mr-2" />Quay lại
                             </button>
                             <div className="flex space-x-4">
@@ -313,7 +313,7 @@ function CreateListing() {
                                     </button>
                                 ) : (
                                     <button type="submit" disabled={loading || Object.keys(errors).length > 0}
-                                        className={`nav-button nav-button-submit ${loading || Object.keys(errors).length > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                            className={`nav-button nav-button-submit ${loading || Object.keys(errors).length > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                         {loading ? (
                                             <><div className="loading-spinner"></div>Đang tạo...</>
                                         ) : (
@@ -345,4 +345,3 @@ function CreateListing() {
 }
 
 export default CreateListing;
-

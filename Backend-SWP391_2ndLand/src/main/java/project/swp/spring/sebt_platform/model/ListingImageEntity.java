@@ -20,14 +20,14 @@ public class ListingImageEntity {
     @JoinColumn(name = "listing_id", nullable = false)
     private ListingEntity listing;
 
-    @Column(name = "image_url", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "image_url", columnDefinition = "VARCHAR(MAX)", nullable = false)
     private String imageUrl;
 
     // Mapping for display order (DB seems to enforce unique (listing_id, display_order) via index 'uk_listing_images_listing_display')
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder = 0;
 
-    @Column(name = "public_id", columnDefinition = "VARCHAR(255)")
+    @Column(name = "public_id", columnDefinition = "VARCHAR(MAX)")
     private String publicId;
 
     @CreationTimestamp

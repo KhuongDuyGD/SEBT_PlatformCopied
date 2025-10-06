@@ -1,6 +1,7 @@
 package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -33,7 +34,7 @@ public class ListingEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private ProductEntity product;
 
-    @Column(name = "title", length = 400, nullable = false, columnDefinition = "NVARCHAR(400)")
+    @Column(name = "title", length = 255, nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String title;
 
     @Column (name = "thumbnail_public_id", length = 255, columnDefinition = "VARCHAR(255)")

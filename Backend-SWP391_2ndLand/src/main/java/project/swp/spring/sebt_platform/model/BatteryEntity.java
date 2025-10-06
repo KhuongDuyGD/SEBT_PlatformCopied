@@ -22,10 +22,10 @@ public class BatteryEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "brand", length = 200, nullable = false, columnDefinition = "NVARCHAR(200)")
+    @Column(name = "brand", length = 200, nullable = false, columnDefinition = "NVARCHAR(50)")
     private String brand;
 
-    @Column(name = "model", length = 200, columnDefinition = "NVARCHAR(200)")
+    @Column(name = "model", length = 200, columnDefinition = "NVARCHAR(50)")
     private String model;
 
     @Column(name = "capacity", nullable = false, precision = 10, scale = 2, columnDefinition = "DECIMAL(10,2)")
@@ -38,7 +38,7 @@ public class BatteryEntity {
     private String compatibleVehicles;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "condition_status", nullable = false, length = 30, columnDefinition = "NVARCHAR(30)")
+    @Column(name = "condition_status", nullable = false, length = 30, columnDefinition = "NVARCHAR(20)")
     private BatteryCondition conditionStatus = BatteryCondition.GOOD;
 
     @CreationTimestamp

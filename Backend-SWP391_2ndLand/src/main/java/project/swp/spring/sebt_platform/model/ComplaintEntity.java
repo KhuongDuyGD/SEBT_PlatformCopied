@@ -21,7 +21,7 @@ public class ComplaintEntity {
     @JoinColumn(name = "user_id")
     private UserEntity user;
 
-    @Column(name = "title", length = 400, columnDefinition = "NVARCHAR(400)")
+    @Column(name = "title", length = 255, columnDefinition = "NVARCHAR(255)")
     private String title;
 
     @Column(name = "content", columnDefinition = "NVARCHAR(MAX)")
