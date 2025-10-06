@@ -4,7 +4,7 @@ import listingsApi from '../../api/listings';
 import { mapListingArray } from '../../utils/listingMapper';
 import { Row, Col, Card, Select, Tag, Button, Empty, Skeleton, Pagination, Space, Typography } from 'antd';
 import ListingSkeletonGrid from '../../components/ListingSkeletonGrid';
-import '../../styles/header.css';
+import '../../css/header.css';
 
 export default function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams();

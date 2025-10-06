@@ -35,7 +35,7 @@ import {
   ShoppingCartOutlined
 } from '@ant-design/icons';
 import backgroundImage from '../assets/background.jpg';
-import '../styles/header.css';
+import '../css/header.css';
 import api from '../api/axios';
 import { mapListingArray } from '../utils/listingMapper';
 

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Image as ImageIcon, X, AlertCircle, Star } from 'lucide-react';
-import './CloudinaryImageUploadGallery.css';
+import '../css/CloudinaryImageUploadGallery.css';
 
 /**
  * Component upload ảnh LOCAL - GIỮ FILE OBJECTS thay vì upload lên Cloudinary

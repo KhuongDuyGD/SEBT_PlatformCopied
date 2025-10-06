@@ -1,6 +1,6 @@
 import { Card, Image, ListGroup, Badge } from "react-bootstrap";
 import { Person, Envelope, Phone, Calendar, Shield, GeoAlt, CheckCircleFill } from "react-bootstrap-icons";
-import "./Profile.css";
+import "../../css/Profile.css";
 
 function UserInfoCard({ userInfo }) {
   if (!userInfo) {

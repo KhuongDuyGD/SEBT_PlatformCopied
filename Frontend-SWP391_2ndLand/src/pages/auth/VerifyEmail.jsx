@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Button, Alert, Container, Row, Col } from "react-bootstrap";
 import api from "../../api/axios";
-import "./Auth.css";
+import "../../css/Auth.css";
 
 function VerifyEmail({ setIsLoggedIn, setUserInfo }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);

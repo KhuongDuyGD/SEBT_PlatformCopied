@@ -5,12 +5,12 @@ import listingsApi from "../../api/listings";
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { baseListingSchema } from '../../utils/validation/listingSchema';
-import "../../components/CloudinaryImageUploadGallery.css";
+import "../../css/CloudinaryImageUploadGallery.css";
 import StepProgress from "../../components/listings/StepProgress";
 import BasicInfoStep from "../../components/listings/steps/BasicInfoStep";
 import ProductDetailsStep from "../../components/listings/steps/ProductDetailsStep";
 import LocationReviewStep from "../../components/listings/steps/LocationReviewStep";
-import "./CreateListing.css";
+import "../../css/CreateListing.css";
 import { AuthContext } from "../../contexts/AuthContext";
 import { useListingDraft } from '../../hooks/useListingDraft';
 

@@ -5,7 +5,7 @@ import { mapListingArray, normalizeImage } from '../../utils/listingMapper';
 import { Link } from 'react-router-dom';
 import { Card, Tag, Button, Pagination, Empty, Space, Typography, Skeleton, message } from 'antd';
 import { ThunderboltOutlined, EyeOutlined } from '@ant-design/icons';
-import '../../styles/header.css';
+import '../../css/header.css';
 
 /**
  * Trang hiển thị danh sách listing của người dùng hiện tại

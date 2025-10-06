@@ -3,7 +3,7 @@ import { Container, Row, Col, Spinner, Alert } from "react-bootstrap";
 import UserInfoCard from "./UserInfoCard";
 import UpdateProfileCard from "./UpdateProfileCard";
 import api from "../../api/axios";
-import "./Profile.css";
+import "../../css/Profile.css";
 
 function Profile() {
   const [userInfo, setUserInfo] = useState(null);
