@@ -8,11 +8,19 @@ export default function StepProgress({ steps, currentStep, onStepClick }) {
         const Icon = step.icon;
         const isActive = currentStep === step.id;
         const isCompleted = currentStep > step.id;
+        
+        // Logic bảo mật: chỉ cho phép click vào bước hiện tại hoặc các bước đã hoàn thành
+        // Điều này ngăn người dùng skip các bước validation
+        const isClickable = isActive || isCompleted;
+        
         return (
           <div key={step.id} className="step-item">
             <div
-              onClick={() => onStepClick(step.id)}
-              className={`step-icon ${isCompleted ? 'completed' : isActive ? 'active' : 'inactive'}`}
+              onClick={() => isClickable && onStepClick(step.id)}
+              className={`step-icon ${isCompleted ? 'completed' : isActive ? 'active' : 'inactive'} ${
+                isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+              }`}
+              title={isClickable ? `Đi đến bước ${step.id}` : 'Hoàn thành bước hiện tại để mở khóa'}
             >
               {isCompleted ? <CheckCircle className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
             </div>

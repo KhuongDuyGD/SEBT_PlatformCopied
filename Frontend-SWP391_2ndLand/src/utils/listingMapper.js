@@ -36,6 +36,8 @@ export function mapListingCart(raw) {
     listingType: raw.listingType,
     status: raw.status || raw.listingStatus,
     category: raw.category || (raw.product?.ev ? 'VEHICLE' : (raw.product?.battery ? 'BATTERY' : undefined)),
+    // Mapping year từ nhiều nguồn có thể trong backend response
+    year: raw.year || raw.product?.ev?.year || raw.product?.battery?.year || raw.manufacturingYear || raw.productionYear || raw.yearOfManufacture,
     // Giữ nguyên để phòng cần field khác
     raw
   };

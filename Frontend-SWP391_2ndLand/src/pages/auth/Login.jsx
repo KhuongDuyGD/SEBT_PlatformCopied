@@ -94,7 +94,7 @@ function Login({ setIsLoggedIn, setUserInfo }) {
                                     </Button>
 
                                     <div className="text-center">
-                                        <Link to="#" className="text-decoration-none p-0 auth-link">Quên mật khẩu?</Link>
+                                        <Link to="/forgot-password" className="text-decoration-none p-0 auth-link">Quên mật khẩu?</Link>
                                     </div>
                                 </Form>
                             </Card.Body>

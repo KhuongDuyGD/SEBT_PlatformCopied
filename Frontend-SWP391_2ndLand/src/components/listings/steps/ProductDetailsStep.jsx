@@ -1,5 +1,6 @@
 import React from 'react';
 import { Car, Battery } from 'lucide-react';
+import { formatNumberWithDots, createFormattedInputHandler } from '../../../utils/numberFormatting';
 
 // Added register + errors props
 export default function ProductDetailsStep({ formData, onChange, register, errors }) {
@@ -102,14 +103,19 @@ export default function ProductDetailsStep({ formData, onChange, register, error
               <div className="form-group">
                 <label className="form-label">Số km đã đi</label>
                 <input
-                  type="number"
+                  type="text"
                   name="vehicle.mileage"
-                  value={formData.vehicle.mileage}
-                  onChange={(e)=> { onChange(e); const r=getReg('vehicle.mileage'); r.onChange && r.onChange(e); }}
+                  // Display formatted value with dots for better readability
+                  value={formatNumberWithDots(formData.vehicle.mileage)}
+                  // Use custom handler to format input and pass raw value to form
+                  onChange={createFormattedInputHandler((e) => {
+                    onChange(e);
+                    const r = getReg('vehicle.mileage');
+                    r.onChange && r.onChange(e);
+                  }, 'vehicle.mileage')}
                   ref={getReg('vehicle.mileage').ref}
-                  min="0"
                   className="form-input"
-                  placeholder="0"
+                  placeholder="100.000"
                 />
               </div>
             </div>
@@ -117,13 +123,17 @@ export default function ProductDetailsStep({ formData, onChange, register, error
               <div className="form-group">
                 <label className="form-label required">Dung lượng pin (kWh)</label>
                 <input
-                  type="number"
+                  type="text"
                   name="vehicle.batteryCapacity"
-                  value={formData.vehicle.batteryCapacity}
-                  onChange={(e)=> { onChange(e); const r=getReg('vehicle.batteryCapacity'); r.onChange && r.onChange(e); }}
+                  // Display formatted value with dots for large numbers
+                  value={formatNumberWithDots(formData.vehicle.batteryCapacity)}
+                  // Use custom handler to format input and pass raw value to form
+                  onChange={createFormattedInputHandler((e) => {
+                    onChange(e);
+                    const r = getReg('vehicle.batteryCapacity');
+                    r.onChange && r.onChange(e);
+                  }, 'vehicle.batteryCapacity')}
                   ref={getReg('vehicle.batteryCapacity').ref}
-                  min="0.1"
-                  step="0.1"
                   className={`form-input ${errors?.vehicle?.batteryCapacity ? 'input-error' : ''}`}
                   placeholder="75.3"
                   required
@@ -187,13 +197,17 @@ export default function ProductDetailsStep({ formData, onChange, register, error
               <div className="form-group">
                 <label className="form-label required">Dung lượng (kWh)</label>
                 <input
-                  type="number"
+                  type="text"
                   name="battery.capacity"
-                  value={formData.battery.capacity}
-                  onChange={(e)=> { onChange(e); const r=getReg('battery.capacity'); r.onChange && r.onChange(e); }}
+                  // Display formatted value with dots for large numbers
+                  value={formatNumberWithDots(formData.battery.capacity)}
+                  // Use custom handler to format input and pass raw value to form
+                  onChange={createFormattedInputHandler((e) => {
+                    onChange(e);
+                    const r = getReg('battery.capacity');
+                    r.onChange && r.onChange(e);
+                  }, 'battery.capacity')}
                   ref={getReg('battery.capacity').ref}
-                  min="0"
-                  step="0.1"
                   className={`form-input ${errors?.battery?.capacity ? 'input-error' : ''}`}
                   placeholder="75.3"
                   required
@@ -203,14 +217,21 @@ export default function ProductDetailsStep({ formData, onChange, register, error
               <div className="form-group">
                 <label className="form-label required">Độ khỏe pin (%)</label>
                 <input
-                  type="number"
+                  type="text"
                   name="battery.healthPercentage"
-                  value={formData.battery.healthPercentage}
-                  onChange={(e)=> { onChange(e); const r=getReg('battery.healthPercentage'); r.onChange && r.onChange(e); }}
+                  // Display formatted value with dots for consistency
+                  value={formatNumberWithDots(formData.battery.healthPercentage)}
+                  // Use custom handler to format input and pass raw value to form
+                  onChange={createFormattedInputHandler((e) => {
+                    onChange(e);
+                    const r = getReg('battery.healthPercentage');
+                    r.onChange && r.onChange(e);
+                  }, 'battery.healthPercentage')}
                   ref={getReg('battery.healthPercentage').ref}
+                  className={`form-input ${errors?.battery?.healthPercentage ? 'input-error' : ''}`}
+                  placeholder="85"
                   min="0"
                   max="100"
-                  className={`form-input ${errors?.battery?.healthPercentage ? 'input-error' : ''}`}
                   required
                 />
                 {errors?.battery?.healthPercentage && <p className="field-error">{errors.battery.healthPercentage.message}</p>}
