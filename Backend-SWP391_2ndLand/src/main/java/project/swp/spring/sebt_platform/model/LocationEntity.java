@@ -13,13 +13,13 @@ public class LocationEntity {
     @JoinColumn(name = "listing_id")
     private ListingEntity listing;
 
-    @Column(name = "province", length = 20, columnDefinition = "NVARCHAR(20)")
+    @Column(name = "province", length = 20, columnDefinition = "NVARCHAR(30)")
     private String province;
 
-    @Column(name = "district", length = 20, columnDefinition = "NVARCHAR(20)")
+    @Column(name = "district", length = 20, columnDefinition = "NVARCHAR(30)")
     private String district;
 
-    @Column(name = "details", length = 255, columnDefinition = "NVARCHAR(255)")
+    @Column(name = "details", length = 255, columnDefinition = "NVARCHAR(MAX)")
     private String details;
 
     // Constructors

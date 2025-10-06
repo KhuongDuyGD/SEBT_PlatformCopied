@@ -27,12 +27,10 @@ public class PostRequestEntity {
     @Column(nullable = false, length = 20)
     private ApprovalStatus status = ApprovalStatus.PENDING;
 
-    // Database has NOT NULL column 'requested_date' (error was: Cannot insert NULL ...),
-    // but it wasn't mapped. Map it and initialize on persist.
     @Column(name = "requested_date", nullable = false)
     private LocalDate requestedDate;
 
-    @Column(name = "admin_notes", columnDefinition = "TEXT")
+    @Column(name = "admin_notes", columnDefinition = "NVARCHAR(MAX)")
     private String adminNotes;
 
     @CreationTimestamp

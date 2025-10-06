@@ -209,7 +209,6 @@ public class ListingServiceImpl implements ListingService {
         listingEntity.setPrice(BigDecimal.valueOf(createListingForm.getPrice()));
         listingEntity.setSeller(user);
         listingEntity.setProduct(productEntity);
-        listingEntity.setStatus(ListingStatus.SUSPENDED);
 
         // Set thumbnail - lấy ảnh đầu tiên từ listingImages làm thumbnail
         if (listingImages != null && !listingImages.isEmpty()) {
@@ -505,74 +504,5 @@ public class ListingServiceImpl implements ListingService {
         }
     }
 
-    private ListingCartResponseDTO convertToListingCartDTO(ListingEntity listing, Long userId) {
-        try {
-            boolean isFavorited = userId != null &&
-                    favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
-
-            return new ListingCartResponseDTO(
-                    listing.getId(),
-                    listing.getTitle(),
-                    listing.getThumbnailImage(),
-                    listing.getPrice().doubleValue(),
-                    listing.getViewsCount(),
-                    listing.getSeller().getPhoneNumber(),
-                    isFavorited
-            );
-        } catch (Exception e) {
-            logger.warn("Error converting listing {} to DTO: {}", listing.getId(), e.getMessage());
-            return null;
-        }
-    }
-
-    private Page<ListingCartResponseDTO> createPageFromList(List<ListingCartResponseDTO> list, Pageable pageable) {
-        if (list == null) list = new ArrayList<>();
-
-        int total = list.size();
-        int start = Math.min((int) pageable.getOffset(), total);
-        int end = Math.min(start + pageable.getPageSize(), total);
-
-        List<ListingCartResponseDTO> pageContent = list.subList(start, end);
-
-        return new PageImpl<>(pageContent, pageable, total);
-    }
-
-    private String extractPublicIdFromCloudinaryUrl(String cloudinaryUrl) {
-        try {
-            if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
-                return null;
-            }
-
-            String[] parts = cloudinaryUrl.split("/upload/");
-            if (parts.length < 2) {
-                return null;
-            }
-
-            String afterUpload = parts[1];
-            String[] segments = afterUpload.split("/");
-
-            // Nếu có version number, bỏ qua segment đầu
-            int startIndex = (segments.length > 1 && segments[0].startsWith("v")) ? 1 : 0;
-
-            // Kết hợp các segment còn lại và remove file extension
-            StringBuilder publicId = new StringBuilder();
-            for (int i = startIndex; i < segments.length; i++) {
-                if (i > startIndex) {
-                    publicId.append("/");
-                }
-                // Remove file extension from last segment
-                String segment = segments[i];
-                if (i == segments.length - 1 && segment.contains(".")) {
-                    segment = segment.substring(0, segment.lastIndexOf("."));
-                }
-                publicId.append(segment);
-            }
-
-            return publicId.toString();
-        } catch (Exception e) {
-
-            return cloudinaryUrl;
-        }
-    }
 }
 

@@ -24,16 +24,16 @@ public class EvVehicleEntity {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
+    @Column(name = "type", nullable = false, length = 30, columnDefinition = "NVARCHAR(30)")
     private VehicleType type;
 
-    @Column(name = "name", length = 200, nullable = false, columnDefinition = "NVARCHAR(200)")
+    @Column(name = "name", length = 200, nullable = false, columnDefinition = "NVARCHAR(100)")
     private String name;
 
-    @Column(name = "model", length = 200, columnDefinition = "NVARCHAR(200)")
+    @Column(name = "model", length = 200, columnDefinition = "NVARCHAR(50)")
     private String model;
 
-    @Column(name = "brand", length = 200, nullable = false, columnDefinition = "NVARCHAR(200)")
+    @Column(name = "brand", length = 200, nullable = false, columnDefinition = "NVARCHAR(50)")
     private String brand;
 
     @Column(name = "year", nullable = false)
@@ -46,7 +46,7 @@ public class EvVehicleEntity {
     private BigDecimal batteryCapacity;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "condition_status", nullable = false, length = 30, columnDefinition = "NVARCHAR(30)")
+    @Column(name = "condition_status", nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
     private VehicleCondition conditionStatus = VehicleCondition.GOOD;
 
     @CreationTimestamp

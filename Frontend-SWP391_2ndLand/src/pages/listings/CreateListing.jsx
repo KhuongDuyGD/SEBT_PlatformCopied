@@ -57,8 +57,10 @@ function CreateListing() {
 
     const steps = [
         { id: 1, title: "Thông tin cơ bản", icon: FileText, description: "Nhập tiêu đề, giá và mô tả sản phẩm" },
-        { id: 2, title: "Chi tiết sản phẩm", icon: formData.productType === 'VEHICLE' ? Car : Battery,
-          description: formData.productType === 'VEHICLE' ? "Thông tin chi tiết về xe điện" : "Thông tin chi tiết về pin" },
+        {
+            id: 2, title: "Chi tiết sản phẩm", icon: formData.productType === 'VEHICLE' ? Car : Battery,
+            description: formData.productType === 'VEHICLE' ? "Thông tin chi tiết về xe điện" : "Thông tin chi tiết về pin"
+        },
         { id: 3, title: "Vị trí & Hoàn tất", icon: MapPin, description: "Thông tin vị trí và xác nhận đăng bán" }
     ];
 
@@ -180,7 +182,16 @@ function CreateListing() {
     };
 
     const prevStep = () => currentStep > 1 && setCurrentStep(s => s - 1);
-    const goToStep = (step) => step >= 1 && step <= steps.length && setCurrentStep(step);
+
+    // Logic navigation - chỉ cho phép quay lại bước trước đó, không cho phép skip bước
+    const goToStep = (step) => {
+        // Chỉ cho phép di chuyển đến bước nhỏ hơn hoặc bằng bước hiện tại
+        // Điều này ngăn người dùng skip các bước chưa validate
+        if (step >= 1 && step <= steps.length && step <= currentStep) {
+            setCurrentStep(step);
+        }
+        // Không làm gì nếu cố gắng skip đến bước chưa mở khóa
+    };
 
     // Effects
     useEffect(() => () => redirectTimeoutRef.current && clearTimeout(redirectTimeoutRef.current), []);
@@ -198,7 +209,7 @@ function CreateListing() {
         return Object.entries(errs).flatMap(([k, v]) => {
             const path = prefix ? `${prefix}.${k}` : k;
             return v?.message ? [{ field: path, message: v.message }] :
-                   typeof v === 'object' ? flattenErrors(v, path) : [];
+                typeof v === 'object' ? flattenErrors(v, path) : [];
         });
     };
 
@@ -221,11 +232,12 @@ function CreateListing() {
                         {[
                             { type: 'VEHICLE', icon: Car, title: 'Xe Điện', desc: 'Đăng bán ô tô điện, xe máy điện, xe đạp điện...' },
                             { type: 'BATTERY', icon: Battery, title: 'Pin Xe Điện', desc: 'Đăng bán pin lithium, pin thay thế, phụ kiện pin' }
-                        ].map(({ type, icon: Icon, title, desc }) => (
+                        ].map(({ type, title, desc }) => (
                             <div key={type}
-                                className={`product-type-card ${formData.productType === type ? 'selected' : ''}`}
-                                onClick={() => setValue('productType', type)}>
-                                <div className="product-type-icon"><Icon className="w-8 h-8" /></div>
+                                 className={`product-type-card ${formData.productType === type ? 'selected' : ''}`}
+                                 onClick={() => setValue('productType', type)}>
+                                {/* IconComponent được sử dụng để render icon động */}
+                                <div className="product-type-icon"><IconComponent className="w-8 h-8" /></div>
                                 <h3 className="product-type-title">{title}</h3>
                                 <p className="product-type-description">{desc}</p>
                             </div>
@@ -291,7 +303,7 @@ function CreateListing() {
                         {/* Navigation */}
                         <div className="navigation-buttons">
                             <button type="button" onClick={prevStep} disabled={currentStep === 1}
-                                className={`nav-button nav-button-back ${currentStep === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    className={`nav-button nav-button-back ${currentStep === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                 <ChevronLeft className="w-5 h-5 mr-2" />Quay lại
                             </button>
                             <div className="flex space-x-4">
@@ -301,7 +313,7 @@ function CreateListing() {
                                     </button>
                                 ) : (
                                     <button type="submit" disabled={loading || Object.keys(errors).length > 0}
-                                        className={`nav-button nav-button-submit ${loading || Object.keys(errors).length > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                            className={`nav-button nav-button-submit ${loading || Object.keys(errors).length > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                         {loading ? (
                                             <><div className="loading-spinner"></div>Đang tạo...</>
                                         ) : (
@@ -333,5 +345,3 @@ function CreateListing() {
 }
 
 export default CreateListing;
-
- 
