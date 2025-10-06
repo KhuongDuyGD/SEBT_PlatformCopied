@@ -5,7 +5,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Input, Dropdown, Button, Avatar, Modal, Typography, Space, Badge, message } from 'antd';
 import { LogoutOutlined, SearchOutlined, CarOutlined, UserOutlined, AppstoreOutlined, BellOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import api from '../api/axios';
-import '../styles/header.css';
+import '../css/header.css';
 
 function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
   // Thêm setUserInfo vào props

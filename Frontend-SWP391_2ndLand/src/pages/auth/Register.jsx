@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Card, Button, Form, Alert, Container, Row, Col, InputGroup } from "react-bootstrap";
 import { useForm } from "react-hook-form";  // Thêm
 import api from "../../api/axios";  // Adjust path if needed
-import "./Auth.css";
+import "../../css/Auth.css";
 
 function Register() {
     const { register, handleSubmit, formState: { errors }, watch } = useForm();

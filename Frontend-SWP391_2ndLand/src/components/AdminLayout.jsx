@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import './AdminLayout.css'
+import '../css/AdminLayout.css'
 
 const menu = [
   { group: 'MAIN', items: [{ to: '/admin', label: 'Dashboard', icon: 'bi-speedometer2', end: true }] },

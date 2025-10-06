@@ -31,7 +31,7 @@ import PendingListings from "./pages/admin/PendingListings"; // Trang xét duy�
 import api from "./api/axios";
 import { AuthContext } from "./contexts/AuthContext";
 import "./App.css";
-import "./styles/theme.css";
+import "./css/theme.css";
 
 // Placeholder cho các trang chưa làm
 const Placeholder = ({ title }) => (

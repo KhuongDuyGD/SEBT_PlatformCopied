@@ -1,4 +1,4 @@
-// src/components/admin/ListingApprovalCard.jsx
+
 import React, { useState } from 'react';
 import { normalizeImage } from '../../utils/listingMapper.js';
 

@@ -1,6 +1,3 @@
-// src/components/PaginationBar.jsx
-// Reusable pagination bar component
-import React from 'react';
 import { Button } from 'react-bootstrap';
 
 export default function PaginationBar({ pagination, loading, onPrev, onNext, className='' }) {
