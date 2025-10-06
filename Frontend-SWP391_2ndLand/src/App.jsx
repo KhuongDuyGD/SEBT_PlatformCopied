@@ -3,8 +3,7 @@ import {
   Routes,
   Route,
   Navigate,
-  useLocation,
-  useNavigate
+  useLocation
 } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { Container, Spinner } from "react-bootstrap";
@@ -14,6 +13,8 @@ import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import VerifyEmail from "./pages/auth/VerifyEmail";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import Support from "./pages/support/Support";
 import Profile from "./pages/profile/Profile";
 import CreateListing from "./pages/listings/CreateListing";
 import ListingPage from "./pages/listings/ListingPage";
@@ -49,7 +50,7 @@ function AppContent({
   handleLogout
 }) {
   const location = useLocation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Not used in this component
 
   // Biến kiểm tra quyền admin (không normalize, chỉ đọc trực tiếp)
   const isAdmin = userInfo?.role === "ADMIN";
@@ -103,7 +104,7 @@ function AppContent({
           <Route path="/settings" element={<Placeholder title="Cài Đặt" />} />
           <Route
             path="/support"
-            element={<Placeholder title="Hỗ Trợ Khách Hàng" />}
+            element={<Support />}
           />
           <Route
             path="/notifications"
@@ -126,6 +127,7 @@ function AppContent({
             }
           />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route
             path="/verify-email"
             element={
@@ -207,7 +209,8 @@ function App() {
         setUserInfo(res.data);
         setIsLoggedIn(true);
         localStorage.setItem("userInfo", JSON.stringify(res.data));
-      } catch (err) {
+      } catch (error) {
+        console.debug('User not logged in:', error.message);
         setIsLoggedIn(false);
         setUserInfo(null);
         localStorage.removeItem("userInfo");
