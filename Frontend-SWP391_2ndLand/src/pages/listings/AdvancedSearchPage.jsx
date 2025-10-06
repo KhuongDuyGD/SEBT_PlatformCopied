@@ -39,7 +39,6 @@ export default function AdvancedSearchPage() {
   const [filters, setFilters] = useState(initialFilters);
   const [page, setPage] = useState(Number(searchParams.get('page')) || 0);
   const [size, setSize] = useState(12);
-  const [rawData, setRawData] = useState([]); // raw from API
   const [listings, setListings] = useState([]); // mapped UI listings
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -63,7 +62,7 @@ export default function AdvancedSearchPage() {
       setApplied(cleaned);
       fetchResults(cleaned, page, size, true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchResults = useCallback(async (paramsObj, pageArg = page, sizeArg = size, silent = false) => {
@@ -76,18 +75,17 @@ export default function AdvancedSearchPage() {
       const res = await listingsApi.advancedSearchListings({ ...paramsObj, page: pageArg, size: sizeArg, signal: controller.signal });
       if (res?.success) {
         const arr = Array.isArray(res.data) ? res.data : [];
-        setRawData(arr);
         const mapped = mapListingArray(arr);
         setListings(mapped);
         setPagination(res.pagination || null);
       } else {
-        setRawData([]); setListings([]); setPagination(null);
+        setListings([]); setPagination(null);
       }
     } catch (e) {
       if (e.name === 'CanceledError' || e.name === 'AbortError') return; // silent cancel
       console.error('Advanced search error', e);
       setError('Không thể tìm kiếm lúc này.');
-      setRawData([]); setListings([]); setPagination(null);
+      setListings([]); setPagination(null);
     } finally {
       if (!silent) setLoading(false);
     }
@@ -115,18 +113,12 @@ export default function AdvancedSearchPage() {
     setFilters(initialFilters);
     setApplied({});
     setPage(0);
-    setRawData([]);
     setListings([]);
     setPagination(null);
     setSearchParams({});
   };
 
-  const nextPage = () => {
-    if (pagination?.hasNext) setPage(p => p + 1);
-  };
-  const prevPage = () => {
-    if (pagination?.hasPrevious) setPage(p => Math.max(0, p - 1));
-  };
+  // Pagination helpers - removed unused functions
 
   // Highlight helper
   const highlight = (text, keyword) => {
@@ -164,12 +156,38 @@ export default function AdvancedSearchPage() {
             <Form.Item label="Loại xe" name="vehicleType">
               <Select allowClear placeholder="Tất cả" options={VEHICLE_TYPE_OPTIONS} />
             </Form.Item>
-            <Form.Item label="Năm" name="year" rules={[{ pattern: /^\d{4}$/g, message: 'Năm 4 chữ số' }]}>
-              <InputNumber placeholder="2024" style={{ width: '100%' }} controls={false} />
+            {/* Updated: Changed from InputNumber to Select dropdown for better UX */}
+            <Form.Item label="Năm sản xuất" name="year">
+              <Select
+                allowClear
+                placeholder="Chọn năm sản xuất"
+                style={{ width: '100%' }}
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                }
+                options={(() => {
+                  // Generate year options from current year back to 2010
+                  // Most electric vehicles are from recent years
+                  const currentYear = new Date().getFullYear();
+                  const startYear = 2010; // Electric vehicles became more common around this time
+                  const years = [];
+
+                  // Add years in descending order (newest first)
+                  for (let year = currentYear; year >= startYear; year--) {
+                    years.push({
+                      value: year,
+                      label: year.toString()
+                    });
+                  }
+
+                  return years;
+                })()}
+              />
             </Form.Item>
             <Row gutter={8}>
               <Col span={12}>
-                <Form.Item label="Giá từ" name="minPrice" tooltip="VND" rules={[{ validator: (_, v) => (v === undefined || v >= 0) ? Promise.resolve() : Promise.reject('>=0') }]}> 
+                <Form.Item label="Giá từ" name="minPrice" tooltip="VND" rules={[{ validator: (_, v) => (v === undefined || v >= 0) ? Promise.resolve() : Promise.reject('>=0') }]}>
                   <InputNumber style={{ width: '100%' }} min={0} step={1000000} placeholder="0" />
                 </Form.Item>
               </Col>

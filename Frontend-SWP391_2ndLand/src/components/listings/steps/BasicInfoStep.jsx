@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, DollarSign } from 'lucide-react';
 import LocalImageUpload from '../../LocalImageUpload';
+import { formatNumberWithDots, createFormattedInputHandler } from '../../../utils/numberFormatting';
 
 // Added register + errors for react-hook-form binding
 export default function BasicInfoStep({ formData, onChange, onImagesUpload, onChangeMainImage, loading, register, errors }) {
@@ -37,13 +38,18 @@ export default function BasicInfoStep({ formData, onChange, onImagesUpload, onCh
             <div className="input-with-icon">
               <DollarSign className="input-icon w-5 h-5" />
               <input
-                type="number"
+                type="text"
                 name="price"
-                value={formData.price}
-                onChange={(e)=> { onChange(e); regPrice.onChange && regPrice.onChange(e); }}
+                // Display formatted value with dots for better readability
+                value={formatNumberWithDots(formData.price)}
+                // Use custom handler to format input and pass raw value to form
+                onChange={createFormattedInputHandler((e) => {
+                  onChange(e);
+                  regPrice.onChange && regPrice.onChange(e);
+                }, 'price')}
                 ref={regPrice.ref}
                 className={`form-input with-icon ${errors?.price ? 'input-error' : ''}`}
-                placeholder="500000000"
+                placeholder="500.000.000"
                 required
               />
             </div>

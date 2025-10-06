@@ -1,15 +1,18 @@
 /* ==================== STYLES CHÍNH CHO CREATE LISTING ==================== */
 
-/* Container chính với background giống trang Home - không dùng ảnh background */
+/* Container chính với background giống trang Home - sử dụng background image */
 .create-listing-container {
   min-height: 100vh;
-  /* Sử dụng gradient tươi sáng giống theme của trang Home */
-  background: linear-gradient(135deg, #416adcff 0%, #fee877ff 20%, #416adcff 100%);
+  /* Sử dụng background image giống như Home screen */
+  background-image: url('../../assets/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   padding: 2rem 1rem;
   position: relative;
 }
 
-/* Overlay để tạo hiệu ứng depth giống Home */
+/* Overlay để tạo hiệu ứng depth giống Home screen */
 .create-listing-container::before {
   content: '';
   position: absolute;
@@ -17,7 +20,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.1); /* Overlay nhẹ để text dễ đọc */
+  /* Overlay nhẹ với gradient giống Home để text dễ đọc và tạo consistency */
+  background: linear-gradient(135deg, rgba(29, 75, 168, 0.3) 0%, rgba(254, 232, 119, 0.2) 50%, rgba(29, 75, 168, 0.3) 100%);
   pointer-events: none;
 }
 
@@ -193,6 +197,22 @@
 .step-icon.inactive {
   background: rgba(255, 255, 255, 0.3);
   color: rgba(255, 255, 255, 0.7);
+}
+
+/* Thêm styles cho cursor states */
+.step-icon.cursor-pointer:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(102, 126, 234, 0.4);
+}
+
+.step-icon.cursor-not-allowed {
+  cursor: not-allowed !important;
+  opacity: 0.5;
+}
+
+.step-icon.cursor-not-allowed:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 /* Thông tin step */

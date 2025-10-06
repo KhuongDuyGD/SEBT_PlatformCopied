@@ -234,8 +234,8 @@ function CreateListing() {
                             { type: 'BATTERY', icon: Battery, title: 'Pin Xe Điện', desc: 'Đăng bán pin lithium, pin thay thế, phụ kiện pin' }
                         ].map(({ type, title, desc }) => (
                             <div key={type}
-                                 className={`product-type-card ${formData.productType === type ? 'selected' : ''}`}
-                                 onClick={() => setValue('productType', type)}>
+                                className={`product-type-card ${formData.productType === type ? 'selected' : ''}`}
+                                onClick={() => setValue('productType', type)}>
                                 {/* IconComponent được sử dụng để render icon động */}
                                 <div className="product-type-icon"><IconComponent className="w-8 h-8" /></div>
                                 <h3 className="product-type-title">{title}</h3>

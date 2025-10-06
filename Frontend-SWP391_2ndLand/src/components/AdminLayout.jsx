@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import '../css/AdminLayout.css'
 
 const menu = [
@@ -29,6 +29,7 @@ const LS_KEY = 'admin_sidebar_collapsed'
 
 const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const saved = localStorage.getItem(LS_KEY)
@@ -38,6 +39,19 @@ const AdminLayout = () => {
   useEffect(() => {
     localStorage.setItem(LS_KEY, collapsed ? '1' : '0')
   }, [collapsed])
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout')
+      navigate('/')
+      window.location.reload() // Refresh to clear all state
+    } catch (error) {
+      console.error('Logout failed:', error)
+      // Still redirect on error
+      navigate('/')
+      window.location.reload()
+    }
+  }
 
   return (
     <div className="admin-shell">
@@ -95,6 +109,20 @@ const AdminLayout = () => {
           transition: 'margin-left .22s cubic-bezier(.4,0,.2,1)'
         }}
       >
+        {/* Admin Navbar */}
+        <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom px-3 py-2">
+          <div className="d-flex justify-content-end w-100">
+            <button
+              className="btn btn-outline-danger btn-sm d-flex align-items-center"
+              onClick={handleLogout}
+              title="Đăng xuất"
+            >
+              <i className="bi bi-box-arrow-right me-1"></i>
+              Đăng xuất
+            </button>
+          </div>
+        </nav>
+
         <div className="content-inner">
           <Outlet />
         </div>

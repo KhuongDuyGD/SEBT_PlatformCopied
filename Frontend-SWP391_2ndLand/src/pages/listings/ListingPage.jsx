@@ -7,6 +7,7 @@ import {
   Form,
   Select,
   InputNumber,
+  AutoComplete,
   Slider,
   Tag,
   Button,
@@ -37,12 +38,21 @@ function ListingPage() {
   };
 
   const [category, setCategory] = useState(deriveInitial());
-  // vehicleType: CAR | BIKE | MOTORBIKE (backend enum) when category === 'cars'
-  const [vehicleType, setVehicleType] = useState(null);
-  // Mặc định tăng max price rất cao để không vô tình lọc mất các xe ô tô đắt tiền (trước đó 100,000,000 làm CAR biến mất)
-  const [priceRange, setPriceRange] = useState([0, 2000000000]); // 0 -> 2,000,000,000 (client-side filter)
-  const [year, setYear] = useState(""); // client-side only
-  const debounceRef = useRef(null);
+  
+  // Vehicle filters (cars) - for xe điện listings
+  const [vehicleType, setVehicleType] = useState(null); // CAR | BIKE | MOTORBIKE (backend enum)
+  const [year, setYear] = useState(""); // server-side filter cho cars
+  const [carBrand, setCarBrand] = useState(""); // client-side brand filter cho xe điện
+  const [carCondition, setCarCondition] = useState(""); // client-side condition filter cho xe điện
+  const [carBatteryCapacity, setCarBatteryCapacity] = useState([0, 200]); // client-side battery capacity range cho xe điện
+
+  // Battery filters (pin) - for pin listings
+  const [batteryBrand, setBatteryBrand] = useState(""); // client-side brand filter cho pin
+  const [batteryCondition, setBatteryCondition] = useState(""); // client-side condition filter cho pin
+  const [batteryCapacity, setBatteryCapacity] = useState([0, 200]); // client-side capacity range cho pin
+
+  // Common filters
+  const [priceRange, setPriceRange] = useState([0, 2000000000]); // client-side price filter
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -50,35 +60,268 @@ function ListingPage() {
   const [size, setSize] = useState(12);
   const [pagination, setPagination] = useState(null);
 
+  // Danh sách thương hiệu pin phổ biến cho AutoComplete - dựa trên data thực tế từ database
+  const batteryBrandOptions = [
+    'Tesla', 'CATL', 'BYD', 'SK Innovation', 'FinDreams', 
+    'LG Energy Solution', 'Panasonic', 'Samsung SDI',
+    'AESC', 'Gotion High-Tech', 'EVE Energy', 'Lishen'
+  ];
+
+  // Danh sách thương hiệu xe điện phổ biến cho AutoComplete - dựa trên database
+  const carBrandOptions = [
+    'VinFast', 'Tesla', 'BYD', 'Xpeng', 'NIO', 'Li Auto',
+    'BMW', 'Mercedes-Benz', 'Audi', 'Hyundai', 'Kia', 'Ford'
+  ];
+
+  // Options cho condition status của pin - dựa trên BatteryCondition enum
+  const batteryConditionOptions = [
+    { value: 'EXCELLENT', label: 'Tuyệt vời' },
+    { value: 'GOOD', label: 'Tốt' },
+    { value: 'FAIR', label: 'Khá' },
+    { value: 'POOR', label: 'Kém' },
+    { value: 'NEEDS_REPLACEMENT', label: 'Cần thay thế' }
+  ];
+
+  // Options cho condition status của xe điện - dựa trên VehicleCondition enum
+  const carConditionOptions = [
+    { value: 'EXCELLENT', label: 'Tuyệt vời' },
+    { value: 'GOOD', label: 'Tốt' },
+    { value: 'FAIR', label: 'Khá' },
+    { value: 'POOR', label: 'Kém' },
+    { value: 'NEEDS_MAINTENANCE', label: 'Cần bảo trì' }
+  ];
+
   const fetchListings = useCallback(async () => {
     setLoading(true);
     setError(null);
     const controller = new AbortController();
     const runStartedAt = Date.now();
+    let usedEndpoint = ''; // For error logging
     // attach to ref if you want cancellation across re-renders (simplified local)
     try {
-      // Decide endpoint: if battery -> batteryCart, if vehicleType filter -> advanced-search, else evCart
+      // Decide endpoint based on category and filters
       let endpoint = '';
+      
       if (category === 'pin') {
-        endpoint = `/listings/batteryCart?page=${page}&size=${size}`;
-      } else if (vehicleType) {
-        endpoint = `/listings/advanced-search?vehicleType=${vehicleType}&page=${page}&size=${size}`;
+        // Pin category - backend không hỗ trợ brand filter, chỉ hỗ trợ year qua battery-filter
+        // Brand filter sẽ được xử lý client-side
+        if (year) {
+          // Pin category with year filter - use battery-filter endpoint
+          const params = new URLSearchParams();
+          params.append('page', page);
+          params.append('size', size);
+          params.append('year', year);
+          endpoint = `/listings/battery-filter?${params.toString()}`;
+          usedEndpoint = endpoint;
+        } else {
+          // Pin category without server-side filters - use simple batteryCart endpoint
+          endpoint = `/listings/batteryCart?page=${page}&size=${size}`;
+          usedEndpoint = endpoint;
+        }
       } else {
-        endpoint = `/listings/evCart?page=${page}&size=${size}`;
+        // Vehicle category (cars)
+        if (vehicleType || year) {
+          // Vehicle category with filters - use ev-filter endpoint  
+          const params = new URLSearchParams();
+          params.append('page', page);
+          params.append('size', size);
+          if (vehicleType) params.append('vehicleType', vehicleType);
+          if (year) params.append('year', year);
+          endpoint = `/listings/ev-filter?${params.toString()}`;
+          usedEndpoint = endpoint;
+        } else {
+          // Vehicle category without filters - use simple evCart endpoint  
+          endpoint = `/listings/evCart?page=${page}&size=${size}`;
+          usedEndpoint = endpoint;
+        }
       }
       const res = await api.get(endpoint, { signal: controller.signal });
       const payload = res.data || {};
       const raw = Array.isArray(payload.data) ? payload.data : [];
       setPagination(payload.pagination || null);
+      
       let mapped = mapListingArray(raw);
       if (mapped.length && import.meta.env.DEV) console.debug('[ListingPage] sample item', mapped[0]);
 
-      // Client-side light filters (only affect current page data)
-      if (year) {
-        mapped = mapped.filter(l => String(l.year || '') === String(year));
-      }
+      // Client-side filters (áp dụng trên dữ liệu đã load từ server)
+      
       if (priceRange && Array.isArray(priceRange)) {
+        // Price range filtering cho cả cars và pin
         mapped = mapped.filter(l => typeof l.price === 'number' && l.price >= priceRange[0] && l.price <= priceRange[1]);
+      }
+
+      // Client-side filters cho pin (backend không hỗ trợ các filter này)
+      if (category === 'pin') {
+        // Brand filter cho pin
+        if (batteryBrand) {
+          const originalCount = mapped.length;
+          mapped = mapped.filter(l => {
+            // Backend ListingCartResponseDTO không có brand field trong current version
+            // Tìm brand trong raw data hoặc extract từ title
+            let brandValue = l.raw?.product?.battery?.brand || l.raw?.brand || '';
+            
+            // Nếu không có brand field, extract từ title
+            // Title pattern: "Pin [Brand] [Capacity]kWh - [Health]% Health"
+            // Ví dụ: "Pin Tesla 75.00kWh - 95% Health", "Pin CATL 80.00kWh - 92% Health"
+            if (!brandValue && l.title) {
+              const titleMatch = l.title.match(/Pin\s+([A-Za-z\s&]+?)(?:\s+\d|$)/i);
+              if (titleMatch && titleMatch[1]) {
+                brandValue = titleMatch[1].trim();
+                // Loại bỏ các từ thừa phổ biến
+                brandValue = brandValue.replace(/\s+(Innovation|Energy|Solution|Systems)$/i, '');
+              }
+            }
+            
+            const matches = brandValue && brandValue.toLowerCase().includes(batteryBrand.toLowerCase());
+            
+            // Debug logging trong development
+            if (import.meta.env.DEV) {
+              console.debug(`[PIN BRAND FILTER] Title: "${l.title}" -> Brand: "${brandValue}" -> Filter: "${batteryBrand}" -> Match: ${matches}`);
+            }
+            
+            return matches;
+          });
+          
+          if (import.meta.env.DEV) {
+            console.debug(`[PIN BRAND FILTER] Filtered ${originalCount} -> ${mapped.length} items for brand: "${batteryBrand}"`);
+          }
+        }
+
+        // Condition filter cho pin - dựa trên title parsing vì backend không expose condition trong ListingCartResponseDTO
+        if (batteryCondition) {
+          mapped = mapped.filter(l => {
+            // Parse condition từ title patterns
+            // Title patterns có thể chứa: "Pin Tesla ... - 95% Health", "Pin BYD ... - Tình trạng tốt"
+            let hasCondition = false;
+            
+            if (l.title) {
+              const title = l.title.toLowerCase();
+              
+              // Map UI condition values với title patterns
+              switch (batteryCondition) {
+                case 'EXCELLENT':
+                  hasCondition = title.includes('như mới') || title.includes('tuyệt vời') || title.includes('excellent');
+                  break;
+                case 'GOOD':
+                  hasCondition = title.includes('tốt') || title.includes('good') || (!title.includes('kém') && !title.includes('cần'));
+                  break;
+                case 'FAIR':
+                  hasCondition = title.includes('khá') || title.includes('fair') || title.includes('bình thường');
+                  break;
+                case 'POOR':
+                  hasCondition = title.includes('kém') || title.includes('poor') || title.includes('xấu');
+                  break;
+                case 'NEEDS_REPLACEMENT':
+                  hasCondition = title.includes('cần thay') || title.includes('thay thế') || title.includes('replacement');
+                  break;
+                default:
+                  hasCondition = true; // Fallback: show all if can't determine
+              }
+            }
+            
+            return hasCondition;
+          });
+        }
+
+        // Capacity range filter cho pin - extract từ title vì backend không expose capacity details
+        if (batteryCapacity && Array.isArray(batteryCapacity)) {
+          mapped = mapped.filter(l => {
+            let capacityValue = null;
+            
+            // Extract capacity từ title pattern "Pin Brand XXkWh"
+            if (l.title) {
+              const capacityMatch = l.title.match(/(\d+(?:\.\d+)?)\s*kWh/i);
+              if (capacityMatch && capacityMatch[1]) {
+                capacityValue = parseFloat(capacityMatch[1]);
+              }
+            }
+            
+            // Nếu không parse được capacity từ title, bỏ qua filter này (show all)
+            if (capacityValue === null) return true;
+            
+            return capacityValue >= batteryCapacity[0] && capacityValue <= batteryCapacity[1];
+          });
+        }
+      } else {
+        // Client-side filters cho xe điện (backend không hỗ trợ brand, condition, battery capacity)
+        
+        // Brand filter cho xe điện - extract từ title vì backend không expose brand trong ListingCartResponseDTO
+        if (carBrand) {
+          mapped = mapped.filter(l => {
+            let brandValue = '';
+            
+            if (l.title) {
+              // Extract brand từ title patterns
+              // Ví dụ: "VinFast VF8 Plus 2024", "BMW iX3 xDrive30i 2023", "Honda PCX Electric 2022"
+              const words = l.title.split(' ');
+              if (words.length > 0) {
+                brandValue = words[0]; // First word is usually the brand
+              }
+            }
+            
+            return brandValue && brandValue.toLowerCase().includes(carBrand.toLowerCase());
+          });
+        }
+
+        // Condition filter cho xe điện - dựa trên title parsing
+        if (carCondition) {
+          mapped = mapped.filter(l => {
+            // Parse condition từ title patterns
+            let hasCondition = false;
+            
+            if (l.title) {
+              const title = l.title.toLowerCase();
+              
+              // Map UI condition values với title patterns
+              switch (carCondition) {
+                case 'EXCELLENT':
+                  hasCondition = title.includes('như mới') || title.includes('tuyệt vời') || title.includes('excellent');
+                  break;
+                case 'GOOD':
+                  hasCondition = title.includes('tốt') || title.includes('good') || (!title.includes('kém') && !title.includes('cần'));
+                  break;
+                case 'FAIR':
+                  hasCondition = title.includes('khá') || title.includes('fair') || title.includes('bình thường');
+                  break;
+                case 'POOR':
+                  hasCondition = title.includes('kém') || title.includes('poor') || title.includes('xấu');
+                  break;
+                case 'NEEDS_MAINTENANCE':
+                  hasCondition = title.includes('cần bảo trì') || title.includes('maintenance') || title.includes('sửa chữa');
+                  break;
+                default:
+                  hasCondition = true; // Fallback: show all if can't determine
+              }
+            }
+            
+            return hasCondition;
+          });
+        }
+
+        // Battery capacity range filter cho xe điện - dựa trên title parsing  
+        if (carBatteryCapacity && Array.isArray(carBatteryCapacity)) {
+          mapped = mapped.filter(l => {
+            // Parse capacity từ title patterns
+            let hasCapacityInRange = false;
+            
+            if (l.title) {
+              // Tìm pattern "X kWh" hoặc "X.X kWh" trong title
+              const capacityMatch = l.title.match(/(\d+(?:\.\d+)?)\s*kWh/i);
+              
+              if (capacityMatch) {
+                const capacity = parseFloat(capacityMatch[1]);
+                hasCapacityInRange = capacity >= carBatteryCapacity[0] && capacity <= carBatteryCapacity[1];
+              } else {
+                // Fallback: nếu không parse được, hiển thị tất cả
+                hasCapacityInRange = true;
+              }
+            } else {
+              hasCapacityInRange = true; // Fallback for empty title
+            }
+            
+            return hasCapacityInRange;
+          });
+        }
       }
 
       setListings(mapped);
@@ -86,15 +329,29 @@ function ListingPage() {
       if (err.name === 'CanceledError' || err.name === 'AbortError') {
         if (import.meta.env.DEV) console.debug('[ListingPage] aborted fetch (stale request)', runStartedAt);
       } else {
-        console.error('Fetch listings error', err);
-        setError('Không thể tải danh sách lúc này.');
+        console.error('Fetch listings error:', err);
+        console.error('Error response:', err.response?.data);
+        console.error('Error status:', err.response?.status);
+        console.error('Used endpoint:', usedEndpoint);
+        
+        // Cải thiện error message dựa trên status code
+        let errorMessage = 'Không thể tải danh sách lúc này.';
+        if (err.response?.status === 404) {
+          errorMessage = 'API endpoint không tồn tại. Vui lòng liên hệ admin.';
+        } else if (err.response?.status === 400) {
+          errorMessage = 'Tham số tìm kiếm không hợp lệ.';
+        } else if (err.response?.status >= 500) {
+          errorMessage = 'Lỗi server. Vui lòng thử lại sau.';
+        }
+        
+        setError(errorMessage);
         setListings([]);
         setPagination(null);
       }
     } finally {
       setLoading(false);
     }
-  }, [category, vehicleType, page, size, year, priceRange]);
+  }, [category, vehicleType, page, size, year, priceRange, batteryBrand, batteryCondition, batteryCapacity, carBrand, carCondition, carBatteryCapacity]);
 
   // Fetch when dependencies change
   useEffect(() => { fetchListings(); }, [fetchListings]);
@@ -103,8 +360,7 @@ function ListingPage() {
   useEffect(() => {
     const p = new URLSearchParams(location.search);
     const cat = p.get('category');
-    const type = p.get('type'); // for batteries (currently unused) or future filters
-
+    
     // Map Vietnamese slugs to backend vehicle types
     const slugMap = {
       'xe-may-dien': 'MOTORBIKE',
@@ -114,41 +370,60 @@ function ListingPage() {
 
     if (cat) {
       if (cat === 'pin') {
-        if (category !== 'pin') setCategory('pin');
-        if (vehicleType !== null) setVehicleType(null); // clear vehicle filter
+        if (category !== 'pin') {
+          setCategory('pin');
+          setVehicleType(null); // clear vehicle filter khi chuyển sang pin
+          // Reset car filters khi chuyển sang pin
+          setCarBrand('');
+          setCarCondition('');
+          setCarBatteryCapacity([0, 200]);
+        }
       } else if (slugMap[cat]) {
-        if (category !== 'cars') setCategory('cars');
+        if (category !== 'cars') {
+          setCategory('cars');
+          // Reset battery filters khi chuyển sang cars
+          setBatteryBrand('');
+          setBatteryCondition('');
+          setBatteryCapacity([0, 200]);
+        }
         const vt = slugMap[cat];
         if (vehicleType !== vt) setVehicleType(vt);
       } else if (['cars','ev'].includes(cat)) {
-        if (category !== 'cars') setCategory('cars');
+        if (category !== 'cars') {
+          setCategory('cars');
+          // Reset battery filters khi chuyển sang cars
+          setBatteryBrand('');
+          setBatteryCondition('');
+          setBatteryCapacity([0, 200]);
+        }
         if (vehicleType !== null) setVehicleType(null);
       }
     }
+  }, [location.search, category, vehicleType]);
 
-    // For future: battery subtype (type param) could be stored if needed
-    // if (cat === 'pin' && type) { ... }
-  }, [location.search]);
+  // Reset page when filters change
+  useEffect(() => { setPage(0); }, [category, vehicleType, year, batteryBrand, batteryCondition, batteryCapacity, carBrand, carCondition, carBatteryCapacity]);
 
-  // Reset page when high-level category or vehicleType changes
-  useEffect(() => { setPage(0); }, [category, vehicleType]);
-
-  const nextPage = () => { if (pagination?.hasNext) setPage(p => p + 1); };
-  const prevPage = () => { if (pagination?.hasPrevious) setPage(p => Math.max(0, p - 1)); };
+  // Removed unused nextPage and prevPage functions
 
   return (
     <Layout style={{ minHeight: 'calc(100vh - 140px)' }}>
       <Sider width={300} breakpoint="lg" collapsedWidth={0} theme="light" style={{ background: '#fff', borderRight: '1px solid #f0f0f0' }}>
         <div style={{ padding: '16px' }}>
-          <Space align="center" style={{ marginBottom: 8 }}>
-            <FilterOutlined />
+          <div style={{ marginBottom: 8 }}>
             <Title level={5} style={{ margin: 0 }}>Bộ lọc</Title>
-          </Space>
+          </div>
           <Form layout="vertical" size="middle">
             <Form.Item label="Danh mục">
               <Select
                 value={category}
-                onChange={(v) => { setCategory(v); setVehicleType(null); }}
+                onChange={(v) => { 
+                  // Cập nhật category state
+                  setCategory(v); 
+                  setVehicleType(null);
+                  // Cập nhật URL để reflect category mới
+                  navigate(`/listings?category=${v}`);
+                }}
                 options={[
                   { value: 'cars', label: 'Xe điện' },
                   { value: 'pin', label: 'Pin' }
@@ -159,9 +434,29 @@ function ListingPage() {
               <Form.Item label="Loại xe">
                 <Select
                   allowClear
-                  placeholder="Tất cả"
+                  placeholder="Chọn loại xe"
                   value={vehicleType || undefined}
-                  onChange={(v) => setVehicleType(v || null)}
+                  onChange={(v) => {
+                    // Cập nhật vehicleType state
+                    setVehicleType(v || null);
+                    
+                    // Cập nhật URL để reflect vehicleType mới
+                    if (v) {
+                      // Map backend vehicle types to Vietnamese slugs for URL
+                      const typeSlugMap = {
+                        'CAR': 'o-to-dien',
+                        'MOTORBIKE': 'xe-may-dien', 
+                        'BIKE': 'xe-dap-dien'
+                      };
+                      const slug = typeSlugMap[v];
+                      if (slug) {
+                        navigate(`/listings?category=${slug}`);
+                      }
+                    } else {
+                      // Clear vehicleType - về cars general
+                      navigate('/listings?category=cars');
+                    }
+                  }}
                   options={[
                     { value: 'CAR', label: 'Ô tô điện' },
                     { value: 'MOTORBIKE', label: 'Xe máy điện' },
@@ -170,18 +465,148 @@ function ListingPage() {
                 />
               </Form.Item>
             )}
-            <Form.Item label={<span>Năm sản xuất <Text type="secondary" style={{ fontSize: 12 }}>(client)</Text></span>}>
-              <InputNumber
-                placeholder="VD: 2022"
-                value={year ? +year : undefined}
-                style={{ width: '100%' }}
-                controls={false}
-                onChange={(val) => {
-                  if (debounceRef.current) clearTimeout(debounceRef.current);
-                  debounceRef.current = setTimeout(()=> setYear(val ? String(val) : ''), 400);
-                }}
-              />
-            </Form.Item>
+            {category === 'cars' && (
+              <Form.Item label={<span>Năm sản xuất <Text type="secondary" style={{ fontSize: 12 }}>(server-side)</Text></span>}>
+                <Select
+                  placeholder="Chọn năm sản xuất"
+                  value={year || undefined}
+                  style={{ width: '100%' }}
+                  allowClear
+                  onChange={(val) => {
+                    // Cập nhật year filter với giá trị được chọn từ dropdown
+                    setYear(val || '');
+                  }}
+                  options={(() => {
+                    // Tạo danh sách các năm từ 2010 đến năm hiện tại (2025)
+                    const currentYear = new Date().getFullYear();
+                    const years = [];
+                    for (let year = currentYear; year >= 2010; year--) {
+                      years.push({ value: String(year), label: String(year) });
+                    }
+                    return years;
+                  })()}
+                />
+              </Form.Item>
+            )}
+            {/* Filters cho Pin Listings */}
+            {category === 'pin' && (
+              <>
+                <Form.Item label={<span>Thương hiệu pin <Text type="secondary" style={{ fontSize: 12 }}>(client-side)</Text></span>}>
+                  <AutoComplete
+                    placeholder="Nhập thương hiệu pin..."
+                    value={batteryBrand || undefined}
+                    onChange={(val) => setBatteryBrand(val || '')}
+                    allowClear
+                    filterOption={(inputValue, option) =>
+                      option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                    }
+                    options={batteryBrandOptions.map(brandName => ({ value: brandName, label: brandName }))}
+                  />
+                </Form.Item>
+
+                <Form.Item label={<span>Tình trạng pin <Text type="secondary" style={{ fontSize: 12 }}>(client-side)</Text></span>}>
+                  <Select
+                    placeholder="Chọn tình trạng pin"
+                    value={batteryCondition || undefined}
+                    onChange={(val) => setBatteryCondition(val || '')}
+                    allowClear
+                    options={batteryConditionOptions}
+                  />
+                </Form.Item>
+
+                <Form.Item label={<span>Dung lượng pin (kWh) <Text type="secondary" style={{ fontSize: 12 }}>(client-side)</Text></span>}>
+                  <Slider
+                    range
+                    min={0}
+                    max={200}
+                    step={5}
+                    value={batteryCapacity}
+                    tooltip={{ formatter: (v) => `${v} kWh` }}
+                    onChange={(vals) => setBatteryCapacity(vals)}
+                  />
+                  <Space style={{ width: '100%', justifyContent: 'space-between' }} size={8}>
+                    <InputNumber
+                      value={batteryCapacity[0]}
+                      min={0}
+                      max={batteryCapacity[1]}
+                      step={5}
+                      addonAfter="kWh"
+                      size="small"
+                      onChange={(v) => setBatteryCapacity([v || 0, batteryCapacity[1]])}
+                    />
+                    <InputNumber
+                      value={batteryCapacity[1]}
+                      min={batteryCapacity[0]}
+                      max={200}
+                      step={5}
+                      addonAfter="kWh"
+                      size="small"
+                      onChange={(v) => setBatteryCapacity([batteryCapacity[0], v || 200])}
+                    />
+                  </Space>
+                </Form.Item>
+              </>
+            )}
+
+            {/* Filters cho Vehicle Listings */}
+            {category === 'cars' && (
+              <>
+                <Form.Item label={<span>Thương hiệu xe <Text type="secondary" style={{ fontSize: 12 }}>(client-side)</Text></span>}>
+                  <AutoComplete
+                    placeholder="Nhập thương hiệu xe..."
+                    value={carBrand || undefined}
+                    onChange={(val) => setCarBrand(val || '')}
+                    allowClear
+                    filterOption={(inputValue, option) =>
+                      option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                    }
+                    options={carBrandOptions.map(brandName => ({ value: brandName, label: brandName }))}
+                  />
+                </Form.Item>
+
+                <Form.Item label={<span>Tình trạng xe <Text type="secondary" style={{ fontSize: 12 }}>(client-side)</Text></span>}>
+                  <Select
+                    placeholder="Chọn tình trạng xe"
+                    value={carCondition || undefined}
+                    onChange={(val) => setCarCondition(val || '')}
+                    allowClear
+                    options={carConditionOptions}
+                  />
+                </Form.Item>
+
+                <Form.Item label={<span>Dung lượng pin xe (kWh) <Text type="secondary" style={{ fontSize: 12 }}>(client-side)</Text></span>}>
+                  <Slider
+                    range
+                    min={0}
+                    max={200}
+                    step={5}
+                    value={carBatteryCapacity}
+                    tooltip={{ formatter: (v) => `${v} kWh` }}
+                    onChange={(vals) => setCarBatteryCapacity(vals)}
+                  />
+                  <Space style={{ width: '100%', justifyContent: 'space-between' }} size={8}>
+                    <InputNumber
+                      value={carBatteryCapacity[0]}
+                      min={0}
+                      max={carBatteryCapacity[1]}
+                      step={5}
+                      addonAfter="kWh"
+                      size="small"
+                      onChange={(v) => setCarBatteryCapacity([v || 0, carBatteryCapacity[1]])}
+                    />
+                    <InputNumber
+                      value={carBatteryCapacity[1]}
+                      min={carBatteryCapacity[0]}
+                      max={200}
+                      step={5}
+                      addonAfter="kWh"
+                      size="small"
+                      onChange={(v) => setCarBatteryCapacity([carBatteryCapacity[0], v || 200])}
+                    />
+                  </Space>
+                </Form.Item>
+              </>
+            )}
             <Form.Item label={<span>Khoảng giá (VND) <Text type="secondary" style={{ fontSize: 12 }}>(lọc cục bộ trên trang)</Text></span>}>
               <Slider
                 range
@@ -220,11 +645,15 @@ function ListingPage() {
               />
             </Form.Item>
             <Space.Compact block>
-              <Button icon={<ReloadOutlined />} loading={loading} onClick={()=> fetchListings()} type="primary" block>
+              <Button loading={loading} onClick={()=> fetchListings()} type="primary" block>
                 Làm mới
               </Button>
             </Space.Compact>
-            <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 12 }}>* Bộ lọc giá & năm hiện tại chỉ áp dụng trên dữ liệu trang đang xem.</Text>
+            <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 12 }}>
+              * Server-side: Năm sản xuất, Loại xe.
+              <br />
+              * Client-side: Giá, Thương hiệu, Tình trạng, Dung lượng pin.
+            </Text>
           </Form>
         </div>
       </Sider>
