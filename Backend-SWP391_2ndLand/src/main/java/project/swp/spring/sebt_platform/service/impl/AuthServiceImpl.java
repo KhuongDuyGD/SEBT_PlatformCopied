@@ -3,6 +3,7 @@ package project.swp.spring.sebt_platform.service.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import project.swp.spring.sebt_platform.model.UserEntity;
+import project.swp.spring.sebt_platform.model.enums.UserRole;
 import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.AuthService;
 import project.swp.spring.sebt_platform.service.MailService;
@@ -47,12 +48,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public boolean register(String password, String email) {
+    public boolean register(String password, String email, UserRole role) {
         try{
             // create salt and hash password
             String salt = utils.generateSalt();
             String hashedPassword = utils.encript(password, salt);
             UserEntity newUser = new UserEntity( email.substring(0,email.indexOf("@")),hashedPassword, email, salt);
+            newUser.setRole(role);
 
             userRepository.save(newUser);
 

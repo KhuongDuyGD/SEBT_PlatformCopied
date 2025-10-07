@@ -69,10 +69,6 @@ public class FavoriteEntity {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

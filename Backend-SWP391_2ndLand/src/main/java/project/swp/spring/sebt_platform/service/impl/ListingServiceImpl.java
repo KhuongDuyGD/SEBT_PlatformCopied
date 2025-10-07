@@ -212,8 +212,8 @@ public class ListingServiceImpl implements ListingService {
 
         // Set thumbnail - lấy ảnh đầu tiên từ listingImages làm thumbnail
         if (listingImages != null && !listingImages.isEmpty()) {
-            listingEntity.setThumbnailImage(listingImages.get(0).url());
-            logger.debug("[CREATE_LISTING] Set thumbnail from first image: {}", listingImages.get(0).url());
+            listingEntity.setThumbnailImage(listingImages.get(0).getUrl());
+            logger.debug("[CREATE_LISTING] Set thumbnail from first image: {}", listingImages.get(0).getUrl());
         } else {
             logger.error("Image list is null or empty - cannot create listing without images");
             return false;
@@ -228,8 +228,8 @@ public class ListingServiceImpl implements ListingService {
             List<ListingImageEntity> listingImageEntities = new ArrayList<>();
             for (Image image : listingImages) {
                 ListingImageEntity listingImageEntity = new ListingImageEntity();
-                listingImageEntity.setImageUrl(image.url());
-                listingImageEntity.setPublicId(image.publicId());
+                listingImageEntity.setImageUrl(image.getUrl());
+                listingImageEntity.setPublicId(image.getPublicId());
                 listingImageEntity.setListing(listingEntity);
                 listingImageEntities.add(listingImageEntity);
             }
@@ -277,8 +277,6 @@ public class ListingServiceImpl implements ListingService {
 
         // Convert to DTO
         ListingDetailResponseDTO detailDTO = new ListingDetailResponseDTO();
-
-        if (listing == null) return null;
 
         detailDTO.setTitle(listing.getTitle());
         detailDTO.setDescription(listing.getDescription());
@@ -476,7 +474,11 @@ public class ListingServiceImpl implements ListingService {
     }
 
     @Override
-    public Page<ListingCartResponseDTO> filterBatteryListings(Integer year, Double minPrice, Double maxPrice, Long userId, Pageable pageable) {
+    public Page<ListingCartResponseDTO> filterBatteryListings(Integer year,
+                                                              Double minPrice,
+                                                              Double maxPrice,
+                                                              Long userId,
+                                                              Pageable pageable) {
         try {
             return listingRepository.filterBatteryListings(
                     year,
