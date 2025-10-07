@@ -5,6 +5,7 @@ import com.cloudinary.utils.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import project.swp.spring.sebt_platform.dto.object.Image;
@@ -68,10 +69,10 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         }
     }
 
+    @Async("imageUploadExecutor")
     @Override
     public List<Image> uploadMultipleImages(List<MultipartFile> files, String folder) {
         List<Image> uploadedImages = new ArrayList<>();
-
         for (MultipartFile file : files) {
             try {
                 Image image = uploadImage(file, folder);
