@@ -1,16 +1,20 @@
 package project.swp.spring.sebt_platform.controller;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.hibernate.query.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import project.swp.spring.sebt_platform.dto.request.UpdateProfileFormDTO;
-import project.swp.spring.sebt_platform.dto.response.ErrorResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.SessionInfoResponseDTO;
-import project.swp.spring.sebt_platform.dto.response.SuccessResponseDTO;
+import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
 import project.swp.spring.sebt_platform.service.MemberService;
 
 @RestController
@@ -24,6 +28,17 @@ public class MemberController {
         this.memberService = memberService;
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "No active session or invalid session",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @PostMapping("/update-profile")
     public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileFormDTO updateProfileDTO, HttpServletRequest request) {
         try {
@@ -32,7 +47,7 @@ public class MemberController {
 
             if (session == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponseDTO("No active session. Please login first."));
+                    .body("No active session. Please login first.");
             }
 
             // Get userId from session
@@ -40,31 +55,43 @@ public class MemberController {
 
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponseDTO("Invalid session. Please login again."));
+                    .body("Invalid session. Please login again.");
             }
 
             // Update profile
             boolean updateResult = memberService.updateProfile(updateProfileDTO, userId);
 
             if (updateResult) {
-                return ResponseEntity.ok(new SuccessResponseDTO("Profile updated successfully"));
+                return ResponseEntity.ok("Profile updated successfully");
             } else {
-                return ResponseEntity.ok(new ErrorResponseDTO("Failed to update profile."));
+                return ResponseEntity.ok("Failed to update profile.");
             }
 
         } catch (Exception e) {
             System.err.println("Update profile error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponseDTO("Internal server error: " + e.getMessage()));
+                .body("Internal server error: " + e.getMessage());
         }
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved post responses",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized: Admin access required",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @GetMapping
     public ResponseEntity<?> getPostResponse(HttpServletRequest request, @RequestParam int page, @RequestParam int size) {
         try {
             HttpSession session = request.getSession(false);
             if (session == null || session.getAttribute("role") == null || !session.getAttribute("role").equals("ADMIN")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Admin access required.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: Admin access required.");
             }
 
             Long userId = (Long) session.getAttribute("userId");
@@ -74,10 +101,25 @@ public class MemberController {
             var postResponses = memberService.getPostAnoucementResponse(userId, pageable);
             return ResponseEntity.ok(postResponses);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Cannot get post responses");
         }
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserProfileResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "No active session or invalid session",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "404", description = "User profile not found",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(HttpServletRequest request) {
         try {
@@ -86,7 +128,7 @@ public class MemberController {
 
             if (session == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponseDTO("No active session. Please login first."));
+                    .body("No active session. Please login first.");
             }
 
             // Get userId from session
@@ -94,7 +136,7 @@ public class MemberController {
 
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponseDTO("Invalid session. Please login again."));
+                    .body("Invalid session. Please login again.");
             }
 
             // Get user profile
@@ -102,18 +144,29 @@ public class MemberController {
 
             if (userProfile == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponseDTO("User profile not found."));
+                    .body("User profile not found.");
             }
 
-            return ResponseEntity.ok(new SuccessResponseDTO("Profile retrieved successfully", userProfile));
+            return ResponseEntity.ok(userProfile);
 
         } catch (Exception e) {
             System.err.println("Get profile error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponseDTO("Internal server error: " + e.getMessage()));
+                .body("Can not get profile");
         }
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Session info retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = SessionInfoResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "No active session",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @GetMapping("/session-info")
     public ResponseEntity<?> getSessionInfo(HttpServletRequest request) {
         try {
@@ -121,7 +174,7 @@ public class MemberController {
 
             if (session == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponseDTO("No active session"));
+                    .body("No active session");
             }
 
             // Return session information
@@ -135,12 +188,12 @@ public class MemberController {
                 session.getMaxInactiveInterval()
             );
 
-            return ResponseEntity.ok(new SuccessResponseDTO("Session info retrieved", sessionInfo));
+            return ResponseEntity.ok(sessionInfo);
 
         } catch (Exception e) {
             System.err.println("Get session info error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponseDTO("Failed to get session info"));
+                .body("Failed to get session info");
         }
     }
 

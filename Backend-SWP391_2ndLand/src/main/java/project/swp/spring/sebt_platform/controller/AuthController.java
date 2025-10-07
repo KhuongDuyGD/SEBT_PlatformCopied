@@ -1,5 +1,9 @@
 package project.swp.spring.sebt_platform.controller;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -18,8 +22,6 @@ import project.swp.spring.sebt_platform.dto.request.ResendOtpRequestDTO;
 import project.swp.spring.sebt_platform.dto.request.UserLoginFormDTO;
 import project.swp.spring.sebt_platform.dto.request.UserRegisterFormDTO;
 import project.swp.spring.sebt_platform.dto.request.UserVerifyEmailFormDTO;
-import project.swp.spring.sebt_platform.dto.response.ErrorResponseDTO;
-import project.swp.spring.sebt_platform.dto.response.SuccessResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.UserSessionResponseDTO;
 import project.swp.spring.sebt_platform.model.UserEntity;
 import project.swp.spring.sebt_platform.model.enums.UserRole;
@@ -45,35 +47,49 @@ public class AuthController {
     @Autowired
     private Utils utils;
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Registration verification email sent",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "409", description = "Email already exists",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody UserRegisterFormDTO user, HttpServletRequest request) {
         try {
             // Input validation
             if (user.password() == null || user.password().trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("Password is required"));
+                    .body("Password is required");
             }
             if (user.email() == null || user.email().trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("Email is required"));
+                    .body("Email is required");
             }
             
             // Email format validation
             if (!user.email().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("Invalid email format"));
+                    .body("Invalid email format");
             }
             
             // Password strength validation
             if (user.password().length() < 6) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("Password must be at least 6 characters"));
+                    .body("Password must be at least 6 characters");
             }
 
             // Check if email already exists
             if (memberService.findUserByEmail(user.email()) != null) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(new ErrorResponseDTO("Email is already registered"));
+                    .body("Email is already registered");
             }
 
             // Register user
@@ -85,33 +101,50 @@ public class AuthController {
 
             // Send verification email
             mailService.sendVerificationEmail(user.email(), pins);
-                return ResponseEntity.ok(new SuccessResponseDTO(
-                    "Please check your email for verification."));
+                return ResponseEntity.ok(
+                    "Please check your email for verification.");
         } catch (Exception e) {
             System.err.println("Registration error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponseDTO("Registration failed"));
+                .body("Registration failed");
         }
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login successful",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserSessionResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "403", description = "Account not activated",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody UserLoginFormDTO user, HttpServletRequest request) {
         try {
             if (user.email() == null || user.password() == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("Email and password are required"));
+                    .body("Email and password are required");
             }
             
             UserEntity loggedInUser = authService.login(user.email(), user.password());
             if (loggedInUser == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponseDTO("email or password is incorrect"));
+                    .body("email or password is incorrect");
             }
             
             // Check if user is activated
             if (loggedInUser.getStatus() != UserStatus.ACTIVE) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorResponseDTO("Account not activated. Please verify your email first."));
+                    .body("Account not activated. Please verify your email first.");
             }
             
             // Tạo session
@@ -136,27 +169,37 @@ public class AuthController {
         } catch (Exception e) {
             System.err.println("Login error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponseDTO("Login failed"));
+                .body("Login failed");
         }
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Email verified successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input or verification failed",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @PostMapping("/verify-email")
     public ResponseEntity<?> verifyEmail(@Valid @RequestBody UserVerifyEmailFormDTO user, HttpServletRequest request) {
         try {
             if (user.pins() == null || user.pins().trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("PIN is required"));
+                    .body("PIN is required");
             }
             if (user.email() == null || user.email().trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("Email is required"));
+                    .body("Email is required");
             }
 
             HttpSession session = request.getSession(false);
-            // Fix: Kiểm tra session null trước khi truy cập attributes
             if (session == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("No verification process found. Please register again."));
+                    .body("No verification process found. Please register again.");
             }
 
             String sessionPins = (String) session.getAttribute("pins");
@@ -165,48 +208,59 @@ public class AuthController {
 
             if (sessionPins == null || sessionEmail == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("No verification process found. Please register again."));
+                    .body("No verification process found. Please register again.");
             }
 
             if (!sessionPins.equals(user.pins())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("OTP does not match the registered email."));
+                    .body("OTP does not match the registered email.");
             }
 
             boolean success = authService.register(sessionPassword,sessionEmail);
 
             if (success) {
                 session.invalidate();
-                return ResponseEntity.ok(new SuccessResponseDTO("Email verified, register successfully"));
+                return ResponseEntity.ok("Email verified, register successfully");
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("Invalid PIN or email"));
+                    .body("Invalid PIN or email");
             }
         } catch (Exception e) {
             System.err.println("Email verification error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponseDTO("Verification failed"));
+                .body("Verification failed");
         }
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "OTP resent successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input or session not found",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @PostMapping("/resend-otp")
     public ResponseEntity<?> resendOtp(@Valid @RequestBody ResendOtpRequestDTO request, HttpServletRequest httpRequest) {
         try {
             if (request.email() == null || request.email().trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("Email is required"));
+                    .body("Email is required");
             }
 
             HttpSession session = httpRequest.getSession(false);
             if (session == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("No verification process found. Please register again."));
+                    .body("No verification process found. Please register again.");
             }
 
             String sessionEmail = (String) session.getAttribute("email");
             if (sessionEmail == null || !sessionEmail.equals(request.email())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponseDTO("Email does not match the registration session."));
+                    .body("Email does not match the registration session.");
             }
 
             // Generate new OTP
@@ -218,22 +272,31 @@ public class AuthController {
             // Send new OTP email
             mailService.sendVerificationEmail(request.email(), newPins);
             
-            return ResponseEntity.ok(new SuccessResponseDTO("New OTP has been sent to your email"));
+            return ResponseEntity.ok("New OTP has been sent to your email");
             
         } catch (Exception e) {
             System.err.println("Resend OTP error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponseDTO("Failed to resend OTP"));
+                .body("Failed to resend OTP");
         }
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserSessionResponseDTO.class))),
+            @ApiResponse(responseCode = "404",content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ResponseEntity.class))),
+            @ApiResponse(responseCode = "500",content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ResponseEntity.class)))
+    })
     @GetMapping("/current-user")
     public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
         try {
             HttpSession session = request.getSession(false);
             if (session == null || session.getAttribute("userId") == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponseDTO("No active session"));
+                    .body("No active session");
             }
             
             Long userId = (Long) session.getAttribute("userId");
@@ -244,7 +307,7 @@ public class AuthController {
             
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponseDTO("Invalid session"));
+                    .body("Invalid session");
             }
             
             UserSessionResponseDTO sessionDTO = new UserSessionResponseDTO(
@@ -255,10 +318,19 @@ public class AuthController {
         } catch (Exception e) {
             System.err.println("Get current user error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponseDTO("Failed to get user information"));
+                .body("Failed to get user information");
         }
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = SessionCheckResponse.class))),
+            @ApiResponse(responseCode = "404",content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ResponseEntity.class))),
+            @ApiResponse(responseCode = "500",content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ResponseEntity.class)))
+    })
     @GetMapping("/check-session")
     public ResponseEntity<?> checkSession(HttpServletRequest request) {
         try {
@@ -291,6 +363,14 @@ public class AuthController {
         public String getMessage() { return message; }
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Logout successful",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         try {
@@ -313,12 +393,12 @@ public class AuthController {
                 .build();
 
             response.addHeader("Set-Cookie", deleteSebtSession.toString());
-            return ResponseEntity.ok(new SuccessResponseDTO("Logout successful"));
+            return ResponseEntity.ok("Logout successful");
         } catch (Exception e) {
             System.err.println("Logout error: " + e.getMessage());
             e.printStackTrace(); // In stack trace để debug tốt hơn
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponseDTO("Logout failed"));
+                    .body("Logout failed");
         }
     }
 }
