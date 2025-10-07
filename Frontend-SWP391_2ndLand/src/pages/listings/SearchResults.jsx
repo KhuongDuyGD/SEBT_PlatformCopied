@@ -19,12 +19,7 @@ export default function SearchResults() {
   const [page, setPage] = useState(pageParam);
   const [size, setSize] = useState(sizeParam);
 
-  const normalizeImage = (url) => {
-    if (!url) return 'https://placehold.co/400x300?text=No+Image';
-    if (url.startsWith('http')) return url;
-    if (url.startsWith('/')) return `http://localhost:8080${url}`; // backend static images
-    return url;
-  };
+
 
   const abortRef = useRef();
   const fetchData = useCallback(async () => {
@@ -35,11 +30,11 @@ export default function SearchResults() {
     try {
       setLoading(true); setError(null);
       const res = await listingsApi.keywordSearch(keyword, page, size, { signal: controller.signal });
-      if (res?.success) {
-        const mapped = mapListingArray(Array.isArray(res.data) ? res.data : []);
+      if (res && Array.isArray(res.content)) {
+        const mapped = mapListingArray(res.content);
         if (mapped.length && import.meta.env.DEV) console.debug('[SearchResults] sample item', mapped[0]);
         setResults(mapped);
-        setPagination(res.pagination || null);
+        setPagination(res);
       } else { setResults([]); setPagination(null); }
     } catch (e) {
       if (e.name === 'AbortError' || e.name === 'CanceledError') {
@@ -56,10 +51,9 @@ export default function SearchResults() {
 
   useEffect(() => {
     setSearchParams({ keyword, page: String(page), size: String(size) });
-  }, [keyword, page, size]);
+  }, [keyword, page, size, setSearchParams]);
 
-  const nextPage = () => pagination?.hasNext && setPage(p => p + 1);
-  const prevPage = () => pagination?.hasPrevious && setPage(p => Math.max(0, p - 1));
+
 
   const sizeOptions = [6,12,24,36].map(v => ({ value: v, label: `${v} / trang` }));
   return (

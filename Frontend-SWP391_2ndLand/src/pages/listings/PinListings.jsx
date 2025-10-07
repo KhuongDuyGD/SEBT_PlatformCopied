@@ -1,7 +1,7 @@
 // DEPRECATED: PinListings page logic đã được hợp nhất vào ListingPage (category=pin)
 import React, { useState, useEffect, useCallback } from "react";
 import ListingPage from "./ListingPage";
-import api from "../../api/axios";
+import listingsApi from "../../api/listings";
 
 function PinListings() {
   const [pinListings, setPinListings] = useState([]);
@@ -16,34 +16,36 @@ function PinListings() {
       setLoading(true);
       setError(null);
       
-      const response = await api.get('/listings/pins');
+      const response = await listingsApi.fetchBatteryListingCarts(0, 30); // lấy 30 đầu tiên cho page này
+      console.log('Battery Response from API:', response); // Debug log
       
-      if (response.data && Array.isArray(response.data)) {
+      // Response theo format từ API docs: Page<ListingCartResponseDTO>
+      const listings = response?.content || [];
+      
+      if (Array.isArray(listings)) {
         // Chuyển đổi dữ liệu từ API thành format phù hợp với ListingPage
-        const formattedListings = response.data.map(listing => ({
-          id: listing.id,
-          image: listing.mainImage || "/images/default-battery.jpg",
-          brand: (listing.product?.battery?.brand && listing.product?.battery?.model) 
-            ? `${listing.product.battery.brand} ${listing.product.battery.model}` 
-            : listing.title,
-          location: listing.location?.province || "Không rõ",
-          km: listing.product?.battery?.healthPercentage ? `Còn ${listing.product?.battery?.healthPercentage}%` : "Không rõ",
-          left: calculateTimeLeft(listing.expiresAt),
+        const formattedListings = listings.map(listing => ({
+          id: listing.listingId,
+          image: listing.thumbnailUrl || "/images/default-battery.jpg",
+          brand: listing.title, // Sử dụng title làm brand
+          location: "Không rõ", // Chưa có trong ListingCartResponseDTO
+          km: "—", // Chưa có trong ListingCartResponseDTO
+          left: '—',
           price: formatPrice(listing.price),
-          owner: listing.seller?.username || "Ẩn danh",
+          owner: listing.sellerPhoneNumber || "Liên hệ",
           comments: 0, // Tạm thời để 0, sau này sẽ implement comment system
-          description: listing.description || "Chưa có mô tả",
-          certified: listing.listingType === 'PREMIUM',
-          capacity: listing.product?.battery?.capacity,
-          condition: listing.product?.battery?.conditionStatus,
-          compatibleVehicles: listing.product?.battery?.compatibleVehicles,
-          viewsCount: listing.viewsCount || 0,
-          createdAt: listing.createdAt
+          description: "Chưa có mô tả", // Chưa có trong ListingCartResponseDTO
+          certified: listing.favorite, // Sử dụng favorite status
+          capacity: "—", // Chưa có trong ListingCartResponseDTO
+          condition: "—", // Chưa có trong ListingCartResponseDTO
+          compatibleVehicles: "—", // Chưa có trong ListingCartResponseDTO
+          viewsCount: listing.viewCount || 0,
+          createdAt: null // Chưa có trong ListingCartResponseDTO
         }));
         
         setPinListings(formattedListings);
       } else {
-        console.warn('API response không đúng format:', response.data);
+        console.warn('API response content không đúng format:', response);
         setPinListings([]);
       }
     } catch (err) {
@@ -57,25 +59,8 @@ function PinListings() {
 
   /**
    * Tính toán thời gian còn lại của listing
-   * @param {string} expiresAt - Thời gian hết hạn
-   * @returns {string} - Chuỗi mô tả thời gian còn lại
+   * Removed calculateTimeLeft function as it's not used in current implementation
    */
-  const calculateTimeLeft = (expiresAt) => {
-    if (!expiresAt) return "Không giới hạn";
-    
-    const now = new Date();
-    const expiration = new Date(expiresAt);
-    const diff = expiration - now;
-    
-    if (diff <= 0) return "Đã hết hạn";
-    
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
-    if (days > 0) return `${days} ngày`;
-    if (hours > 0) return `${hours} giờ`;
-    return "Sắp hết hạn";
-  };
 
   /**
    * Format giá tiền

@@ -3,7 +3,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import listingsApi from '../../api/listings';
 import { mapListingArray, normalizeImage } from '../../utils/listingMapper';
 import { Link } from 'react-router-dom';
-import { Card, Tag, Button, Pagination, Empty, Space, Typography, Skeleton, message } from 'antd';
+import { Card, Tag, Button, Pagination, Empty, Space, Typography, Skeleton } from 'antd';
 import { ThunderboltOutlined, EyeOutlined } from '@ant-design/icons';
 import '../../css/header.css';
 
@@ -25,11 +25,11 @@ export default function MyListings() {
             setLoading(true);
             setError(null);
             const res = await listingsApi.fetchMyListings(page, size);
-            // Backend wrapper format: { success, data, pagination }
-            if (res?.success) {
-                const mapped = mapListingArray(res.data || []);
+            // Backend trả về Page object theo YAML spec
+            if (res && Array.isArray(res.content)) {
+                const mapped = mapListingArray(res.content);
                 setItems(mapped);
-                setPagination(res.pagination || null);
+                setPagination(res);
             } else { setItems([]); setPagination(null);}
         } catch (e) {
             console.error('Fetch my listings error', e);
@@ -43,22 +43,7 @@ export default function MyListings() {
         if (isLoggedIn) fetchData();
     }, [fetchData, isLoggedIn]);
 
-    const nextPage = () => {
-        if (pagination?.hasNext) setPage(p => p + 1);
-    };
-    const prevPage = () => {
-        if (pagination?.hasPrevious) setPage(p => Math.max(0, p - 1));
-    };
 
-    const statusColor = (status) => {
-        switch (status) {
-            case 'PENDING': return 'bg-amber-500';
-            case 'APPROVED': return 'bg-green-600';
-            case 'REJECTED': return 'bg-red-600';
-            case 'SOLD': return 'bg-indigo-600';
-            default: return 'bg-gray-500';
-        }
-    };
 
     const statusTag = (st) => {
         const map = {

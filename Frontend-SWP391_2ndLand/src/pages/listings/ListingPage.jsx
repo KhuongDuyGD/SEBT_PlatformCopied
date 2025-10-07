@@ -1,5 +1,5 @@
 // src/pages/listings/ListingPage.jsx
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Layout,
@@ -15,8 +15,7 @@ import {
   Empty,
   Skeleton,
   Space,
-  Typography,
-  message
+  Typography
 } from 'antd';
 import { FilterOutlined, ThunderboltOutlined, ReloadOutlined } from '@ant-design/icons';
 import api from '../../api/axios';
@@ -137,8 +136,8 @@ function ListingPage() {
       }
       const res = await api.get(endpoint, { signal: controller.signal });
       const payload = res.data || {};
-      const raw = Array.isArray(payload.data) ? payload.data : [];
-      setPagination(payload.pagination || null);
+      const raw = Array.isArray(payload.content) ? payload.content : [];
+      setPagination(payload);
       
       let mapped = mapListingArray(raw);
       if (mapped.length && import.meta.env.DEV) console.debug('[ListingPage] sample item', mapped[0]);
@@ -187,40 +186,83 @@ function ListingPage() {
           }
         }
 
-        // Condition filter cho pin - dựa trên title parsing vì backend không expose condition trong ListingCartResponseDTO
+        // Condition filter cho pin - dựa trên title parsing và health percentage
+        // Vì ListingCartResponseDTO không có condition field, phải parse từ title
         if (batteryCondition) {
+          const originalCount = mapped.length;
           mapped = mapped.filter(l => {
-            // Parse condition từ title patterns
-            // Title patterns có thể chứa: "Pin Tesla ... - 95% Health", "Pin BYD ... - Tình trạng tốt"
-            let hasCondition = false;
+            if (!l.title) return false;
             
-            if (l.title) {
-              const title = l.title.toLowerCase();
-              
-              // Map UI condition values với title patterns
-              switch (batteryCondition) {
-                case 'EXCELLENT':
-                  hasCondition = title.includes('như mới') || title.includes('tuyệt vời') || title.includes('excellent');
-                  break;
-                case 'GOOD':
-                  hasCondition = title.includes('tốt') || title.includes('good') || (!title.includes('kém') && !title.includes('cần'));
-                  break;
-                case 'FAIR':
-                  hasCondition = title.includes('khá') || title.includes('fair') || title.includes('bình thường');
-                  break;
-                case 'POOR':
-                  hasCondition = title.includes('kém') || title.includes('poor') || title.includes('xấu');
-                  break;
-                case 'NEEDS_REPLACEMENT':
-                  hasCondition = title.includes('cần thay') || title.includes('thay thế') || title.includes('replacement');
-                  break;
-                default:
-                  hasCondition = true; // Fallback: show all if can't determine
-              }
+            const title = l.title.toLowerCase();
+            let matches = false;
+            
+            // Trước tiên, thử parse health percentage từ title pattern "XX% Health"
+            const healthMatch = title.match(/(\d+)%\s*health/i);
+            let healthPercent = null;
+            if (healthMatch) {
+              healthPercent = parseInt(healthMatch[1]);
             }
             
-            return hasCondition;
+            // Mapping condition dựa trên health percentage và keywords
+            switch (batteryCondition) {
+              case 'EXCELLENT':
+                // Health >= 95% hoặc keywords như "như mới", "tuyệt vời"
+                matches = (healthPercent !== null && healthPercent >= 95) ||
+                          title.includes('như mới') || 
+                          title.includes('tuyệt vời') || 
+                          title.includes('excellent') ||
+                          title.includes('hoàn hảo');
+                break;
+                
+              case 'GOOD':  
+                // Health 80-94% hoặc keywords "tốt" (nhưng không có negative keywords)
+                matches = (healthPercent !== null && healthPercent >= 80 && healthPercent < 95) ||
+                          (title.includes('tốt') && !title.includes('không tốt') && !title.includes('kém')) ||
+                          title.includes('good');
+                break;
+                
+              case 'FAIR':
+                // Health 60-79% hoặc keywords "khá", "bình thường"
+                matches = (healthPercent !== null && healthPercent >= 60 && healthPercent < 80) ||
+                          title.includes('khá') || 
+                          title.includes('fair') || 
+                          title.includes('bình thường') ||
+                          title.includes('trung bình');
+                break;
+                
+              case 'POOR':
+                // Health 30-59% hoặc keywords "kém", "xấu"
+                matches = (healthPercent !== null && healthPercent >= 30 && healthPercent < 60) ||
+                          title.includes('kém') || 
+                          title.includes('poor') || 
+                          title.includes('xấu') ||
+                          title.includes('hỏng');
+                break;
+                
+              case 'NEEDS_REPLACEMENT':
+                // Health < 30% hoặc keywords về thay thế
+                matches = (healthPercent !== null && healthPercent < 30) ||
+                          title.includes('cần thay') || 
+                          title.includes('thay thế') || 
+                          title.includes('replacement') ||
+                          title.includes('cần sửa');
+                break;
+                
+              default:
+                matches = true;
+            }
+            
+            // Debug logging
+            if (import.meta.env.DEV && healthPercent !== null) {
+              console.debug(`[BATTERY CONDITION] "${l.title}" -> Health: ${healthPercent}% -> Filter: ${batteryCondition} -> Match: ${matches}`);
+            }
+            
+            return matches;
           });
+          
+          if (import.meta.env.DEV) {
+            console.debug(`[BATTERY CONDITION FILTER] Filtered ${originalCount} -> ${mapped.length} items for condition: "${batteryCondition}"`);
+          }
         }
 
         // Capacity range filter cho pin - extract từ title vì backend không expose capacity details

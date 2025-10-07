@@ -17,31 +17,34 @@ function CarListings() {
       setError(null);
       
       const response = await listingsApi.fetchEvListingCarts(0, 30); // lấy 30 đầu tiên cho page này
-      const data = response?.data || [];
+      console.log('Response from API:', response); // Debug log
+      
+      // Response theo format từ API docs: Page<ListingCartResponseDTO>
+      const listings = response?.content || [];
 
-      if (Array.isArray(data)) {
-        const formattedListings = data.map(listing => ({
-          id: listing.id,
-          image: listing.mainImageUrl || listing.mainImage || "/images/default-car.jpg",
-          brand: listing.brand || listing?.ev?.brand || listing.title,
-          location: listing.locationProvince || listing.location?.province || "Không rõ",
-          km: listing.mileage ? `${listing.mileage.toLocaleString()} km` : (listing.ev?.mileage ? `${listing.ev.mileage.toLocaleString()} km` : "Không rõ"),
+      if (Array.isArray(listings)) {
+        const formattedListings = listings.map(listing => ({
+          id: listing.listingId,
+          image: listing.thumbnailUrl || "/images/default-car.jpg",
+          brand: listing.title, // Sử dụng title làm brand
+          location: "Không rõ", // Chưa có trong ListingCartResponseDTO
+          km: "—", // Chưa có trong ListingCartResponseDTO
           left: '—',
           price: formatPrice(listing.price),
-          owner: listing.sellerName || listing.seller?.username || "Ẩn danh",
+          owner: listing.sellerPhoneNumber || "Liên hệ",
           comments: 0,
-          description: listing.description || "Chưa có mô tả",
-          certified: listing.listingType === 'PREMIUM',
-          year: listing.year || listing.ev?.year,
-          condition: listing.conditionStatus || listing.ev?.conditionStatus,
-          batteryCapacity: listing.batteryCapacity || listing.ev?.batteryCapacity,
-          viewsCount: listing.viewsCount || 0,
-          createdAt: listing.createdAt
+          description: "Chưa có mô tả", // Chưa có trong ListingCartResponseDTO
+          certified: listing.favorite, // Sử dụng favorite status
+          year: "—", // Chưa có trong ListingCartResponseDTO
+          condition: "—", // Chưa có trong ListingCartResponseDTO
+          batteryCapacity: "—", // Chưa có trong ListingCartResponseDTO
+          viewsCount: listing.viewCount || 0,
+          createdAt: null // Chưa có trong ListingCartResponseDTO
         }));
         
         setCarListings(formattedListings);
       } else {
-        console.warn('API response không đúng format:', response);
+        console.warn('API response content không đúng format:', response);
         setCarListings([]);
       }
     } catch (err) {
@@ -53,27 +56,7 @@ function CarListings() {
     }
   }, []);
 
-  /**
-   * Tính toán thời gian còn lại của listing
-   * @param {string} expiresAt - Thời gian hết hạn
-   * @returns {string} - Chuỗi mô tả thời gian còn lại
-   */
-  const calculateTimeLeft = (expiresAt) => {
-    if (!expiresAt) return "Không giới hạn";
-    
-    const now = new Date();
-    const expiration = new Date(expiresAt);
-    const diff = expiration - now;
-    
-    if (diff <= 0) return "Đã hết hạn";
-    
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
-    if (days > 0) return `${days} ngày`;
-    if (hours > 0) return `${hours} giờ`;
-    return "Sắp hết hạn";
-  };
+  // Removed calculateTimeLeft function as it's not used in current implementation
 
   /**
    * Format giá tiền
