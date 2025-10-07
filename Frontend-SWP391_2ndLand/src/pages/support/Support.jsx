@@ -46,17 +46,20 @@ function Support() {
       // Gọi API gửi yêu cầu hỗ trợ
       const response = await sendSupportRequest(values);
       
-      if (response.success) {
+      // Handle different response formats
+      const isSuccess = response && (response.success === true || response.success === undefined);
+      
+      if (isSuccess) {
         setSubmitResult({
           type: 'success',
-          message: response.message || 'Yêu cầu hỗ trợ đã được gửi thành công! Chúng tôi sẽ phản hồi qua email của bạn trong vòng 24 giờ.'
+          message: response?.message || 'Yêu cầu hỗ trợ đã được gửi thành công! Chúng tôi sẽ phản hồi qua email của bạn trong vòng 24 giờ.'
         });
         message.success('✅ Gửi yêu cầu hỗ trợ thành công!');
         form.resetFields();
       } else {
         setSubmitResult({
           type: 'error',
-          message: response.message || 'Có lỗi xảy ra khi gửi yêu cầu. Vui lòng thử lại.'
+          message: response?.message || 'Có lỗi xảy ra khi gửi yêu cầu. Vui lòng thử lại.'
         });
         message.error('❌ Gửi yêu cầu thất bại!');
       }

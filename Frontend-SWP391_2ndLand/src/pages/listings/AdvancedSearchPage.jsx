@@ -73,11 +73,11 @@ export default function AdvancedSearchPage() {
       if (!silent) setLoading(true);
       setError(null);
       const res = await listingsApi.advancedSearchListings({ ...paramsObj, page: pageArg, size: sizeArg, signal: controller.signal });
-      if (res?.success) {
-        const arr = Array.isArray(res.data) ? res.data : [];
+      if (res && Array.isArray(res.content)) {
+        const arr = res.content;
         const mapped = mapListingArray(arr);
         setListings(mapped);
-        setPagination(res.pagination || null);
+        setPagination(res);
       } else {
         setListings([]); setPagination(null);
       }

@@ -27,10 +27,15 @@ const FAQDropdown = () => {
       
       const response = await getFAQList();
       
-      if (response.success && response.data) {
+      if (response && Array.isArray(response)) {
+        setFaqList(response);
+      } else if (response && typeof response === 'object' && Array.isArray(response.data)) {
+        // Fallback: if response has wrapper format
         setFaqList(response.data);
       } else {
-        setError('Không thể tải danh sách FAQ');
+        console.warn('FAQ response is not an array:', response);
+        setFaqList([]); // Ensure faqList is always an array
+        setError('Dữ liệu FAQ không hợp lệ');
       }
     } catch (err) {
       console.error('Lỗi khi tải FAQ:', err);
@@ -112,7 +117,17 @@ const FAQDropdown = () => {
 
       {/* Danh sách FAQ - đã bỏ thanh tìm kiếm */}
       <div className="faq-list">
-        {faqList.map((item, index) => (
+        {!Array.isArray(faqList) || faqList.length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '2rem',
+            color: '#6c757d',
+            fontStyle: 'italic'
+          }}>
+            {loading ? 'Đang tải câu hỏi thường gặp...' : 'Chưa có câu hỏi thường gặp nào.'}
+          </div>
+        ) : (
+          faqList.map((item, index) => (
           <div key={index} className="faq-item">
             {/* Câu hỏi - clickable để mở/đóng */}
             <button
@@ -143,7 +158,8 @@ const FAQDropdown = () => {
               </div>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Thông tin hỗ trợ thêm */}

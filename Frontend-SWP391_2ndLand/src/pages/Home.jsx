@@ -52,7 +52,7 @@ function Home() {
   const [viewMode, setViewMode] = useState('grid'); // for newest section (grid | compact)
 
   const safeMap = (payload) => {
-    const raw = Array.isArray(payload?.data) ? payload.data : [];
+    const raw = Array.isArray(payload?.content) ? payload.content : [];
     return mapListingArray(raw).slice(0, 8);
   };
 

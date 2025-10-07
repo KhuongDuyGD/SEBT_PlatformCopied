@@ -46,29 +46,28 @@ function ListingDetail() {
       // Đúng endpoint backend: GET /api/listings/detail/{listingId}
       const response = await api.get(`/listings/detail/${id}`);
 
-      // Backend trả về envelope { success, data, message }
-      const payload = response.data;
-      if (payload?.success && payload.data) {
-        const data = payload.data;
+      // Backend trả về trực tiếp ListingDetailResponseDTO theo YAML
+      const data = response.data;
+      if (data) {
         // Chuẩn hóa một số field cho UI hiện tại
         const normalized = {
           id: data.id,
-            title: data.title,
-            description: data.description,
-            price: data.price,
-            listingType: data.listingType,
-            status: data.status,
-            createdAt: data.createdAt,
-            updatedAt: data.updatedAt,
-            product: data.product,
-            location: data.location,
-            seller: data.seller,
-            thumbnail: data.thumbnail,
-            images: Array.isArray(data.images) ? data.images : [],
+          title: data.title,
+          description: data.description,
+          price: data.price,
+          listingType: data.listingType,
+          status: data.status,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+          product: data.product,
+          location: data.location,
+          seller: data.seller,
+          thumbnail: data.thumbnail,
+          images: Array.isArray(data.images) ? data.images : [],
         };
         setListing(normalized);
       } else {
-        setError(payload?.message || 'Không tìm thấy listing này.');
+        setError('Không tìm thấy listing này.');
       }
     } catch (err) {
       console.error('Lỗi khi fetch listing detail:', err);

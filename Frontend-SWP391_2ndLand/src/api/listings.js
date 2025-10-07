@@ -9,12 +9,13 @@ export const createListing = (formData, userId) => {
     return api.post('/listings/create', formData, { headers });
 };
 
-// Advanced search
+// Advanced search - use the same search endpoint as keyword search with additional filters
 export const advancedSearchListings = (params = {}) => {
+    const { keyword = '', ...otherParams } = params;
     const query = new URLSearchParams(
-        Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+        Object.entries({keyword, ...otherParams}).filter(([, v]) => v !== undefined && v !== null && v !== '')
     ).toString();
-    return api.get(`/listings/advanced-search?${query}`).then(r => r.data);
+    return api.get(`/listings/search?${query}`).then(r => r.data);
 };
 
 // Keyword search (accept optional axios config: { signal } etc.)
