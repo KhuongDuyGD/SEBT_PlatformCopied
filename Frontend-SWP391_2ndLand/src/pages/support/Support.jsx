@@ -23,6 +23,10 @@ import {
   UserOutlined
 } from '@ant-design/icons';
 
+// Import các service và component mới
+import { sendSupportRequest, SUPPORT_REQUEST_TYPES } from '../../api/support';
+import FAQDropdown from '../../components/support/FAQDropdown';
+
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -31,22 +35,38 @@ const { Option } = Select;
 function Support() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [submitResult, setSubmitResult] = useState(null); // Lưu kết quả gửi form
 
-  // Handle form submission
+  // Xử lý gửi form hỗ trợ - Gọi API thực tế
   const handleSubmit = async (values) => {
     setLoading(true);
+    setSubmitResult(null); // Reset kết quả trước đó
+    
     try {
-      // Trong thực tế sẽ gọi API support với values
-      console.log('Support request:', values);
+      // Gọi API gửi yêu cầu hỗ trợ
+      const response = await sendSupportRequest(values);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      message.success('Yêu cầu hỗ trợ đã được gửi thành công. Chúng tôi sẽ phản hồi trong vòng 24 giờ.');
-      form.resetFields();
+      if (response.success) {
+        setSubmitResult({
+          type: 'success',
+          message: response.message || 'Yêu cầu hỗ trợ đã được gửi thành công! Chúng tôi sẽ phản hồi qua email của bạn trong vòng 24 giờ.'
+        });
+        message.success('✅ Gửi yêu cầu hỗ trợ thành công!');
+        form.resetFields();
+      } else {
+        setSubmitResult({
+          type: 'error',
+          message: response.message || 'Có lỗi xảy ra khi gửi yêu cầu. Vui lòng thử lại.'
+        });
+        message.error('❌ Gửi yêu cầu thất bại!');
+      }
     } catch (err) {
-      console.error('Support request error:', err);
-      message.error('Có lỗi xảy ra. Vui lòng thử lại sau.');
+      console.error('Lỗi khi gửi yêu cầu hỗ trợ:', err);
+      setSubmitResult({
+        type: 'error',
+        message: err.message || 'Có lỗi xảy ra khi kết nối đến server. Vui lòng kiểm tra kết nối mạng và thử lại.'
+      });
+      message.error('❌ Có lỗi xảy ra khi gửi yêu cầu!');
     } finally {
       setLoading(false);
     }
@@ -109,6 +129,19 @@ function Support() {
             {/* Support Form */}
             <Col xs={24} lg={16}>
               <Card title="Gửi Yêu Cầu Hỗ Trợ">
+                {/* Hiển thị kết quả gửi form */}
+                {submitResult && (
+                  <Alert
+                    type={submitResult.type}
+                    message={submitResult.type === 'success' ? 'Gửi thành công!' : 'Gửi thất bại!'}
+                    description={submitResult.message}
+                    showIcon
+                    closable
+                    onClose={() => setSubmitResult(null)}
+                    style={{ marginBottom: '1.5rem' }}
+                  />
+                )}
+                
                 <Form
                   form={form}
                   layout="vertical"
@@ -155,31 +188,31 @@ function Support() {
                     rules={[{ required: true, message: 'Vui lòng chọn loại yêu cầu' }]}
                   >
                     <Select placeholder="Chọn loại yêu cầu">
-                      <Option value="technical">
+                      <Option value={SUPPORT_REQUEST_TYPES.TECHNICAL}>
                         <Space>
                           <BugOutlined />
                           Hỗ trợ kỹ thuật
                         </Space>
                       </Option>
-                      <Option value="account">
+                      <Option value={SUPPORT_REQUEST_TYPES.ACCOUNT}>
                         <Space>
                           <UserOutlined />
                           Vấn đề tài khoản
                         </Space>
                       </Option>
-                      <Option value="listing">
+                      <Option value={SUPPORT_REQUEST_TYPES.LISTING}>
                         <Space>
                           <QuestionCircleOutlined />
                           Vấn đề về listing
                         </Space>
                       </Option>
-                      <Option value="payment">
+                      <Option value={SUPPORT_REQUEST_TYPES.PAYMENT}>
                         <Space>
                           <MailOutlined />
                           Vấn đề thanh toán
                         </Space>
                       </Option>
-                      <Option value="other">
+                      <Option value={SUPPORT_REQUEST_TYPES.OTHER}>
                         <Space>
                           <QuestionCircleOutlined />
                           Khác
@@ -221,53 +254,37 @@ function Support() {
                       size="large"
                       style={{ width: '100%' }}
                     >
-                      Gửi Yêu Cầu Hỗ Trợ
+                      {loading ? 'Đang gửi...' : 'Gửi Yêu Cầu Hỗ Trợ'}
                     </Button>
+                    
+                    {/* Thông báo hướng dẫn */}
+                    <div style={{ 
+                      marginTop: '1rem', 
+                      padding: '0.75rem',
+                      backgroundColor: '#f0f8ff',
+                      border: '1px solid #d1ecf1',
+                      borderRadius: '6px',
+                      fontSize: '0.9rem',
+                      color: '#0c5460'
+                    }}>
+                      <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
+                        📧 Sau khi gửi yêu cầu:
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                        <li>Email sẽ được gửi đến đội ngũ hỗ trợ</li>
+                        <li>Bạn sẽ nhận được phản hồi qua email trong vòng 24 giờ</li>
+                        <li>Vui lòng kiểm tra cả thư mục spam/junk mail</li>
+                      </ul>
+                    </div>
                   </Form.Item>
                 </Form>
               </Card>
             </Col>
           </Row>
 
-          {/* FAQ Section */}
-          <Card title="Câu Hỏi Thường Gặp">
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Card size="small" style={{ height: '100%' }}>
-                  <Title level={5}>Làm sao để đăng tin bán xe/pin?</Title>
-                  <Text type="secondary">
-                    Bạn cần đăng nhập tài khoản, sau đó click vào "Đăng tin" và điền đầy đủ thông tin sản phẩm.
-                  </Text>
-                </Card>
-              </Col>
-
-              <Col xs={24} md={12}>
-                <Card size="small" style={{ height: '100%' }}>
-                  <Title level={5}>Tại sao tài khoản tôi bị khóa?</Title>
-                  <Text type="secondary">
-                    Tài khoản có thể bị khóa do vi phạm quy định. Vui lòng liên hệ support để được hỗ trợ.
-                  </Text>
-                </Card>
-              </Col>
-
-              <Col xs={24} md={12}>
-                <Card size="small" style={{ height: '100%' }}>
-                  <Title level={5}>Làm sao để thay đổi thông tin cá nhân?</Title>
-                  <Text type="secondary">
-                    Vào trang Profile, click "Chỉnh sửa" và cập nhật thông tin mới.
-                  </Text>
-                </Card>
-              </Col>
-
-              <Col xs={24} md={12}>
-                <Card size="small" style={{ height: '100%' }}>
-                  <Title level={5}>Quên mật khẩu phải làm sao?</Title>
-                  <Text type="secondary">
-                    Click vào "Quên mật khẩu" tại trang đăng nhập và làm theo hướng dẫn.
-                  </Text>
-                </Card>
-              </Col>
-            </Row>
+          {/* FAQ Section - Component mới với dropdown */}
+          <Card style={{ padding: '1rem' }}>
+            <FAQDropdown />
           </Card>
         </Space>
       </Content>

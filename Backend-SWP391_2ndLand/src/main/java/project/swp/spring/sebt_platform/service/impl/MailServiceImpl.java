@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import project.swp.spring.sebt_platform.dto.request.SupportRequestDTO;
 import project.swp.spring.sebt_platform.service.MailService;
 
 @Service
@@ -132,6 +133,108 @@ public class MailServiceImpl implements MailService {
                 "                © 2024 EV Secondhand Marketplace. Tất cả quyền được bảo lưu.<br>" +
                 "                Email này được gửi đến: " + email +
                 "            </p>" +
+                "        </div>" +
+                "    </div>" +
+                "</body>" +
+                "</html>";
+    }
+
+    /**
+     * Gửi email hỗ trợ từ khách hàng đến admin
+     * Email sẽ được gửi tới Saitohtedofu1982@gmail.com với reply-to là email khách hàng
+     */
+    @Async("emailExecutor")
+    @Override
+    public void sendSupportEmail(SupportRequestDTO supportRequest) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            // Gửi email đến admin
+            helper.setFrom(fromEmail);
+            helper.setTo("Saitohtedofu1982@gmail.com");
+            helper.setReplyTo(supportRequest.email()); // Để admin có thể reply trực tiếp cho khách hàng
+            helper.setSubject("🆘 " + supportRequest.getRequestTypeInVietnamese() + " - " + supportRequest.subject());
+
+            String htmlContent = buildSupportEmailContent(supportRequest);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Không thể gửi email hỗ trợ", e);
+        }
+    }
+
+    /**
+     * Tạo nội dung HTML cho email hỗ trợ
+     */
+    private String buildSupportEmailContent(SupportRequestDTO supportRequest) {
+        return "<!DOCTYPE html>" +
+                "<html lang='vi'>" +
+                "<head>" +
+                "    <meta charset='UTF-8'>" +
+                "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
+                "    <title>Yêu cầu hỗ trợ khách hàng - 2ndLand</title>" +
+                "    <style>" +
+                "        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; }" +
+                "        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }" +
+                "        .header { background: linear-gradient(135deg, #416adcff 0%, #27407a 100%); color: white; padding: 30px; text-align: center; }" +
+                "        .content { padding: 30px; }" +
+                "        .info-section { background-color: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #416adcff; }" +
+                "        .info-row { margin: 10px 0; display: flex; }" +
+                "        .info-label { font-weight: bold; min-width: 120px; color: #495057; }" +
+                "        .info-value { color: #212529; }" +
+                "        .description-box { background-color: #fff; border: 1px solid #dee2e6; padding: 20px; margin: 20px 0; border-radius: 8px; }" +
+                "        .footer { background-color: #495057; color: #adb5bd; text-align: center; padding: 20px; font-size: 12px; }" +
+                "        .urgent { color: #dc3545; font-weight: bold; }" +
+                "        .reply-info { background-color: #e7f3ff; padding: 15px; margin: 20px 0; border-radius: 8px; border: 1px solid #b3d9ff; }" +
+                "    </style>" +
+                "</head>" +
+                "<body>" +
+                "    <div class='container'>" +
+                "        <div class='header'>" +
+                "            <h1 style='margin: 0; font-size: 28px;'>🆘 Yêu cầu hỗ trợ khách hàng</h1>" +
+                "            <p style='margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;'>2ndLand - EV Secondhand Marketplace</p>" +
+                "        </div>" +
+                "        <div class='content'>" +
+                "            <div class='reply-info'>" +
+                "                <p style='margin: 0; font-size: 14px;'>" +
+                "                    <strong>📧 Hướng dẫn phản hồi:</strong> Bấm 'Reply' để trả lời trực tiếp cho khách hàng tại email: " +
+                "                    <strong>" + supportRequest.email() + "</strong>" +
+                "                </p>" +
+                "            </div>" +
+                "            <div class='info-section'>" +
+                "                <h3 style='margin-top: 0; color: #416adcff;'>📋 Thông tin khách hàng</h3>" +
+                "                <div class='info-row'>" +
+                "                    <span class='info-label'>👤 Họ và tên:</span>" +
+                "                    <span class='info-value'>" + supportRequest.fullName() + "</span>" +
+                "                </div>" +
+                "                <div class='info-row'>" +
+                "                    <span class='info-label'>📧 Email:</span>" +
+                "                    <span class='info-value'>" + supportRequest.email() + "</span>" +
+                "                </div>" +
+                "                <div class='info-row'>" +
+                "                    <span class='info-label'>🏷️ Loại yêu cầu:</span>" +
+                "                    <span class='info-value urgent'>" + supportRequest.getRequestTypeInVietnamese() + "</span>" +
+                "                </div>" +
+                "                <div class='info-row'>" +
+                "                    <span class='info-label'>📌 Tiêu đề:</span>" +
+                "                    <span class='info-value'>" + supportRequest.subject() + "</span>" +
+                "                </div>" +
+                "            </div>" +
+                "            <div class='description-box'>" +
+                "                <h3 style='margin-top: 0; color: #416adcff;'>📝 Mô tả chi tiết vấn đề</h3>" +
+                "                <p style='margin: 0; line-height: 1.6; white-space: pre-wrap;'>" + supportRequest.description() + "</p>" +
+                "            </div>" +
+                "            <div style='text-align: center; margin: 30px 0;'>" +
+                "                <p style='font-size: 14px; color: #6c757d;'>" +
+                "                    💡 <strong>Lưu ý:</strong> Vui lòng phản hồi khách hàng trong vòng 24 giờ để đảm bảo chất lượng dịch vụ." +
+                "                </p>" +
+                "            </div>" +
+                "        </div>" +
+                "        <div class='footer'>" +
+                "            <p style='margin: 0;'>© 2024 2ndLand - EV Secondhand Marketplace</p>" +
+                "            <p style='margin: 5px 0 0 0;'>Email hệ thống được gửi tự động - Không reply email này</p>" +
                 "        </div>" +
                 "    </div>" +
                 "</body>" +
