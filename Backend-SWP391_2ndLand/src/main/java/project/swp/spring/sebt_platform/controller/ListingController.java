@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.web.multipart.MultipartFile;
 import project.swp.spring.sebt_platform.dto.object.*;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
@@ -23,6 +22,10 @@ import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
 import project.swp.spring.sebt_platform.service.CloudinaryService;
 import project.swp.spring.sebt_platform.service.ListingService;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
 
 /**
  * REST Controller for Listings - Base URL: /api/listings
@@ -42,25 +45,34 @@ public class ListingController {
     /**
      * POST /api/listings/create - Create new listing with images
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Listing created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input or image upload failed",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "User not authenticated",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createListing(
             @ModelAttribute CreateListingFormDTO dto,
             HttpServletRequest request) {
-
         try {
             Long userId = getUserId(request);
             if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "success", false,
-                    "message", "Vui lòng đăng nhập để tạo bài đăng"
-                ));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Vui lòng đăng nhập để tạo bài đăng");
             }
 
             if (dto.getImages() == null || dto.getImages().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "success", false,
-                    "message", "Vui lòng tải lên ít nhất một ảnh cho bài đăng"
-                ));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Vui lòng tải lên ít nhất một ảnh cho bài đăng");
             }
 
             logger.info("Creating listing - userId: {}, title: '{}', images: {}",
@@ -68,37 +80,36 @@ public class ListingController {
 
             List<Image> images = cloudinaryService.uploadMultipleImages(dto.getImages(), "listings");
             if (images.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "success", false,
-                    "message", "Tải lên ảnh thất bại. Vui lòng thử lại"
-                ));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Tải lên ảnh thất bại. Vui lòng thử lại");
             }
 
             boolean success = listingService.createListing(dto, userId, images);
             if (!success) {
-               return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "success", false,
-                    "message", "Tạo bài đăng thất bại. Vui lòng kiểm tra lại thông tin"
-               ));
+               return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Tạo bài đăng thất bại. Vui lòng kiểm tra lại thông tin");
             }
 
-            return ResponseEntity.ok().body(Map.of(
-                "success", true,
-                "message", "Tạo bài đăng thành công"
-            ));
+            return ResponseEntity.ok("Tạo bài đăng thành công");
 
         } catch (Exception e) {
             logger.error("Error creating listing: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Lỗi khi tạo bài đăng"
-            ));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi tạo bài đăng");
         }
     }
 
     /**
      * GET /api/listings/evCart - Get all EV listings
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved EV listings",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @GetMapping("/evCart")
     public ResponseEntity<?> getEvListings(
             HttpServletRequest request,
@@ -113,16 +124,22 @@ public class ListingController {
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             logger.error("Error getting EV listings: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Lỗi khi lấy danh sách EV"
-            ));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy danh sách EV");
         }
     }
 
     /**
      * GET /api/listings/batteryCart - Get all battery listings
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved battery listings",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @GetMapping("/batteryCart")
     public ResponseEntity<?> getBatteryListings(
             HttpServletRequest request,
@@ -137,65 +154,78 @@ public class ListingController {
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             logger.error("Error getting battery listings: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Lỗi khi lấy danh sách pin"
-            ));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy danh sách pin");
         }
     }
 
     /**
      * GET /api/listings/detail/{id} - Get listing detail
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved listing detail",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ListingDetailResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid listing ID",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "404", description = "Listing not found",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @GetMapping("/detail/{listingId}")
     public ResponseEntity<?> getListingDetail(
             @PathVariable Long listingId,
             HttpServletRequest request) {
-
         try {
             if (listingId == null || listingId <= 0) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "success", false,
-                    "message", "ID bài đăng không hợp lệ"
-                ));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("ID bài đăng không hợp lệ");
             }
 
             ListingDetailResponseDTO detail = listingService.getListingDetailById(
                 listingId, getUserId(request));
 
             if (detail == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
-                    "success", false,
-                    "message", "Không tìm thấy bài đăng với ID đã cho"
-                ));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Không tìm thấy bài đăng với ID đã cho");
             }
 
             return ResponseEntity.ok(detail);
         } catch (Exception e) {
             logger.error("Error getting listing detail: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Lỗi khi lấy chi tiết bài đăng"
-            ));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy chi tiết bài đăng");
         }
     }
 
     /**
      * GET /api/listings/search - Search listings by keyword
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved search results",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid search keyword",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @GetMapping("/search")
     public ResponseEntity<?> searchListings(
             @RequestParam String keyword,
             HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
-
         try {
             if (keyword == null || keyword.trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "success", false,
-                    "message", "Vui lòng nhập từ khóa tìm kiếm"
-                ));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Vui lòng nhập từ khóa tìm kiếm");
             }
 
             Pageable pageable = PageRequest.of(Math.max(0, page), validateSize(size));
@@ -205,16 +235,22 @@ public class ListingController {
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             logger.error("Error searching listings: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Lỗi khi tìm kiếm bài đăng"
-            ));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi tìm kiếm bài đăng");
         }
     }
 
     /**
      * GET /api/listings/ev-filter - Filter EV listings
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved filtered EV listings",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @GetMapping("/ev-filter")
     public ResponseEntity<?> filterEvListings(
             @RequestParam(required = false) Double minPrice,
@@ -233,16 +269,22 @@ public class ListingController {
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             logger.error("Error filtering EV listings: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Lỗi khi lọc EV"
-            ));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lọc EV");
         }
     }
 
     /**
      * GET /api/listings/battery-filter - Filter battery listings
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved filtered battery listings",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @GetMapping("/battery-filter")
     public ResponseEntity<?> filterBatteryListings(
             @RequestParam(required = false) Double minPrice,
@@ -260,16 +302,25 @@ public class ListingController {
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             logger.error("Error filtering battery listings: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Lỗi khi lọc pin"
-            ));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lọc pin");
         }
     }
 
     /**
      * GET /api/listings/my-listings - Get user's listings
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved user's listings",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "400", description = "User not authenticated",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @GetMapping("/my-listings")
     public ResponseEntity<?> getMyListings(
             HttpServletRequest request,
@@ -279,10 +330,8 @@ public class ListingController {
         try {
             Long userId = getUserId(request);
             if (userId == null) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "Vui lòng đăng nhập để xem bài đăng của bạn"
-                ));
+                return ResponseEntity.badRequest()
+                    .body("Vui lòng đăng nhập để xem bài đăng của bạn");
             }
 
             Pageable pageable = PageRequest.of(Math.max(0, page), validateSize(size));
@@ -291,10 +340,8 @@ public class ListingController {
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             logger.error("Error getting my listings: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Lỗi khi lấy danh sách của bạn"
-            ));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy danh sách của bạn");
         }
     }
 
