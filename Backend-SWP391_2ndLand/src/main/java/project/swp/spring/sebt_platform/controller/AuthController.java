@@ -216,7 +216,7 @@ public class AuthController {
                     .body("OTP does not match the registered email.");
             }
 
-            boolean success = authService.register(sessionPassword,sessionEmail);
+            boolean success = authService.register(sessionPassword,sessionEmail,UserRole.MEMBER);
 
             if (success) {
                 session.invalidate();
@@ -396,7 +396,6 @@ public class AuthController {
             return ResponseEntity.ok("Logout successful");
         } catch (Exception e) {
             System.err.println("Logout error: " + e.getMessage());
-            e.printStackTrace(); // In stack trace để debug tốt hơn
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Logout failed");
         }

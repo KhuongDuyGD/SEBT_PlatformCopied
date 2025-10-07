@@ -23,7 +23,6 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     private static final Logger logger = LoggerFactory.getLogger(CloudinaryServiceImpl.class);
     private static final Set<String> ALLOWED_FORMATS = Set.of("jpg", "jpeg", "png", "gif", "webp", "bmp");
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
     private final Cloudinary cloudinary;
 
     @Autowired
@@ -39,10 +38,11 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
             // Tạo unique filename
             String originalFilename = file.getOriginalFilename();
+            assert originalFilename != null;
             String uniqueFilename = generateUniqueFilename(originalFilename);
 
             // Upload options
-            Map<String, Object> uploadOptions = ObjectUtils.asMap(
+            Map uploadOptions = ObjectUtils.asMap(
                     "folder", folder,
                     "public_id", uniqueFilename,
                     "resource_type", "image",

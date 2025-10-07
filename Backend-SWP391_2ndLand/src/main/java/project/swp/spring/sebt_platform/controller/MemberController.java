@@ -39,6 +39,56 @@ public class MemberController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class)))
     })
+    @PutMapping("/favorite")
+    public ResponseEntity<?> markFavorite(@RequestParam Long userId, @RequestParam Long listingId) {
+        try {
+            boolean result = memberService.markFavorite(userId, listingId);
+            if (result) {
+                return ResponseEntity.ok("Listing marked as favorite.");
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to mark listing as favorite.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+        }
+    }
+
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "No active session or invalid session",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
+    @DeleteMapping("/favorite")
+    public ResponseEntity<?> unmarkFavorite(@RequestParam Long userId, @RequestParam Long listingId) {
+        try {
+            boolean result = memberService.unmarkFavorite(userId, listingId);
+            if (result) {
+                return ResponseEntity.ok("Listing unmarked as favorite.");
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to unmark listing as favorite.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to unmark favorite");
+        }
+    }
+
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "No active session or invalid session",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @PostMapping("/update-profile")
     public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileFormDTO updateProfileDTO, HttpServletRequest request) {
         try {
@@ -85,7 +135,7 @@ public class MemberController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class)))
     })
-    @GetMapping
+    @GetMapping(path = "/post-responses")
     public ResponseEntity<?> getPostResponse(HttpServletRequest request, @RequestParam int page, @RequestParam int size) {
         try {
             HttpSession session = request.getSession(false);
