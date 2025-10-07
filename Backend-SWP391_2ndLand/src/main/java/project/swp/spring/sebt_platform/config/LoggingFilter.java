@@ -11,11 +11,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/**
- * Simple logging filter to trace all incoming requests (method, path, origin) including
- * CORS preflight (OPTIONS) requests. Helps diagnose CORS failures where browser reports
- * non-OK preflight status.
- */
 @Component
 public class LoggingFilter extends OncePerRequestFilter {
 
