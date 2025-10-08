@@ -11,11 +11,9 @@ import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
 import project.swp.spring.sebt_platform.model.FavoriteEntity;
 import project.swp.spring.sebt_platform.model.ListingEntity;
-import project.swp.spring.sebt_platform.model.PostResponseEntity;
 import project.swp.spring.sebt_platform.model.UserEntity;
 import project.swp.spring.sebt_platform.repository.FavoriteRepository;
 import project.swp.spring.sebt_platform.repository.ListingRepository;
-import project.swp.spring.sebt_platform.repository.PostResponseRepository;
 import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.MemberService;
 import project.swp.spring.sebt_platform.util.Utils;
@@ -31,15 +29,11 @@ public class MemberServiceImpl implements MemberService {
 
     private final ListingRepository listingRepository;
 
-    private final PostResponseRepository postResponseRepository;
-
     @Autowired
     public MemberServiceImpl(UserRepository userRepository,
                              FavoriteRepository favoriteRepository,
-                             ListingRepository listingRepository,
-                             PostResponseRepository postResponseRepository) {
+                             ListingRepository listingRepository) {
         this.userRepository = userRepository;
-        this.postResponseRepository = postResponseRepository;
         this.favoriteRepository = favoriteRepository;
         this.listingRepository = listingRepository;
     }
@@ -161,22 +155,7 @@ public class MemberServiceImpl implements MemberService {
     @Override
     public Page<PostAnoucementResponseDTO> getPostAnoucementResponse(Long userId, Pageable pageable) {
         try {
-            Page<PostResponseEntity> responses = postResponseRepository.findAllBySellerId(userId, pageable);
-            return responses.map(response -> {
-                PostAnoucementResponseDTO dto = new PostAnoucementResponseDTO();
-                dto.setPostResponseId(response.getPostRequest().getId());
-                dto.setListingId(response.getPostRequest().getListing().getId());
-                dto.setThumbnailUrl(response.getPostRequest().getListing().getThumbnailImage());
-                dto.setTitle(response.getPostRequest().getListing().getTitle());
-                dto.setApprovalStatus(response.getPostRequest().getStatus());
-                dto.setAdminFeedback(response.getPostRequest().getAdminNotes());
-                dto.setReviewedAt(response.getPostRequest().getReviewedAt());
-
-                dto.setPaymentQrCodeUrl(response.getPaymentQRCodeUrl());
-                dto.setPaymentStatus(response.getPaymentStatus());
-                dto.setAmount(response.getPostRequest().getListing().getPrice().doubleValue());
-                return dto;
-            });
+            return null;
         } catch (Exception e) {
             System.err.println("Get post announcement response error: " + e.getMessage());
         }

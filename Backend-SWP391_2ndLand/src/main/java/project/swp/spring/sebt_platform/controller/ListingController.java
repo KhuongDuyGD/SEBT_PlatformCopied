@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import project.swp.spring.sebt_platform.dto.object.*;
+import project.swp.spring.sebt_platform.dto.request.BatteryFilterFormDTO;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
+import project.swp.spring.sebt_platform.dto.request.EvFilterFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
@@ -246,17 +248,14 @@ public class ListingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved filtered EV listings",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))),
+                            schema = @Schema(implementation = EvFilterFormDTO.class))),
             @ApiResponse(responseCode = "500", description = "Server error",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class)))
     })
     @GetMapping("/ev-filter")
     public ResponseEntity<?> filterEvListings(
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) VehicleType vehicleType,
-            @RequestParam(required = false) Integer year,
+            @RequestBody EvFilterFormDTO evFilterFormDTO,
             HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
@@ -264,7 +263,7 @@ public class ListingController {
         try {
             Pageable pageable = PageRequest.of(Math.max(0, page), validateSize(size));
             Page<ListingCartResponseDTO> results = listingService.filterEvListings(
-                year, vehicleType, minPrice, maxPrice, getUserId(request), pageable);
+                evFilterFormDTO , getUserId(request), pageable);
 
             return ResponseEntity.ok(results);
         } catch (Exception e) {
@@ -280,25 +279,21 @@ public class ListingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved filtered battery listings",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))),
+                            schema = @Schema(implementation = BatteryFilterFormDTO.class))),
             @ApiResponse(responseCode = "500", description = "Server error",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class)))
     })
     @GetMapping("/battery-filter")
     public ResponseEntity<?> filterBatteryListings(
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) Integer year,
+            @RequestBody BatteryFilterFormDTO batteryFilterFormDTO,
             HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
-
         try {
             Pageable pageable = PageRequest.of(Math.max(0, page), validateSize(size));
             Page<ListingCartResponseDTO> results = listingService.filterBatteryListings(
-                year, minPrice, maxPrice, getUserId(request), pageable);
-
+               batteryFilterFormDTO, getUserId(request), pageable);
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             logger.error("Error filtering battery listings: {}", e.getMessage(), e);

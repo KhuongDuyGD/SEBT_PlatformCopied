@@ -21,7 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import project.swp.spring.sebt_platform.dto.object.*;
+import project.swp.spring.sebt_platform.dto.request.BatteryFilterFormDTO;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
+import project.swp.spring.sebt_platform.dto.request.EvFilterFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
 import project.swp.spring.sebt_platform.model.*;
@@ -439,23 +441,23 @@ public class ListingServiceImpl implements ListingService {
 
     @Override
     public Page<ListingCartResponseDTO> filterEvListings(
-            Integer year,
-            VehicleType vehicleType,
-            Double minPrice,
-            Double maxPrice,
+            EvFilterFormDTO evFilterFormDTO,
             Long userId,
             Pageable pageable) {
         try {
             return listingRepository.filterEvListings(
-                    year,
-                    vehicleType,
-                    minPrice != null ? BigDecimal.valueOf(minPrice) : null,
-                    maxPrice != null ? BigDecimal.valueOf(maxPrice) : null,
+                    evFilterFormDTO.year(),
+                    evFilterFormDTO.vehicleType(),
+                    evFilterFormDTO.brand(),
+                    evFilterFormDTO.location(),
+                    evFilterFormDTO.minBatteryCapacity(),
+                    evFilterFormDTO.maxBatteryCapacity(),
+                    evFilterFormDTO.minPrice() != null ? BigDecimal.valueOf(evFilterFormDTO.minPrice()) : null,
+                    evFilterFormDTO.maxPrice() != null ? BigDecimal.valueOf(evFilterFormDTO.maxPrice()) : null,
                     pageable
             ).map(listing -> {
                         boolean isFavorited = userId != null &&
                                 favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
-
                         return new ListingCartResponseDTO(
                                 listing.getId(),
                                 listing.getTitle(),
@@ -474,16 +476,18 @@ public class ListingServiceImpl implements ListingService {
     }
 
     @Override
-    public Page<ListingCartResponseDTO> filterBatteryListings(Integer year,
-                                                              Double minPrice,
-                                                              Double maxPrice,
+    public Page<ListingCartResponseDTO> filterBatteryListings(BatteryFilterFormDTO batteryFilterFormDTO,
                                                               Long userId,
                                                               Pageable pageable) {
         try {
             return listingRepository.filterBatteryListings(
-                    year,
-                    minPrice != null ? BigDecimal.valueOf(minPrice) : null,
-                    maxPrice != null ? BigDecimal.valueOf(maxPrice) : null,
+                    batteryFilterFormDTO.brand(),
+                    batteryFilterFormDTO.location(),
+                    batteryFilterFormDTO.compatibility(),
+                    batteryFilterFormDTO.minBatteryCapacity(),
+                    batteryFilterFormDTO.maxBatteryCapacity(),
+                    batteryFilterFormDTO.minPrice() != null ? BigDecimal.valueOf(batteryFilterFormDTO.minPrice()) : null,
+                    batteryFilterFormDTO.maxPrice() != null ? BigDecimal.valueOf(batteryFilterFormDTO.maxPrice()) : null,
                     pageable
             ).map(listing -> {
                         boolean isFavorited = userId != null &&

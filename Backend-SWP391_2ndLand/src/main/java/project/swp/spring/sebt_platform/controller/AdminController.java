@@ -73,7 +73,6 @@ public class AdminController {
 
                 boolean result = adminService.approvePostListing(postRequestId);
                 if (result) {
-                    adminService.addPostResponse(postRequestId);
                     return ResponseEntity.ok("Post request approved successfully.");
                 } else {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to approve post request.");
@@ -107,7 +106,6 @@ public class AdminController {
 
                 boolean result = adminService.rejectPostListing(postRequestId, reason);
                 if (result) {
-                    adminService.addPostResponse(postRequestId);
                     return ResponseEntity.ok("Post request rejected successfully.");
                 } else {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to reject post request.");

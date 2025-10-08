@@ -14,5 +14,4 @@ public interface AdminService {
 
     public boolean rejectPostListing(Long requestId, String reason);
 
-    public boolean addPostResponse(Long requestId);
 }
