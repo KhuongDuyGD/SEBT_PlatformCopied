@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class CloudinaryServiceImpl implements CloudinaryService {
@@ -71,8 +72,9 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
     @Async("imageUploadExecutor")
     @Override
-    public List<Image> uploadMultipleImages(List<MultipartFile> files, String folder) {
+    public CompletableFuture<List<Image>> uploadMultipleImages(List<MultipartFile> files, String folder) {
         List<Image> uploadedImages = new ArrayList<>();
+
         for (MultipartFile file : files) {
             try {
                 Image image = uploadImage(file, folder);
@@ -80,12 +82,12 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                 logger.info("Successfully uploaded: {}", file.getOriginalFilename());
             } catch (Exception e) {
                 logger.error("Failed to upload {}: {}", file.getOriginalFilename(), e.getMessage());
-                // Continue with other files instead of failing completely
             }
         }
 
-        return uploadedImages;
+        return CompletableFuture.completedFuture(uploadedImages);
     }
+
 
     @Override
     public boolean deleteImage(String publicId) {

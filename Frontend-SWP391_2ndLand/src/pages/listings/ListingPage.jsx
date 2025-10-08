@@ -93,14 +93,14 @@ function ListingPage() {
   const fetchListings = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const controller = new AbortController();
-    const runStartedAt = Date.now();
-    let usedEndpoint = ''; // For error logging
+      new AbortController();
+      const runStartedAt = Date.now();
+      let usedEndpoint = ''; // For error logging
     // attach to ref if you want cancellation across re-renders (simplified local)
     try {
       // Decide endpoint based on category and filters
       let endpoint = '';
-      
+
       if (category === 'pin') {
         // Pin category - backend không hỗ trợ brand filter, chỉ hỗ trợ year qua battery-filter
         // Brand filter sẽ được xử lý client-side
@@ -120,7 +120,7 @@ function ListingPage() {
       } else {
         // Vehicle category (cars)
         if (vehicleType || year) {
-          // Vehicle category with filters - use ev-filter endpoint  
+          // Vehicle category with filters - use ev-filter endpoint
           const params = new URLSearchParams();
           params.append('page', page);
           params.append('size', size);
@@ -129,16 +129,18 @@ function ListingPage() {
           endpoint = `/listings/ev-filter?${params.toString()}`;
           usedEndpoint = endpoint;
         } else {
-          // Vehicle category without filters - use simple evCart endpoint  
+          // Vehicle category without filters - use simple evCart endpoint
           endpoint = `/listings/evCart?page=${page}&size=${size}`;
           usedEndpoint = endpoint;
         }
       }
-      const res = await api.get(endpoint, { signal: controller.signal });
+        const res = await api.get(endpoint);
+        const data = res.data;
+        setListings(mapListingArray(data.content || []));
       const payload = res.data || {};
       const raw = Array.isArray(payload.content) ? payload.content : [];
       setPagination(payload);
-      
+
       let mapped = mapListingArray(raw);
       if (mapped.length && import.meta.env.DEV) console.debug('[ListingPage] sample item', mapped[0]);
 

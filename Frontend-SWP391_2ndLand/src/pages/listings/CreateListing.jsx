@@ -102,13 +102,25 @@ function CreateListing() {
         formData.append('category', values.productType === 'VEHICLE' ? 'EV' : 'BATTERY');
         formData.append('listingType', 'NORMAL');
 
-        // Product fields
-        const productData = values.productType === 'VEHICLE' ? values.vehicle : values.battery;
+        // Product-specific fields
+        const productData = values.productType === 'VEHICLE'
+            ? {
+                ...values.vehicle,
+                mileage: parseInt(values.vehicle.mileage || 100, 10),
+                batteryCapacity: parseInt(values.vehicle.batteryCapacity || 100, 10),
+            }
+            : {
+                ...values.battery,
+                capacity: parseInt(values.battery.capacity || 100, 10),
+                healthPercentage: parseInt(values.battery.healthPercentage || 100, 10),
+            };
+
         const prefix = values.productType === 'VEHICLE' ? 'product.ev' : 'product.battery';
 
         Object.entries(productData).forEach(([key, val]) => {
             formData.append(`${prefix}.${key}`, val ?? '');
         });
+
 
         // Location fields
         Object.entries(values.location).forEach(([key, val]) => {
@@ -232,18 +244,21 @@ function CreateListing() {
                         {[
                             { type: 'VEHICLE', icon: Car, title: 'Xe Điện', desc: 'Đăng bán ô tô điện, xe máy điện, xe đạp điện...' },
                             { type: 'BATTERY', icon: Battery, title: 'Pin Xe Điện', desc: 'Đăng bán pin lithium, pin thay thế, phụ kiện pin' }
-                        ].map(({ type, title, desc }) => (
+                        ].map(({ type, icon: Icon ,title, desc }) => (
                             <div key={type}
-                                className={`product-type-card ${formData.productType === type ? 'selected' : ''}`}
-                                onClick={() => setValue('productType', type)}>
-                                {/* IconComponent được sử dụng để render icon động */}
-                                <div className="product-type-icon"><IconComponent className="w-8 h-8" /></div>
+                                 className={`product-type-card ${formData.productType === type ? 'selected' : ''}`}
+                                 onClick={() => setValue('productType', type)}>
+                                <div className="product-type-icon">
+                                    <Icon className="w-8 h-8" />
+                                </div>
                                 <h3 className="product-type-title">{title}</h3>
                                 <p className="product-type-description">{desc}</p>
                             </div>
                         ))}
                     </div>
                 )}
+
+
 
                 <StepProgress steps={steps} currentStep={currentStep} onStepClick={goToStep} />
 
