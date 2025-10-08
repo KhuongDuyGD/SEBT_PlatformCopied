@@ -5,25 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4fa67949-db7b-446f-b539-ae7cafb7c212" name="Changes" comment="modify response form of controllers">
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/dataSources/0edd23fc-4a4d-4357-ab3a-31f9b954094f.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/0edd23fc-4a4d-4357-ab3a-31f9b954094f.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/Initializer.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/Initializer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/AuthController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/MemberController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/MemberController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Image.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Image.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Seller.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/object/Seller.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/response/ListingCartResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/response/ListingCartResponseDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/response/ListingResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/response/ListingResponseDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/response/RegisterResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/response/RegisterResponseDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/response/UserSessionResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/response/UserSessionResponseDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/FavoriteEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/FavoriteEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/FavoriteRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/FavoriteRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/AuthService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/MemberService.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/MemberService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/AuthServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/AuthServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/ListingController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/ListingController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/CloudinaryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/CloudinaryService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/CloudinaryServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/CloudinaryServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/ListingServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/ListingServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/MemberServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/MemberServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/pages/listings/CreateListing.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/pages/listings/CreateListing.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/pages/listings/ListingPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/pages/listings/ListingPage.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -91,7 +80,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Spring Boot.SebtPlatformApplication.executor": "Run",
-    "git-widget-placeholder": "MinhBe/modify-response-form-of-controller",
+    "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
@@ -344,5 +333,16 @@
     <MESSAGE value="Async upload images" />
     <MESSAGE value="modify response form of controllers" />
     <option name="LAST_COMMIT_MESSAGE" value="modify response form of controllers" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/ListingController.java</url>
+          <line>366</line>
+          <option name="timeStamp" value="23" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
