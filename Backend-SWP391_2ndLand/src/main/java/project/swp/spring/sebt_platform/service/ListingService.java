@@ -5,7 +5,9 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 import project.swp.spring.sebt_platform.dto.object.Image;
+import project.swp.spring.sebt_platform.dto.request.BatteryFilterFormDTO;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
+import project.swp.spring.sebt_platform.dto.request.EvFilterFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
@@ -16,17 +18,12 @@ public interface ListingService {
     Page<ListingCartResponseDTO> getListingsByKeyWord(String keyWord, Long userId, Pageable pageable);
 
     Page<ListingCartResponseDTO> filterEvListings(
-            Integer year,
-            VehicleType vehicleType,
-            Double minPrice,
-            Double maxPrice,
+            EvFilterFormDTO evFilterFormDTO,
             Long userId,
             Pageable pageable);
 
     Page<ListingCartResponseDTO> filterBatteryListings(
-            Integer year,
-            Double minPrice,
-            Double maxPrice,
+            BatteryFilterFormDTO batteryFilterFormDTO,
             Long userId,
             Pageable pageable);
 

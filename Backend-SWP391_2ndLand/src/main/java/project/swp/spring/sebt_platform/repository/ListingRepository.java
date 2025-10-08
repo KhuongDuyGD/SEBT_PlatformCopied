@@ -48,34 +48,56 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
             "AND LOWER(l.title) LIKE LOWER(CONCAT('%', :title, '%'))")
     List<ListingEntity> findByTitleContaining(@Param("title") String title);
 
-    @Query("SELECT l FROM ListingEntity l " +
-            "WHERE l.status = 'ACTIVE' " +
-            "AND (:year IS NULL OR l.product.evVehicle.year = :year) " +
-            "AND (:type IS NULL OR l.product.evVehicle.type = :type) " +
-            "AND (:minPrice IS NULL OR l.price >= :minPrice) " +
-            "AND (:maxPrice IS NULL OR l.price <= :maxPrice) " +
-            "AND l.product.evVehicle IS NOT NULL " +
-            "ORDER BY l.createdAt DESC")
+    @Query(
+            "SELECT l FROM ListingEntity l " +
+                    "JOIN LocationEntity lt " +
+                    "Where l.status = 'ACTIVE' " +
+                    "AND (:year IS NULL OR l.product.evVehicle.year = :year) " +
+                    "AND (:type IS NULL OR l.product.evVehicle.type = :type) " +
+                    "AND (:brand IS NULL OR LOWER(l.product.evVehicle.brand) = LOWER(:brand)) " +
+                    "AND (:location IS NULL OR LOWER(lt.province) LIKE LOWER(CONCAT('%', :location, '%'))) " +
+                    "AND (:minBatteryCapacity IS NULL OR l.product.battery.capacity >= :minBatteryCapacity) " +
+                    "AND (:maxBatteryCapacity IS NULL OR l.product.battery.capacity <= :maxBatteryCapacity) " +
+                    "AND (:minPrice IS NULL OR l.price >= :minPrice) " +
+                    "AND (:maxPrice IS NULL OR l.price <= :maxPrice) " +
+                    "AND l.product.evVehicle IS NOT NULL " +
+                    "ORDER BY l.createdAt DESC"
+    )
     Page<ListingEntity> filterEvListings(
             @Param("year") Integer year,
             @Param("type") VehicleType type,
+            @Param("brand") String brand,
+            @Param("location") String location,
+            @Param("minBatteryCapacity") Integer minBatteryCapacity,
+            @Param("maxBatteryCapacity") Integer maxBatteryCapacity,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable);
 
-    @Query("SELECT l FROM ListingEntity l " +
-            "WHERE l.status = 'ACTIVE' " +
-            "AND (:year IS NULL OR l.product.evVehicle.year = :year) " +
-            "AND (:type IS NULL OR l.product.evVehicle.type = :type) " +
-            "AND (:minPrice IS NULL OR l.price >= :minPrice) " +
-            "AND (:maxPrice IS NULL OR l.price <= :maxPrice) " +
-            "AND l.product.battery IS NOT NULL " +
-            "ORDER BY l.createdAt DESC")
+    @Query(
+            "SELECT l FROM ListingEntity l " +
+                    "JOIN LocationEntity lt " +
+                    "Where l.status = 'ACTIVE' " +
+                    "AND (:brand IS NULL OR LOWER(l.product.battery.brand) = LOWER(:brand)) " +
+                    "AND (:compatibility IS NULL OR LOWER(l.product.battery.compatibleVehicles) LIKE LOWER(CONCAT('%', :compatibility, '%'))) " +
+                    "AND (:location IS NULL OR LOWER(lt.province) LIKE LOWER(CONCAT('%', :location, '%'))) " +
+                    "AND (:minBatteryCapacity IS NULL OR l.product.battery.capacity >= :minBatteryCapacity) " +
+                    "AND (:maxBatteryCapacity IS NULL OR l.product.battery.capacity <= :maxBatteryCapacity) " +
+                    "AND (:minPrice IS NULL OR l.price >= :minPrice) " +
+                    "AND (:maxPrice IS NULL OR l.price <= :maxPrice) " +
+                    "AND l.product.battery IS NOT NULL " +
+                    "ORDER BY l.createdAt DESC"
+    )
     Page<ListingEntity> filterBatteryListings(
-            @Param("year") Integer year,
+            @Param("brand") String brand,
+            @Param("location") String location,
+            @Param("compatibility") String compatibility,
+            @Param("minBatteryCapacity") Integer minBatteryCapacity,
+            @Param("maxBatteryCapacity") Integer maxBatteryCapacity,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable);
+
 
     @Query("SELECT l FROM ListingEntity l " +
             "WHERE l.status = 'ACTIVE' " +

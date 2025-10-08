@@ -7,13 +7,11 @@ import org.springframework.stereotype.Service;
 import project.swp.spring.sebt_platform.dto.response.PostListingCartResponseDTO;
 import project.swp.spring.sebt_platform.model.ListingEntity;
 import project.swp.spring.sebt_platform.model.PostRequestEntity;
-import project.swp.spring.sebt_platform.model.PostResponseEntity;
 import project.swp.spring.sebt_platform.model.enums.ApprovalStatus;
 import project.swp.spring.sebt_platform.model.enums.ListingStatus;
 import project.swp.spring.sebt_platform.model.enums.PaymentStatus;
 import project.swp.spring.sebt_platform.repository.ListingRepository;
 import project.swp.spring.sebt_platform.repository.PostRequestRepository;
-import project.swp.spring.sebt_platform.repository.PostResponseRepository;
 import project.swp.spring.sebt_platform.service.AdminService;
 
 import java.time.LocalDateTime;
@@ -22,14 +20,12 @@ import java.time.LocalDateTime;
 public class AdminServiceImpl implements AdminService {
 
     private final PostRequestRepository postRequestRepository;
-    private final PostResponseRepository postResponseRepository;
     private final ListingRepository listingRepository;
 
     @Autowired
-    public AdminServiceImpl(PostRequestRepository postRequestRepository, PostResponseRepository postResponseRepository, ListingRepository listingRepository) {
+    public AdminServiceImpl(PostRequestRepository postRequestRepository, ListingRepository listingRepository) {
         this.listingRepository = listingRepository;
         this.postRequestRepository = postRequestRepository;
-        this.postResponseRepository = postResponseRepository;
     }
 
     @Override
@@ -87,24 +83,4 @@ public class AdminServiceImpl implements AdminService {
         }
     }
 
-    @Override
-    public boolean addPostResponse(Long requestId) {
-        try {
-            PostRequestEntity postRequest = postRequestRepository.findById(requestId).orElse(null);
-            if (postRequest == null) {
-                return false;
-            }
-
-            // Tạo PostResponseEntity mới
-            PostResponseEntity postResponse = new PostResponseEntity();
-            postResponse.setPostRequest(postRequest);
-            postResponse.setPaymentStatus(PaymentStatus.PENDING);
-            postResponse.setUpdateAt(LocalDateTime.now());
-            postResponseRepository.save(postResponse);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
 }
