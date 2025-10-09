@@ -1,8 +1,7 @@
-// src/pages/admin/PendingListings.jsx
-import React, { useEffect, useState } from 'react';
-import { useListingApproval } from '../../hooks/useListingApproval.js';
-import ListingApprovalCard from '../../components/admin/ListingApprovalCard.jsx';
-import PaginationBar from '../../components/PaginationBar.jsx';
+import { useEffect, useState } from 'react';
+import { useListingApproval } from '../../../hooks/useListingApproval.js';
+import ListingApprovalCard from '../../../components/admin/listing/ListingApprovalCard.jsx';
+import PaginationBar from '../../../components/PaginationBar.jsx';
 
 const PendingListings = () => {
     const {
