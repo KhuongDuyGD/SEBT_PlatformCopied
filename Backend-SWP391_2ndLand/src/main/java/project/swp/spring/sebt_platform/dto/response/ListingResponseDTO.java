@@ -11,7 +11,7 @@ public class ListingResponseDTO {
     private Long id;
     private String title;
     private String description;
-    private BigDecimal price;
+    private double price;
     private String mainImage;
     private List<String> images;
     private ListingStatus status;
@@ -27,7 +27,7 @@ public class ListingResponseDTO {
     public ListingResponseDTO() {
     }
 
-    public ListingResponseDTO(Long id, String title, String description, BigDecimal price,
+    public ListingResponseDTO(Long id, String title, String description, double price,
                             String mainImage, List<String> images, ListingStatus status,
                             ListingType listingType, Integer viewsCount, LocalDateTime createdAt,
                             LocalDateTime updatedAt, LocalDateTime expiresAt, SellerInfoDTO seller,
@@ -74,11 +74,11 @@ public class ListingResponseDTO {
         this.description = description;
     }
 
-    public BigDecimal getPrice() {
+    public double getPrice() {
         return price;
     }
 
-    public void setPrice(BigDecimal price) {
+    public void setPrice(double price) {
         this.price = price;
     }
 

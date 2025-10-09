@@ -31,6 +31,7 @@ public class SupportController {
      * @param supportRequest Dữ liệu form hỗ trợ từ khách hàng
      * @return ResponseEntity với thông báo kết quả
      */
+
     @PostMapping("/send")
     public ResponseEntity<?> sendSupportRequest(@RequestBody SupportRequestDTO supportRequest) {
         try {
@@ -55,7 +56,6 @@ public class SupportController {
             );
 
         } catch (Exception e) {
-            // Log lỗi (trong thực tế nên dùng logger thay vì System.err)
             System.err.println("Lỗi khi gửi yêu cầu hỗ trợ: " + e.getMessage());
             e.printStackTrace();
 

@@ -107,7 +107,7 @@ public class ListingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved EV listings",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))),
+                            schema = @Schema(implementation = ListingCartResponseDTO.class))),
             @ApiResponse(responseCode = "500", description = "Server error",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class)))
@@ -137,7 +137,7 @@ public class ListingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved battery listings",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))),
+                            schema = @Schema(implementation = ListingCartResponseDTO.class))),
             @ApiResponse(responseCode = "500", description = "Server error",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class)))
@@ -210,7 +210,7 @@ public class ListingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved search results",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))),
+                            schema = @Schema(implementation = ListingCartResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid search keyword",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class))),
@@ -248,7 +248,7 @@ public class ListingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved filtered EV listings",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = EvFilterFormDTO.class))),
+                            schema = @Schema(implementation = ListingCartResponseDTO.class))),
             @ApiResponse(responseCode = "500", description = "Server error",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class)))
@@ -279,7 +279,7 @@ public class ListingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved filtered battery listings",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = BatteryFilterFormDTO.class))),
+                            schema = @Schema(implementation = ListingCartResponseDTO.class))),
             @ApiResponse(responseCode = "500", description = "Server error",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class)))
@@ -308,7 +308,7 @@ public class ListingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved user's listings",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))),
+                            schema = @Schema(implementation = ListingCartResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "User not authenticated",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class))),
@@ -341,7 +341,6 @@ public class ListingController {
     }
 
     // ========== HELPER METHODS ==========
-
     private Long getUserId(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {

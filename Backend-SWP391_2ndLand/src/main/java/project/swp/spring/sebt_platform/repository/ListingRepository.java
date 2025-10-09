@@ -109,7 +109,22 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
                         "WHERE l.status = :status AND l.product.evVehicle.type = :type ORDER BY l.createdAt DESC")
         Page<ListingEntity> findByStatusAndVehicleType(@Param("status") ListingStatus status, @Param("type") VehicleType type, Pageable pageable);
 
+        //static method
 
         @Query("SELECT l FROM ListingEntity l WHERE l.product.evVehicle.type = :type ORDER BY l.createdAt DESC")
         List<ListingEntity> findAllByVehicleTypeNoStatus(@Param("type") VehicleType type);
+
+        long countListingEntitiesByStatus(ListingStatus status);
+
+        @Query(
+                "SELECT Count(l) FROM ListingEntity l " +
+                        "WHERE l.product.evVehicle IS NOT NULL "
+        )
+        long countListingsHavingEvVehicle();
+
+    @Query(
+            "SELECT Count(l) FROM ListingEntity l " +
+                    "WHERE l.product.battery IS NOT NULL "
+    )
+        long countListingsHavingBattery();
 }

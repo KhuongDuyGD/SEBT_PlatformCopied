@@ -452,8 +452,8 @@ public class ListingServiceImpl implements ListingService {
                     evFilterFormDTO.location(),
                     evFilterFormDTO.minBatteryCapacity(),
                     evFilterFormDTO.maxBatteryCapacity(),
-                    evFilterFormDTO.minPrice() != null ? BigDecimal.valueOf(evFilterFormDTO.minPrice()) : null,
-                    evFilterFormDTO.maxPrice() != null ? BigDecimal.valueOf(evFilterFormDTO.maxPrice()) : null,
+                    BigDecimal.valueOf(evFilterFormDTO.minPrice()),
+                    BigDecimal.valueOf(evFilterFormDTO.maxPrice()),
                     pageable
             ).map(listing -> {
                         boolean isFavorited = userId != null &&
@@ -486,8 +486,8 @@ public class ListingServiceImpl implements ListingService {
                     batteryFilterFormDTO.compatibility(),
                     batteryFilterFormDTO.minBatteryCapacity(),
                     batteryFilterFormDTO.maxBatteryCapacity(),
-                    batteryFilterFormDTO.minPrice() != null ? BigDecimal.valueOf(batteryFilterFormDTO.minPrice()) : null,
-                    batteryFilterFormDTO.maxPrice() != null ? BigDecimal.valueOf(batteryFilterFormDTO.maxPrice()) : null,
+                    BigDecimal.valueOf(batteryFilterFormDTO.minBatteryCapacity()),
+                    BigDecimal.valueOf(batteryFilterFormDTO.maxBatteryCapacity()),
                     pageable
             ).map(listing -> {
                         boolean isFavorited = userId != null &&

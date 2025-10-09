@@ -6,13 +6,14 @@ import project.swp.spring.sebt_platform.dto.object.Product;
 import project.swp.spring.sebt_platform.dto.object.Seller;
 import project.swp.spring.sebt_platform.model.enums.ListingType;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class ListingDetailResponseDTO {
     Long id;
     String title;
     String description;
-    Double price;
+    double price;
     ListingType listingType;
     String status;
     String createdAt;
@@ -29,7 +30,7 @@ public class ListingDetailResponseDTO {
     public ListingDetailResponseDTO(Long id,
                                     String title,
                                     String description,
-                                    Double price,
+                                    double price,
                                     ListingType listingType,
                                     String status, String createdAt,
                                     String updatedAt, Product product,
@@ -74,11 +75,11 @@ public class ListingDetailResponseDTO {
         this.description = description;
     }
 
-    public Double getPrice() {
+    public double getPrice() {
         return price;
     }
 
-    public void setPrice(Double price) {
+    public void setPrice(double price) {
         this.price = price;
     }
 

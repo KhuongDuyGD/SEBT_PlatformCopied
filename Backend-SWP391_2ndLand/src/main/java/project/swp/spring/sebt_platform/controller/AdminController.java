@@ -26,7 +26,7 @@ public class AdminController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved post requests",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))),
+                            schema = @Schema(implementation = PostListingCartResponseDTO.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized: Admin access required",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class))),
@@ -78,7 +78,7 @@ public class AdminController {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to approve post request.");
                 }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }
     }
 
@@ -111,7 +111,7 @@ public class AdminController {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to reject post request.");
                 }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }
     }
 }
