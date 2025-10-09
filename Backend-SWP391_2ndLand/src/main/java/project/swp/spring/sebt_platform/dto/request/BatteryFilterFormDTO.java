@@ -7,8 +7,8 @@ public record BatteryFilterFormDTO(
         String brand,
         String location,
         String compatibility,
-        Integer minBatteryCapacity,
-        Integer maxBatteryCapacity,
-        Double minPrice,
-        Double maxPrice
+        int minBatteryCapacity,
+        int maxBatteryCapacity,
+        double minPrice,
+        double maxPrice
 ) {}

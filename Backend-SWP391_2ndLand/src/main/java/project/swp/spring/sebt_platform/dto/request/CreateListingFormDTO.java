@@ -12,7 +12,7 @@ public class CreateListingFormDTO {
     private Product product = new Product(); // Initialize with empty object
     private ListingType listingType;
     private String description;
-    private Double price;
+    private double price;
     private String category;
     private Location location = new Location(); // Initialize with empty object
     private List<MultipartFile> images; // Danh sách file ảnh, ảnh đầu tiên sẽ là thumbnail
@@ -24,7 +24,7 @@ public class CreateListingFormDTO {
     }
 
     public CreateListingFormDTO(String title, Product product, ListingType listingType,
-                                String description, Double price, String category,
+                                String description, double price, String category,
                                 Location location, List<MultipartFile> images) {
         this.title = title;
         this.product = product != null ? product : new Product();
@@ -52,8 +52,8 @@ public class CreateListingFormDTO {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public Double getPrice() { return price; }
-    public void setPrice(Double price) { this.price = price; }
+    public double getPrice() { return price; }
+    public void setPrice(double price) { this.price = price; }
 
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }

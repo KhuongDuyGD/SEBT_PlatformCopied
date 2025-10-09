@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import project.swp.spring.sebt_platform.dto.request.UpdateProfileFormDTO;
+import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.SessionInfoResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
 import project.swp.spring.sebt_platform.service.MemberService;
@@ -120,14 +121,14 @@ public class MemberController {
         } catch (Exception e) {
             System.err.println("Update profile error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Internal server error: " + e.getMessage());
+                .body("Internal server error");
         }
     }
 
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved post responses",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))),
+                            schema = @Schema(implementation = PostAnoucementResponseDTO.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized: Admin access required",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class))),
@@ -148,7 +149,7 @@ public class MemberController {
             // Call your service method to get the paginated data
             Pageable pageable = Pageable.ofSize(size).withPage(page);
 
-            var postResponses = memberService.getPostAnoucementResponse(userId, pageable);
+            var postResponses =  memberService.getPostAnoucementResponse(userId, pageable);
             return ResponseEntity.ok(postResponses);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -190,7 +191,7 @@ public class MemberController {
             }
 
             // Get user profile
-            var userProfile = memberService.getUserProfileById(userId);
+            UserProfileResponseDTO userProfile = memberService.getUserProfileById(userId);
 
             if (userProfile == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)

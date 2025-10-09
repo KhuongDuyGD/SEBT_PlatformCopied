@@ -4,7 +4,7 @@ public class ListingCartResponseDTO {
     private Long listingId;
     private String title;
     private String thumbnailUrl;
-    private Double price;
+    private double price;
     private int viewCount;
     private String sellerPhoneNumber;
     private boolean favorite;
