@@ -169,7 +169,6 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public FiguresAdminDashboardResponseDTO getFiguresForDashBoard() {
-        long numberOfActiveListings = listingRepository
 
         return null;
     }
