@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { normalizeImage } from '../../utils/listingMapper.js';
+import { normalizeImage } from '../../../utils/listingMapper.js';
 
 const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) => {
     const [showRejectModal, setShowRejectModal] = useState(false);
@@ -12,17 +12,17 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
 
     const handleApprove = () => {
         if (showApprovalNote) {
-            onApprove(listing.id || listing.listingId, approvalNote);
+            onApprove(listing.listingId, approvalNote);
             setApprovalNote('');
             setShowApprovalNote(false);
         } else {
-            onApprove(listing.id || listing.listingId);
+            onApprove(listing.listingId);
         }
     };
 
     const handleReject = () => {
         if (rejectionReason.trim()) {
-            onReject(listing.id || listing.listingId, rejectionReason);
+            onReject(listing.listingId, rejectionReason);
             setRejectionReason('');
             setShowRejectModal(false);
         }
@@ -83,7 +83,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                 </div>
 
                 <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>ID: #{listing.id || listing.listingId || 'N/A'}</span>
+                    <span>ID: #{listing.listingId || 'N/A'}</span>
                     <span>{listing.createdDate ? new Date(listing.createdDate).toLocaleDateString('vi-VN') : 'N/A'}</span>
                 </div>
             </div>

@@ -26,7 +26,8 @@ import ListingDetail from "./pages/listings/ListingDetail";
 //============================= ADMIN PAGES =============================
 import AdminDashboard from "./AdminDashboard";          // đảm bảo file này tồn tại
 import AdminLayout from "./components/AdminLayout";     // đảm bảo đúng đường dẫn
-import PendingListings from "./pages/admin/PendingListings"; // Trang xét duyệt listing
+import PendingListings from "./pages/admin/listing/PendingListings"; // Trang xét duyệt listing
+import UserManagement from "./pages/admin/usermanagement/UserManagement";
 //============================= ADMIN PAGES =============================
 
 import api from "./api/axios";
@@ -156,6 +157,7 @@ function AppContent({
           >
             <Route index element={<AdminDashboard />} />
             <Route path="pending-listings" element={<PendingListings />} />
+            <Route path="users" element={<UserManagement />} />
             {/*
               Thêm các route admin khác khi bạn đã tạo file:
               <Route path="listings" element={<AdminListings />} />

@@ -15,7 +15,7 @@ function UpdateProfileCard({ userInfo, onUpdated }) {
     defaultValues: {
       username: userInfo?.username || "",
       phoneNumber: userInfo?.phoneNumber || "",
-      avatarUrl: userInfo?.avatarUrl || "" // giữ nếu muốn hỗ trợ nhập URL fallback
+      avatarUrl: userInfo?.avatarUrl || "" 
     }
   });
 
