@@ -50,6 +50,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public boolean register(String password, String email, UserRole role) {
         try{
+            // Idempotent: nếu user đã tồn tại thì coi như đã seed xong -> trả true, tránh lỗi UNIQUE KEY & log bẩn
+            UserEntity existing = userRepository.findUserByEmail(email);
+            if(existing != null){
+                // Có thể cập nhật role nếu khác (tuỳ nhu cầu). Ở đây chỉ đảm bảo không tạo trùng.
+                return true;
+            }
             // create salt and hash password
             String salt = utils.generateSalt();
             String hashedPassword = utils.encript(password, salt);
@@ -60,7 +66,7 @@ public class AuthServiceImpl implements AuthService {
 
             return true;
         } catch(Exception e){
-            System.out.println("Registration error: " + e.getMessage());
+            System.out.println("Registration error: " + e.getMessage()); // Giữ log cho các lỗi khác
             return false;
         }
     }

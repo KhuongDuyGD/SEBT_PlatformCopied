@@ -1,12 +1,11 @@
 import React from 'react';
-import { FileText, DollarSign } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import LocalImageUpload from '../../LocalImageUpload';
-import { formatNumberWithDots, createFormattedInputHandler } from '../../../utils/numberFormatting';
 
 // Added register + errors for react-hook-form binding
 export default function BasicInfoStep({ formData, onChange, onImagesUpload, onChangeMainImage, loading, register, errors }) {
   const regTitle = register ? register('title') : {};
-  const regPrice = register ? register('price') : {};
+  // price moved to PricingReviewStep
   const regDescription = register ? register('description') : {};
   return (
     <div>
@@ -32,28 +31,6 @@ export default function BasicInfoStep({ formData, onChange, onImagesUpload, onCh
               required
             />
             {errors?.title && <p className="field-error">{errors.title.message}</p>}
-          </div>
-          <div className="form-group">
-            <label className="form-label required">Giá bán (VND)</label>
-            <div className="input-with-icon">
-              <DollarSign className="input-icon w-5 h-5" />
-              <input
-                type="text"
-                name="price"
-                // Display formatted value with dots for better readability
-                value={formatNumberWithDots(formData.price)}
-                // Use custom handler to format input and pass raw value to form
-                onChange={createFormattedInputHandler((e) => {
-                  onChange(e);
-                  regPrice.onChange && regPrice.onChange(e);
-                }, 'price')}
-                ref={regPrice.ref}
-                className={`form-input with-icon ${errors?.price ? 'input-error' : ''}`}
-                placeholder="500.000.000"
-                required
-              />
-            </div>
-            {errors?.price && <p className="field-error">{errors.price.message}</p>}
           </div>
         </div>
         <div className="form-group">
