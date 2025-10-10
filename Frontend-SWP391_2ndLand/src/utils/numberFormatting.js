@@ -105,3 +105,21 @@ export const formatConfidence = (c) => {
   if (c === null || c === undefined || isNaN(c)) return '';
   return Math.round(c * 100) + '%';
 };
+
+/**
+ * Format clamp percent (0.12 -> ±12%)
+ */
+export const formatClampPercent = (p) => {
+  if (p === null || p === undefined || isNaN(p)) return '';
+  return '±' + (p * 100).toFixed(1) + '%';
+};
+
+/**
+ * Format a multiplicative factor (e.g. 0.97 -> -3.0%, 1.15 -> +15.0%).
+ */
+export const formatFactorDelta = (f) => {
+  if (f === null || f === undefined || isNaN(f)) return '';
+  const delta = (f - 1) * 100;
+  const sign = delta > 0 ? '+' : (delta < 0 ? '' : '');
+  return sign + delta.toFixed(1) + '%';
+};

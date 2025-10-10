@@ -5,6 +5,7 @@ import { mapListingArray, normalizeImage } from '../../utils/listingMapper';
 import { Link } from 'react-router-dom';
 import { Card, Tag, Button, Pagination, Empty, Space, Typography, Skeleton } from 'antd';
 import { ThunderboltOutlined, EyeOutlined } from '@ant-design/icons';
+import { ListingStatus, ApprovalStatus } from '../../constants/enums.js';
 import '../../css/header.css';
 
 /**
@@ -45,14 +46,27 @@ export default function MyListings() {
 
 
 
-    const statusTag = (st) => {
+    const statusTag = (item) => {
+        // Prefer approvalStatus if present and not APPROVED (still in workflow)
+        const approval = item.approvalStatus || item.raw?.approvalStatus;
+        const listingSt = item.status || item.listingStatus;
+        let key;
+        if (approval && approval !== ApprovalStatus.APPROVED) {
+            key = approval; // show workflow state
+        } else {
+            key = listingSt;
+        }
         const map = {
-            PENDING: { color: 'gold', text: 'Chờ duyệt' },
-            APPROVED: { color: 'green', text: 'Đã duyệt' },
-            REJECTED: { color: 'red', text: 'Từ chối' },
-            SOLD: { color: 'purple', text: 'Đã bán' }
+            [ApprovalStatus.PENDING]: { color: 'gold', text: 'Chờ duyệt' },
+            [ApprovalStatus.REJECTED]: { color: 'red', text: 'Từ chối' },
+            [ApprovalStatus.REQUIRES_CHANGES]: { color: 'orange', text: 'Cần chỉnh sửa' },
+            [ListingStatus.ACTIVE]: { color: 'green', text: 'Đang hoạt động' },
+            [ListingStatus.SUSPENDED]: { color: 'volcano', text: 'Tạm treo' },
+            [ListingStatus.SOLD]: { color: 'purple', text: 'Đã bán' },
+            [ListingStatus.EXPIRED]: { color: 'default', text: 'Hết hạn' },
+            [ListingStatus.REMOVED]: { color: 'default', text: 'Gỡ bỏ' },
         };
-        const cfg = map[st] || { color: 'default', text: st };
+        const cfg = map[key] || { color: 'default', text: key || '—' };
         return <Tag color={cfg.color}>{cfg.text}</Tag>;
     };
 
@@ -105,7 +119,7 @@ export default function MyListings() {
                                 <Typography.Text strong ellipsis={{ tooltip: it.title }} style={{ fontSize:14 }}>{it.title}</Typography.Text>
                                 <Space size={[4,4]} wrap>
                                     {it.category && <Tag bordered={false}>{it.category}</Tag>}
-                                    {statusTag(it.status)}
+                                    {statusTag(it)}
                                 </Space>
                                 <Typography.Text style={{ fontWeight:600, color:'#1677ff' }}>
                                     {typeof it.price === 'number' ? it.price.toLocaleString('vi-VN') + ' VND' : 'Liên hệ'}

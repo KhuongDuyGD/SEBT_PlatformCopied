@@ -445,15 +445,15 @@ public class ListingServiceImpl implements ListingService {
             Long userId,
             Pageable pageable) {
         try {
-            return listingRepository.filterEvListings(
-                    evFilterFormDTO.year(),
-                    evFilterFormDTO.vehicleType(),
-                    evFilterFormDTO.brand(),
-                    evFilterFormDTO.location(),
-                    evFilterFormDTO.minBatteryCapacity(),
-                    evFilterFormDTO.maxBatteryCapacity(),
-                    BigDecimal.valueOf(evFilterFormDTO.minPrice()),
-                    BigDecimal.valueOf(evFilterFormDTO.maxPrice()),
+        return listingRepository.filterEvListings(
+            evFilterFormDTO.year(),
+            evFilterFormDTO.vehicleType(),
+            evFilterFormDTO.brand(),
+            evFilterFormDTO.location(),
+            evFilterFormDTO.minBatteryCapacity(),
+            evFilterFormDTO.maxBatteryCapacity(),
+            evFilterFormDTO.minPrice() != null ? BigDecimal.valueOf(evFilterFormDTO.minPrice()) : null,
+            evFilterFormDTO.maxPrice() != null ? BigDecimal.valueOf(evFilterFormDTO.maxPrice()) : null,
                     pageable
             ).map(listing -> {
                         boolean isFavorited = userId != null &&
@@ -484,10 +484,10 @@ public class ListingServiceImpl implements ListingService {
                     batteryFilterFormDTO.brand(),
                     batteryFilterFormDTO.location(),
                     batteryFilterFormDTO.compatibility(),
-                    batteryFilterFormDTO.minBatteryCapacity(),
-                    batteryFilterFormDTO.maxBatteryCapacity(),
-                    BigDecimal.valueOf(batteryFilterFormDTO.minBatteryCapacity()),
-                    BigDecimal.valueOf(batteryFilterFormDTO.maxBatteryCapacity()),
+            batteryFilterFormDTO.minBatteryCapacity(),
+            batteryFilterFormDTO.maxBatteryCapacity(),
+            batteryFilterFormDTO.minPrice() != null ? BigDecimal.valueOf(batteryFilterFormDTO.minPrice()) : null,
+            batteryFilterFormDTO.maxPrice() != null ? BigDecimal.valueOf(batteryFilterFormDTO.maxPrice()) : null,
                     pageable
             ).map(listing -> {
                         boolean isFavorited = userId != null &&

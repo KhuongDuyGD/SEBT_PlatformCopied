@@ -14,7 +14,7 @@ import PricingReviewStep from "../../components/listings/steps/PricingReviewStep
 import "../../css/CreateListing.css";
 import { AuthContext } from "../../contexts/AuthContext";
 import { useListingDraft } from '../../hooks/useListingDraft';
-import { heuristicSuggestPrice, buildGeminiPricingPrompt } from '../../utils/priceEstimation';
+import { sanitizeListingDraft } from '../../utils/validation/normalizers';
 import { fetchServerPriceSuggestion } from '../../api/pricing';
 
 const DEFAULT_VALUES = {
@@ -29,8 +29,8 @@ const STEP_FIELDS = {
     1: ['title', 'description', 'images'],
     2: (productType) => productType === 'VEHICLE'
         ? ['vehicle.type', 'vehicle.brand', 'vehicle.name', 'vehicle.year', 'vehicle.conditionStatus', 'vehicle.batteryCapacity']
-        : ['battery.brand', 'battery.capacity', 'battery.healthPercentage', 'battery.conditionStatus'],
-    3: ['location.province'],
+        : ['battery.brand', 'battery.model', 'battery.capacity', 'battery.healthPercentage', 'battery.conditionStatus'],
+    3: ['location.province', 'location.district'],
     4: ['price']
 };
 
@@ -90,6 +90,15 @@ function CreateListing() {
     const buildListingDataForEstimation = () => {
         const v = getValues();
         if (!v) return null;
+        // Canonicalize model (insert space after VF if missing) for VinFast cars
+        const normalizeModel = (raw) => {
+            if (!raw) return raw;
+            const lower = raw.toLowerCase();
+            if (/(^|\s)vf\d{1,2}(\s|$)/.test(lower) && !/vf\s+\d/.test(lower)) {
+                return raw.replace(/vf(\d{1,2})/i, 'VF $1');
+            }
+            return raw;
+        };
         const listingData = {
             title: v.title,
             description: v.description,
@@ -98,7 +107,7 @@ function CreateListing() {
             category: v.productType === 'VEHICLE' ? 'EV' : 'BATTERY',
             product: v.productType === 'VEHICLE' ? {
                 brand: v.vehicle.brand,
-                model: v.vehicle.model,
+                model: normalizeModel([v.vehicle.name, v.vehicle.model].filter(Boolean).join(' ').trim()),
                 batteryCapacity: v.vehicle.batteryCapacity ? `${v.vehicle.batteryCapacity} kWh` : null,
                 year: v.vehicle.year,
                 condition: v.vehicle.conditionStatus || 'Used'
@@ -126,45 +135,48 @@ function CreateListing() {
                 setPriceSuggestion({ suggestedPrice: null, reason: 'Thiếu dữ liệu' });
                 return;
             }
-
-            // Always compute heuristic first (fast) so UI can show immediate baseline
-            const heuristic = heuristicSuggestPrice(data);
-            setPriceSuggestion({
-                suggestedPrice: heuristic || null,
-                reason: heuristic ? 'Heuristic sơ bộ (sẽ cập nhật nếu AI thành công)...' : 'Heuristic không đủ dữ liệu',
-                mode: 'heuristic'
-            });
-
-            // Attempt server AI (Gemini) in background
-            try {
-                const serverPayload = {
-                    title: data.title,
-                    description: data.description,
-                    category: data.category,
-                    product: data.product,
-                    location: data.location
-                };
-                const ai = await fetchServerPriceSuggestion(serverPayload);
-                if (ai && (ai.suggestedPrice || ai.suggestedPrice === 0)) {
-                    setPriceSuggestion(prev => ({
-                        ...prev,
-                        suggestedPrice: ai.suggestedPrice || prev?.suggestedPrice || null,
-                        reason: ai.reason || prev?.reason,
-                        mode: ai.mode || 'gemini',
-                        model: ai.model
-                    }));
-                } else {
-                    setPriceSuggestion(prev => ({
-                        ...prev,
-                        reason: (prev?.reason || '') + ' | AI không trả về kết quả rõ ràng.'
-                    }));
+            setPriceSuggestion({ suggestedPrice: null, reason: 'Đang lấy giá đề xuất từ server...', mode: 'loading' });
+            const serverPayload = {
+                title: data.title,
+                description: data.description,
+                category: data.category,
+                product: data.product,
+                location: data.location
+            };
+            const ai = await fetchServerPriceSuggestion(serverPayload);
+            if (ai && (ai.suggestedPrice || ai.suggestedPrice === 0)) {
+                // Ensure min/max fallback if absent
+                let { minPrice, maxPrice } = ai;
+                if ((minPrice == null || maxPrice == null) && ai.heuristicPrice != null) {
+                    minPrice = Math.round(ai.heuristicPrice * 0.85);
+                    maxPrice = Math.round(ai.heuristicPrice * 1.15);
                 }
-            } catch (aiErr) {
-                setPriceSuggestion(prev => ({
-                    ...prev,
-                    reason: (prev?.reason || 'Heuristic') + ' | Lỗi AI: ' + (aiErr.response?.status || aiErr.message)
-                }));
+                setPriceSuggestion({
+                    suggestedPrice: ai.suggestedPrice ?? ai.heuristicPrice ?? null,
+                    reason: ai.reason,
+                    mode: ai.mode || 'gemini',
+                    model: ai.model,
+                    heuristicPrice: ai.heuristicPrice,
+                    minPrice,
+                    maxPrice,
+                    deltaPercent: ai.deltaPercent,
+                    confidence: ai.confidence,
+                    cacheHit: ai.cacheHit,
+                    clamped: ai.clamped,
+                    promptVersion: ai.promptVersion,
+                    baselinePrice: ai.baselinePrice,
+                    clampPercent: ai.clampPercent,
+                    factorAge: ai.factorAge,
+                    factorCapacity: ai.factorCapacity,
+                    factorCondition: ai.factorCondition,
+                    factorMileage: ai.factorMileage,
+                    factorHealth: ai.factorHealth
+                });
+            } else {
+                setPriceSuggestion(prev => ({ ...prev, reason: 'Server không trả về kết quả giá.' }));
             }
+        } catch (err) {
+            setPriceSuggestion(prev => ({ ...prev, reason: 'Lỗi khi lấy giá từ server: ' + (err.response?.status || err.message) }));
         } finally {
             setPriceSuggesting(false);
         }
@@ -176,16 +188,7 @@ function CreateListing() {
         }
     };
 
-    const togglePromptPreview = () => {
-        if (!showPromptPreview) {
-            const data = buildListingDataForEstimation();
-            if (data) {
-                const prompt = buildGeminiPricingPrompt(data);
-                setPriceSuggestion(ps => ({ ...(ps || {}), prompt }));
-            }
-        }
-        setShowPromptPreview(p => !p);
-    };
+    const togglePromptPreview = () => setShowPromptPreview(p => !p);
 
     // Handle images upload
     const handleImagesUpload = (files) => {
@@ -208,21 +211,21 @@ function CreateListing() {
         formData.append('title', values.title);
         formData.append('description', values.description || '');
         formData.append('price', values.price);
-        formData.append('category', values.productType === 'VEHICLE' ? 'EV' : 'BATTERY');
+    formData.append('category', values.productType === 'VEHICLE' ? 'EV' : 'BATTERY');
         formData.append('listingType', 'NORMAL');
 
         // Product-specific fields
         const productData = values.productType === 'VEHICLE'
             ? {
                 ...values.vehicle,
-                mileage: parseInt(values.vehicle.mileage || 100, 10),
-                batteryCapacity: parseInt(values.vehicle.batteryCapacity || 100, 10),
-            }
+                mileage: values.vehicle.mileage === '' || values.vehicle.mileage == null ? '' : parseInt(values.vehicle.mileage, 10),
+                batteryCapacity: parseFloat(values.vehicle.batteryCapacity),
+              }
             : {
                 ...values.battery,
-                capacity: parseInt(values.battery.capacity || 100, 10),
-                healthPercentage: parseInt(values.battery.healthPercentage || 100, 10),
-            };
+                capacity: parseFloat(values.battery.capacity),
+                healthPercentage: parseInt(values.battery.healthPercentage, 10),
+              };
 
         const prefix = values.productType === 'VEHICLE' ? 'product.ev' : 'product.battery';
 
@@ -262,7 +265,8 @@ function CreateListing() {
             const currentUser = userInfo ||
                 JSON.parse(localStorage.getItem('userInfo') || localStorage.getItem('user') || sessionStorage.getItem('user') || 'null');
 
-            const formData = buildFormData(values);
+            const cleansed = sanitizeListingDraft(values);
+            const formData = buildFormData(cleansed);
             const response = await listingsApi.createListing(formData, currentUser?.id);
 
             if (response.status === 200 || response.status === 201) {
@@ -277,16 +281,23 @@ function CreateListing() {
         } catch (err) {
             console.error('❌ Lỗi khi tạo listing:', err);
 
-            const errorMessages = {
-                400: '❌ Thông tin không hợp lệ: ' + (err.response?.data?.message || 'Vui lòng kiểm tra lại'),
-                401: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại',
-                413: '📦 File ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 10MB',
-                500: '⚠️ Lỗi server: ' + (err.response?.data?.message || 'Vui lòng thử lại sau')
-            };
-
-            setError(err.response?.status
-                ? errorMessages[err.response.status] || `Lỗi HTTP ${err.response.status}`
-                : err.request ? '🌐 Không thể kết nối server' : err.message || 'Có lỗi xảy ra');
+            if (err.response?.status === 400 && err.response.data?.fieldErrors) {
+                // Map backend fieldErrors to a readable summary
+                const backendFields = err.response.data.fieldErrors
+                  .map(fe => `${fe.field}: ${fe.message}`)
+                  .join('; ');
+                setError('❌ Thông tin không hợp lệ: ' + backendFields);
+            } else {
+                const errorMessages = {
+                    400: '❌ Thông tin không hợp lệ: ' + (err.response?.data?.message || 'Vui lòng kiểm tra lại'),
+                    401: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại',
+                    413: '📦 File ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 10MB',
+                    500: '⚠️ Lỗi server: ' + (err.response?.data?.message || 'Vui lòng thử lại sau')
+                };
+                setError(err.response?.status
+                    ? errorMessages[err.response.status] || `Lỗi HTTP ${err.response.status}`
+                    : err.request ? '🌐 Không thể kết nối server' : err.message || 'Có lỗi xảy ra');
+            }
         } finally {
             setLoading(false);
         }

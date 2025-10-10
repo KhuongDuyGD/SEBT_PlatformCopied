@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, Sparkles, ClipboardList, Info } from 'lucide-react';
+import { DollarSign, Sparkles, ClipboardList, Info, ChevronDown, ChevronRight } from 'lucide-react';
 import { formatNumberWithDots, createFormattedInputHandler, formatVnd, formatDeltaPercent, formatConfidence } from '../../../utils/numberFormatting';
 
 /**
@@ -168,6 +168,11 @@ export default function PricingReviewStep({
                 </div>
               )}
 
+              {/* Breakdown (collapsible) */}
+              {priceSuggestion.baselinePrice != null && (
+                <BreakdownPanel suggestion={priceSuggestion} />
+              )}
+
               {/* Reason (trim long) */}
               {priceSuggestion.reason && (
                 <p className="text-xs text-gray-500 leading-relaxed whitespace-pre-line">
@@ -221,3 +226,56 @@ export default function PricingReviewStep({
     </div>
   );
 }
+
+  // --- Breakdown sub-component ---
+  function BreakdownPanel({ suggestion }) {
+    const [open, setOpen] = React.useState(false);
+    const fmt = (v) => v == null ? '—' : (v % 1 === 0 ? v.toFixed(0) : v.toFixed(3));
+    const toPct = (f) => f == null ? '—' : ((f - 1) * 100).toFixed(1) + '%';
+    const clampPct = suggestion.clampPercent != null ? (suggestion.clampPercent * 100).toFixed(1) + '%' : '—';
+    const factors = [
+      ['Age', suggestion.factorAge],
+      ['Capacity', suggestion.factorCapacity],
+      ['Condition', suggestion.factorCondition],
+      ['Mileage', suggestion.factorMileage],
+      ['Health', suggestion.factorHealth],
+    ];
+    // Reconstruct heuristic approx = baseline * product(factors) (display for transparency)
+    let reconstructed = null;
+    try {
+      if (suggestion.baselinePrice && factors.every(([,f]) => f)) {
+        reconstructed = Math.round(
+          suggestion.baselinePrice * factors.reduce((acc, [,f]) => acc * f, 1)
+        );
+      }
+    } catch (e) {}
+    return (
+      <div className="border rounded bg-white/60 backdrop-blur-sm p-3 text-xs">
+        <button type="button" onClick={() => setOpen(o=>!o)} className="flex items-center gap-1 font-medium text-gray-700 hover:text-gray-900">
+          {open ? <ChevronDown className="w-3 h-3"/> : <ChevronRight className="w-3 h-3"/>}
+          Phân rã heuristic
+          <span className="ml-2 text-[10px] px-1 py-0.5 bg-gray-200 rounded">clamp {clampPct}</span>
+        </button>
+        {open && (
+          <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="col-span-2 md:col-span-3 flex flex-wrap gap-4 items-baseline">
+              <span>Baseline: <strong>{formatVnd(suggestion.baselinePrice)} ₫</strong></span>
+              {suggestion.heuristicPrice && (
+                <span>Heuristic: <strong>{formatVnd(suggestion.heuristicPrice)} ₫</strong></span>
+              )}
+              {reconstructed && suggestion.heuristicPrice && Math.abs(reconstructed - suggestion.heuristicPrice) > 5000 && (
+                <span className="text-amber-600">Recalc≈ {formatVnd(reconstructed)} ₫</span>
+              )}
+            </div>
+            {factors.map(([label, f]) => (
+              <div key={label} className="p-2 rounded border bg-gray-100/60">
+                <div className="font-medium text-gray-700">{label}</div>
+                <div className="font-mono text-gray-900">{fmt(f)}</div>
+                <div className="text-[10px] text-gray-500">{toPct(f)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
