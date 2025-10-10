@@ -2,15 +2,17 @@ package project.swp.spring.sebt_platform.dto.request;
 
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
 
-import java.math.BigDecimal;
-
+/**
+ * EV filter DTO now uses wrapper types so that null means "not supplied".
+ * Controller will build this from query params; service layer must handle null.
+ */
 public record EvFilterFormDTO(
         VehicleType vehicleType,
         Integer year,
         String brand,
         String location,
-        int minBatteryCapacity,
-        int maxBatteryCapacity,
-        double minPrice,
-        double maxPrice
+        Integer minBatteryCapacity,
+        Integer maxBatteryCapacity,
+        Double minPrice,
+        Double maxPrice
 ) {}

@@ -20,6 +20,25 @@ public class PricingSuggestResponseDTO {
     private String prompt;              // prompt đã gửi lên AI (truncated)
     private Boolean cacheHit;           // true nếu lấy từ cache server
 
+    // --- Breakdown fields (mới thêm) ---
+    private Long baselinePrice;         // Baseline theo model/brand trước khi nhân hệ số
+    private Double clampPercent;        // biên clamp động (ví dụ 0.12 nghĩa ±12%)
+    // Các hệ số thành phần
+    private Double factorAge;
+    private Double factorCapacity;
+    private Double factorCondition;
+    private Double factorMileage;
+    private Double factorHealth;
+
+    // Depreciation strategy metadata
+    private String strategyType;      // LINEAR | EXPONENTIAL | NONE
+    private Double strategyRate;      // %/year (linear) hoặc factor (exponential)
+    private Double strategyMaxDep;    // Tổng khấu hao tối đa (fraction), có thể null nếu không set
+
+    // Evidence tags: nguồn / yếu tố tạo nên quyết định giá (baseline, depreciation, capacity, mileage, condition, health, market, adjustment, clamp)
+    @io.swagger.v3.oas.annotations.media.Schema(description = "Các nhãn giải thích: baseline,depreciation,capacity,mileage,condition,health,market,adjustment,clamp,heuristic")
+    private java.util.List<String> evidence; // optional; AI sẽ cung cấp + backend có thể bổ sung
+
     public PricingSuggestResponseDTO() {}
 
     public PricingSuggestResponseDTO(Long suggestedPrice, String reason, String model, String mode) {
@@ -73,4 +92,26 @@ public class PricingSuggestResponseDTO {
     public void setPrompt(String prompt) { this.prompt = prompt; }
     public Boolean getCacheHit() { return cacheHit; }
     public void setCacheHit(Boolean cacheHit) { this.cacheHit = cacheHit; }
+    public Long getBaselinePrice() { return baselinePrice; }
+    public void setBaselinePrice(Long baselinePrice) { this.baselinePrice = baselinePrice; }
+    public Double getClampPercent() { return clampPercent; }
+    public void setClampPercent(Double clampPercent) { this.clampPercent = clampPercent; }
+    public Double getFactorAge() { return factorAge; }
+    public void setFactorAge(Double factorAge) { this.factorAge = factorAge; }
+    public Double getFactorCapacity() { return factorCapacity; }
+    public void setFactorCapacity(Double factorCapacity) { this.factorCapacity = factorCapacity; }
+    public Double getFactorCondition() { return factorCondition; }
+    public void setFactorCondition(Double factorCondition) { this.factorCondition = factorCondition; }
+    public Double getFactorMileage() { return factorMileage; }
+    public void setFactorMileage(Double factorMileage) { this.factorMileage = factorMileage; }
+    public Double getFactorHealth() { return factorHealth; }
+    public void setFactorHealth(Double factorHealth) { this.factorHealth = factorHealth; }
+    public String getStrategyType() { return strategyType; }
+    public void setStrategyType(String strategyType) { this.strategyType = strategyType; }
+    public Double getStrategyRate() { return strategyRate; }
+    public void setStrategyRate(Double strategyRate) { this.strategyRate = strategyRate; }
+    public Double getStrategyMaxDep() { return strategyMaxDep; }
+    public void setStrategyMaxDep(Double strategyMaxDep) { this.strategyMaxDep = strategyMaxDep; }
+    public java.util.List<String> getEvidence() { return evidence; }
+    public void setEvidence(java.util.List<String> evidence) { this.evidence = evidence; }
 }

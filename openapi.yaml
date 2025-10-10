@@ -1,0 +1,211 @@
+openapi: 3.0.3
+info:
+  title: SEBT_platform API
+  version: 1.1.0
+  description: >-
+    OpenAPI spec synchronized with recent refactors: favorites RESTful endpoints
+    and filter query parameters (no GET bodies). Legacy /favorite endpoints are
+    deprecated and subject to removal.
+servers:
+  - url: http://localhost:8080/api
+    description: Local dev
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+  schemas:
+    PricingSuggestResponse:
+      type: object
+      description: Pricing suggestion including heuristic & AI breakdown
+      properties:
+        suggestedPrice: { type: integer, format: int64, description: Giá cuối cùng trả về (đã clamp nếu áp dụng) }
+        reason: { type: string, description: Giải thích hoặc thông tin fallback }
+        model: { type: string, description: Tên model AI (nếu dùng) }
+        mode: { type: string, description: "heuristic | gemini" }
+        heuristicPrice: { type: integer, format: int64 }
+        minPrice: { type: integer, format: int64 }
+        maxPrice: { type: integer, format: int64 }
+        clamped: { type: boolean }
+        confidence: { type: number, format: double }
+        deltaPercent: { type: number, format: double, description: Phần trăm chênh lệch so với heuristic }
+        promptVersion: { type: string }
+        prompt: { type: string }
+        cacheHit: { type: boolean }
+        baselinePrice: { type: integer, format: int64, description: Baseline ban đầu trước nhân hệ số }
+        clampPercent: { type: number, format: double, description: Biên clamp động (0.12 = ±12%) }
+        factorAge: { type: number, format: double }
+        factorCapacity: { type: number, format: double }
+        factorCondition: { type: number, format: double }
+        factorMileage: { type: number, format: double }
+        factorHealth: { type: number, format: double }
+        strategyType: { type: string, description: Kiểu khấu hao baseline áp dụng (LINEAR | EXPONENTIAL | NONE) }
+        strategyRate: { type: number, format: double, description: Tỉ lệ khấu hao (linear %/năm hoặc exponential factor) }
+        strategyMaxDep: { type: number, format: double, description: Giới hạn tổng khấu hao tối đa (fraction, ví dụ 0.6 = 60%) }
+      required: [suggestedPrice, mode]
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        path: { type: string }
+        status: { type: integer, format: int32 }
+        error: { type: string }
+        message: { type: string }
+        code: { type: string, description: Application specific error code }
+      required: [timestamp, path, status, error]
+    FavoriteStatus:
+      type: object
+      properties:
+        listingId: { type: integer, format: int64 }
+        favorited: { type: boolean }
+      required: [listingId, favorited]
+    ListingCart:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        title: { type: string }
+        price: { type: number, format: double }
+        thumbnailUrl: { type: string }
+        favorited: { type: boolean }
+      required: [id, title, price]
+paths:
+  /pricing/suggest:
+    post:
+      summary: Gợi ý giá tài sản (xe/battery)
+      tags: [Pricing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category: { type: string }
+                title: { type: string }
+                description: { type: string }
+                product: { type: object, additionalProperties: true }
+                location: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Giá gợi ý trả về
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PricingSuggestResponse' }
+        '400': { description: Thiếu hoặc sai dữ liệu đầu vào }
+        '500': { description: Lỗi hệ thống }
+  /members/favorites/{listingId}:
+    put:
+      summary: Mark listing as favorite
+      tags: [Favorites]
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Favorited
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FavoriteStatus' }
+        '400': { description: Bad Request, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Server Error, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+    delete:
+      summary: Unmark favorite
+      tags: [Favorites]
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Unfavorited
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FavoriteStatus' }
+        '400': { description: Bad Request, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Server Error, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /listings/ev-filter:
+    get:
+      summary: Filter EV listings
+      tags: [Listings]
+      parameters:
+        - { name: vehicleType, in: query, required: false, schema: { type: string } }
+        - { name: year, in: query, required: false, schema: { type: integer, format: int32 } }
+        - { name: brand, in: query, required: false, schema: { type: string } }
+        - { name: location, in: query, required: false, schema: { type: string } }
+        - { name: minBatteryCapacity, in: query, required: false, schema: { type: integer } }
+        - { name: maxBatteryCapacity, in: query, required: false, schema: { type: integer } }
+        - { name: minPrice, in: query, required: false, schema: { type: number, format: double } }
+        - { name: maxPrice, in: query, required: false, schema: { type: number, format: double } }
+        - { name: page, in: query, required: false, schema: { type: integer, default: 0 } }
+        - { name: size, in: query, required: false, schema: { type: integer, default: 12 } }
+      responses:
+        '200':
+          description: Page of EV Listings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items: { $ref: '#/components/schemas/ListingCart' }
+                  totalElements: { type: integer, format: int64 }
+                  totalPages: { type: integer }
+                  number: { type: integer }
+        '500': { description: Server Error }
+  /listings/battery-filter:
+    get:
+      summary: Filter battery listings
+      tags: [Listings]
+      parameters:
+        - { name: brand, in: query, required: false, schema: { type: string } }
+        - { name: location, in: query, required: false, schema: { type: string } }
+        - { name: compatibility, in: query, required: false, schema: { type: string } }
+        - { name: minBatteryCapacity, in: query, required: false, schema: { type: integer } }
+        - { name: maxBatteryCapacity, in: query, required: false, schema: { type: integer } }
+        - { name: minPrice, in: query, required: false, schema: { type: number, format: double } }
+        - { name: maxPrice, in: query, required: false, schema: { type: number, format: double } }
+        - { name: page, in: query, required: false, schema: { type: integer, default: 0 } }
+        - { name: size, in: query, required: false, schema: { type: integer, default: 12 } }
+      responses:
+        '200':
+          description: Page of Battery Listings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items: { $ref: '#/components/schemas/ListingCart' }
+                  totalElements: { type: integer, format: int64 }
+                  totalPages: { type: integer }
+                  number: { type: integer }
+        '500': { description: Server Error }
+  /members/favorite:
+    put:
+      deprecated: true
+      summary: LEGACY mark favorite (will be removed)
+      tags: [Favorites]
+      parameters:
+        - { name: listingId, in: query, required: true, schema: { type: integer, format: int64 } }
+        - { name: userId, in: query, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { description: OK }
+    delete:
+      deprecated: true
+      summary: LEGACY unmark favorite (will be removed)
+      tags: [Favorites]
+      parameters:
+        - { name: listingId, in: query, required: true, schema: { type: integer, format: int64 } }
+        - { name: userId, in: query, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { description: OK }

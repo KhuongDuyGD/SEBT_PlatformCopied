@@ -238,29 +238,33 @@ Same format as EV/Battery Listings response
 ## 6. Filter EV Listings
 **Endpoint:** `GET /api/listings/ev-filter`
 
-### Query Parameters
-- `minPrice` (optional): Minimum price
-- `maxPrice` (optional): Maximum price
-- `vehicleType` (optional): CAR | BIKE | SCOOTER
-- `year` (optional): Manufacturing year
-- `page` (optional, default: 0)
-- `size` (optional, default: 12)
+### Query Parameters (tất cả optional)
+- `vehicleType`: CAR | BIKE | SCOOTER
+- `year`: Năm sản xuất
+- `brand`: Hãng
+- `location`: Địa điểm (tỉnh/thành)
+- `minBatteryCapacity` / `maxBatteryCapacity`: Khoảng dung lượng pin (Wh hoặc kWh tùy chuẩn nội bộ)
+- `minPrice` / `maxPrice`: Khoảng giá
+- `page` (default: 0)
+- `size` (default: 12)
 
 ### Response
-Same format as EV Listings response
+Giống format danh sách EV Listings (có thể thêm `favorited` nếu người dùng đăng nhập)
 
 ## 7. Filter Battery Listings
 **Endpoint:** `GET /api/listings/battery-filter`
 
-### Query Parameters
-- `minPrice` (optional): Minimum price
-- `maxPrice` (optional): Maximum price
-- `year` (optional): Manufacturing year
-- `page` (optional, default: 0)
-- `size` (optional, default: 12)
+### Query Parameters (tất cả optional)
+- `brand`: Hãng pin
+- `location`: Địa điểm
+- `compatibility`: Chuỗi mô tả tương thích (ví dụ "CAR,Bike")
+- `minBatteryCapacity` / `maxBatteryCapacity`: Khoảng dung lượng
+- `minPrice` / `maxPrice`: Khoảng giá
+- `page` (default: 0)
+- `size` (default: 12)
 
 ### Response
-Same format as Battery Listings response
+Giống format Battery Listings (kèm `favorited` nếu có phiên đăng nhập)
 
 ## 8. Get My Listings
 **Endpoint:** `GET /api/listings/my-listings`
@@ -280,6 +284,36 @@ Same format as EV/Battery Listings response
   "message": "Vui lòng đăng nhập để xem bài đăng của bạn"
 }
 ```
+
+## 9. Favorites (New RESTful)
+
+### 9.1 Mark Favorite
+**Endpoint:** `PUT /api/members/favorites/{listingId}`
+
+Yêu cầu phiên đăng nhập hợp lệ (cookie session). Trả về:
+```json
+{
+  "listingId": 123,
+  "favorited": true
+}
+```
+
+### 9.2 Unmark Favorite
+**Endpoint:** `DELETE /api/members/favorites/{listingId}`
+
+Phản hồi:
+```json
+{
+  "listingId": 123,
+  "favorited": false
+}
+```
+
+### 9.3 Legacy (Deprecated) — sẽ gỡ sau
+`PUT /api/members/favorite?userId=&listingId=`
+`DELETE /api/members/favorite?userId=&listingId=`
+
+Không nên dùng nữa; frontend đã bỏ fallback.
 
 ## Common Error Handling in Frontend
 

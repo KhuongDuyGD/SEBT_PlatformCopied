@@ -65,21 +65,35 @@ public class ListingController {
     public ResponseEntity<?> createListing(
             @ModelAttribute CreateListingFormDTO dto,
             HttpServletRequest request) {
+        Long userId = getUserId(request);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("Vui lòng đăng nhập để tạo bài đăng");
+        }
+
+        // Validate images early
+        if (dto.getImages() == null || dto.getImages().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Vui lòng tải lên ít nhất một ảnh cho bài đăng");
+        }
+
+        // Manual validation & normalization
+        project.swp.spring.sebt_platform.validation.CreateListingValidator validator = new project.swp.spring.sebt_platform.validation.CreateListingValidator();
+        var result = validator.validateAndNormalize(dto);
+        if (result.hasErrors()) {
+            throw new project.swp.spring.sebt_platform.exception.ValidationException("Validation failed", result.getErrors());
+        }
+
+        logger.info("[CREATE_LISTING_REQUEST] userId={} title='{}' category={} listingType={} evPresent={} batteryPresent={} images={}",
+                userId,
+                dto.getTitle(),
+                dto.getCategory(),
+                dto.getListingType(),
+                dto.getProduct()!=null && dto.getProduct().getEv()!=null,
+                dto.getProduct()!=null && dto.getProduct().getBattery()!=null,
+                dto.getImages()!=null?dto.getImages().size():0);
+
         try {
-            Long userId = getUserId(request);
-            if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Vui lòng đăng nhập để tạo bài đăng");
-            }
-
-            if (dto.getImages() == null || dto.getImages().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Vui lòng tải lên ít nhất một ảnh cho bài đăng");
-            }
-
-            logger.info("Creating listing - userId: {}, title: '{}', images: {}",
-                userId, dto.getTitle(), dto.getImages().size());
-
             List<Image> images = cloudinaryService.uploadMultipleImages(dto.getImages(), "listings").get();
             if (images.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -88,16 +102,16 @@ public class ListingController {
 
             boolean success = listingService.createListing(dto, userId, images);
             if (!success) {
-               return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Tạo bài đăng thất bại. Vui lòng kiểm tra lại thông tin");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Tạo bài đăng thất bại. Vui lòng kiểm tra lại thông tin");
             }
-
             return ResponseEntity.ok("Tạo bài đăng thành công");
-
+        } catch (project.swp.spring.sebt_platform.exception.ValidationException ve) {
+            throw ve; // will be handled by advice
         } catch (Exception e) {
             logger.error("Error creating listing: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Lỗi khi tạo bài đăng");
+                    .body("Lỗi khi tạo bài đăng");
         }
     }
 
@@ -255,21 +269,38 @@ public class ListingController {
     })
     @GetMapping("/ev-filter")
     public ResponseEntity<?> filterEvListings(
-            @RequestBody EvFilterFormDTO evFilterFormDTO,
             HttpServletRequest request,
+            @RequestParam(required = false) VehicleType vehicleType,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Integer minBatteryCapacity,
+            @RequestParam(required = false) Integer maxBatteryCapacity,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
 
         try {
             Pageable pageable = PageRequest.of(Math.max(0, page), validateSize(size));
+            EvFilterFormDTO dto = new EvFilterFormDTO(
+                    vehicleType,
+                    year,
+                    brand,
+                    location,
+                    minBatteryCapacity,
+                    maxBatteryCapacity,
+                    minPrice,
+                    maxPrice
+            );
             Page<ListingCartResponseDTO> results = listingService.filterEvListings(
-                evFilterFormDTO , getUserId(request), pageable);
+                    dto, getUserId(request), pageable);
 
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             logger.error("Error filtering EV listings: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Lỗi khi lọc EV");
+                    .body("Lỗi khi lọc EV");
         }
     }
 
@@ -286,19 +317,34 @@ public class ListingController {
     })
     @GetMapping("/battery-filter")
     public ResponseEntity<?> filterBatteryListings(
-            @RequestBody BatteryFilterFormDTO batteryFilterFormDTO,
             HttpServletRequest request,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String compatibility,
+            @RequestParam(required = false) Integer minBatteryCapacity,
+            @RequestParam(required = false) Integer maxBatteryCapacity,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         try {
             Pageable pageable = PageRequest.of(Math.max(0, page), validateSize(size));
+            BatteryFilterFormDTO dto = new BatteryFilterFormDTO(
+                    brand,
+                    location,
+                    compatibility,
+                    minBatteryCapacity,
+                    maxBatteryCapacity,
+                    minPrice,
+                    maxPrice
+            );
             Page<ListingCartResponseDTO> results = listingService.filterBatteryListings(
-               batteryFilterFormDTO, getUserId(request), pageable);
+                    dto, getUserId(request), pageable);
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             logger.error("Error filtering battery listings: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Lỗi khi lọc pin");
+                    .body("Lỗi khi lọc pin");
         }
     }
 

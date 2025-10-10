@@ -1,6 +1,7 @@
 // src/hooks/useListingApproval.js
 import { useState, useCallback } from 'react';
 import { getPendingListings, approveListing, rejectListing } from '../api/admin.js';
+import { ApprovalStatus } from '../constants/enums.js';
 
 export const useListingApproval = () => {
     const [listings, setListings] = useState([]);
@@ -24,16 +25,19 @@ export const useListingApproval = () => {
 
             // Accept response from admin.post-request normalized mapping
             const content = response.content || response.data || [];
-            const mapped = (Array.isArray(content) ? content : []).map(item => ({
-                // post-request items may include requestId and ListingId
-                id: item.id ?? item.requestId ?? item.requestID,
-                listingId: item.listingId ?? item.ListingId ?? item.ListingID,
-                title: item.title ?? item.name ?? '—',
-                price: item.price ?? null,
-                thumbnail: item.thumbnail ?? item.thumbnailUrl ?? null,
-                status: item.status ?? 'PENDING',
-                raw: item
-            }));
+            const mapped = (Array.isArray(content) ? content : []).map(item => {
+                const approval = item.approvalStatus || item.status || item.approval || ApprovalStatus.PENDING;
+                return {
+                    // post-request items may include requestId and ListingId
+                    id: item.id ?? item.requestId ?? item.requestID,
+                    listingId: item.listingId ?? item.ListingId ?? item.ListingID,
+                    title: item.title ?? item.name ?? '—',
+                    price: item.price ?? null,
+                    thumbnail: item.thumbnail ?? item.thumbnailUrl ?? null,
+                    approvalStatus: approval,
+                    raw: item
+                };
+            });
 
             setListings(mapped);
             setPagination({
