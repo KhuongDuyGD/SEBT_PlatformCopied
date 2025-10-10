@@ -10,9 +10,12 @@ import StepProgress from "../../components/listings/StepProgress";
 import BasicInfoStep from "../../components/listings/steps/BasicInfoStep";
 import ProductDetailsStep from "../../components/listings/steps/ProductDetailsStep";
 import LocationReviewStep from "../../components/listings/steps/LocationReviewStep";
+import PricingReviewStep from "../../components/listings/steps/PricingReviewStep";
 import "../../css/CreateListing.css";
 import { AuthContext } from "../../contexts/AuthContext";
 import { useListingDraft } from '../../hooks/useListingDraft';
+import { heuristicSuggestPrice, buildGeminiPricingPrompt } from '../../utils/priceEstimation';
+import { fetchServerPriceSuggestion } from '../../api/pricing';
 
 const DEFAULT_VALUES = {
     title: '', description: '', price: '', images: [], mainImageIndex: 0,
@@ -23,11 +26,12 @@ const DEFAULT_VALUES = {
 };
 
 const STEP_FIELDS = {
-    1: ['title', 'price', 'description', 'images'],
+    1: ['title', 'description', 'images'],
     2: (productType) => productType === 'VEHICLE'
-        ? ['vehicle.type', 'vehicle.brand', 'vehicle.name', 'vehicle.year', 'vehicle.conditionStatus']
+        ? ['vehicle.type', 'vehicle.brand', 'vehicle.name', 'vehicle.year', 'vehicle.conditionStatus', 'vehicle.batteryCapacity']
         : ['battery.brand', 'battery.capacity', 'battery.healthPercentage', 'battery.conditionStatus'],
-    3: ['location.province']
+    3: ['location.province'],
+    4: ['price']
 };
 
 function CreateListing() {
@@ -37,6 +41,9 @@ function CreateListing() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
+    const [priceSuggestion, setPriceSuggestion] = useState(null);
+    const [priceSuggesting, setPriceSuggesting] = useState(false);
+    const [showPromptPreview, setShowPromptPreview] = useState(false);
     const redirectTimeoutRef = useRef(null);
 
     const { register, handleSubmit, setValue, getValues, watch, reset, trigger, formState: { errors } } = useForm({
@@ -56,12 +63,13 @@ function CreateListing() {
     });
 
     const steps = [
-        { id: 1, title: "Thông tin cơ bản", icon: FileText, description: "Nhập tiêu đề, giá và mô tả sản phẩm" },
+        { id: 1, title: "Thông tin cơ bản", icon: FileText, description: "Tiêu đề, mô tả, hình ảnh" },
         {
             id: 2, title: "Chi tiết sản phẩm", icon: formData.productType === 'VEHICLE' ? Car : Battery,
-            description: formData.productType === 'VEHICLE' ? "Thông tin chi tiết về xe điện" : "Thông tin chi tiết về pin"
+            description: formData.productType === 'VEHICLE' ? "Thông số & tình trạng xe" : "Thông số & tình trạng pin"
         },
-        { id: 3, title: "Vị trí & Hoàn tất", icon: MapPin, description: "Thông tin vị trí và xác nhận đăng bán" }
+        { id: 3, title: "Vị trí", icon: MapPin, description: "Tỉnh / Quận đăng bán" },
+        { id: 4, title: "Giá & Xác nhận", icon: CheckCircle, description: "Gợi ý giá & duyệt lại thông tin" }
     ];
 
     // Handle input change
@@ -76,6 +84,107 @@ function CreateListing() {
             const castVal = name === 'price' && value !== '' ? Number(value) : value;
             setValue(name, castVal, { shouldValidate: true, shouldDirty: true });
         }
+    };
+
+    // -------- Giá đề xuất --------
+    const buildListingDataForEstimation = () => {
+        const v = getValues();
+        if (!v) return null;
+        const listingData = {
+            title: v.title,
+            description: v.description,
+            price: v.price || null,
+            listingType: 'NORMAL',
+            category: v.productType === 'VEHICLE' ? 'EV' : 'BATTERY',
+            product: v.productType === 'VEHICLE' ? {
+                brand: v.vehicle.brand,
+                model: v.vehicle.model,
+                batteryCapacity: v.vehicle.batteryCapacity ? `${v.vehicle.batteryCapacity} kWh` : null,
+                year: v.vehicle.year,
+                condition: v.vehicle.conditionStatus || 'Used'
+            } : {
+                brand: v.battery.brand,
+                model: v.battery.model,
+                batteryCapacity: v.battery.capacity ? `${v.battery.capacity} kWh` : null,
+                year: new Date().getFullYear(),
+                condition: v.battery.conditionStatus || 'Used'
+            },
+            location: {
+                province: v.location.province,
+                district: v.location.district
+            }
+        };
+        return listingData;
+    };
+
+    const handleSuggestPrice = async () => {
+        if (priceSuggesting) return;
+        setPriceSuggesting(true);
+        try {
+            const data = buildListingDataForEstimation();
+            if (!data) {
+                setPriceSuggestion({ suggestedPrice: null, reason: 'Thiếu dữ liệu' });
+                return;
+            }
+
+            // Always compute heuristic first (fast) so UI can show immediate baseline
+            const heuristic = heuristicSuggestPrice(data);
+            setPriceSuggestion({
+                suggestedPrice: heuristic || null,
+                reason: heuristic ? 'Heuristic sơ bộ (sẽ cập nhật nếu AI thành công)...' : 'Heuristic không đủ dữ liệu',
+                mode: 'heuristic'
+            });
+
+            // Attempt server AI (Gemini) in background
+            try {
+                const serverPayload = {
+                    title: data.title,
+                    description: data.description,
+                    category: data.category,
+                    product: data.product,
+                    location: data.location
+                };
+                const ai = await fetchServerPriceSuggestion(serverPayload);
+                if (ai && (ai.suggestedPrice || ai.suggestedPrice === 0)) {
+                    setPriceSuggestion(prev => ({
+                        ...prev,
+                        suggestedPrice: ai.suggestedPrice || prev?.suggestedPrice || null,
+                        reason: ai.reason || prev?.reason,
+                        mode: ai.mode || 'gemini',
+                        model: ai.model
+                    }));
+                } else {
+                    setPriceSuggestion(prev => ({
+                        ...prev,
+                        reason: (prev?.reason || '') + ' | AI không trả về kết quả rõ ràng.'
+                    }));
+                }
+            } catch (aiErr) {
+                setPriceSuggestion(prev => ({
+                    ...prev,
+                    reason: (prev?.reason || 'Heuristic') + ' | Lỗi AI: ' + (aiErr.response?.status || aiErr.message)
+                }));
+            }
+        } finally {
+            setPriceSuggesting(false);
+        }
+    };
+
+    const applySuggestedPrice = () => {
+        if (priceSuggestion?.suggestedPrice) {
+            setValue('price', priceSuggestion.suggestedPrice, { shouldValidate: true, shouldDirty: true });
+        }
+    };
+
+    const togglePromptPreview = () => {
+        if (!showPromptPreview) {
+            const data = buildListingDataForEstimation();
+            if (data) {
+                const prompt = buildGeminiPricingPrompt(data);
+                setPriceSuggestion(ps => ({ ...(ps || {}), prompt }));
+            }
+        }
+        setShowPromptPreview(p => !p);
     };
 
     // Handle images upload
@@ -314,6 +423,20 @@ function CreateListing() {
                         {currentStep === 3 && (
                             <LocationReviewStep formData={formData} onChange={handleInputChange} errors={errors} register={register} />
                         )}
+                        {currentStep === 4 && (
+                            <PricingReviewStep
+                                formData={formData}
+                                errors={errors}
+                                register={register}
+                                onChange={handleInputChange}
+                                onSuggestPrice={handleSuggestPrice}
+                                priceSuggesting={priceSuggesting}
+                                priceSuggestion={priceSuggestion}
+                                applySuggestedPrice={applySuggestedPrice}
+                                togglePromptPreview={togglePromptPreview}
+                                showPromptPreview={showPromptPreview}
+                            />
+                        )}
 
                         {/* Navigation */}
                         <div className="navigation-buttons">
@@ -339,6 +462,8 @@ function CreateListing() {
                             </div>
                         </div>
                     </form>
+
+                    {/* Suggestion panel moved inside PricingReviewStep */}
 
                     {/* Error Summary */}
                     {flattenErrors(errors).length > 0 && (
