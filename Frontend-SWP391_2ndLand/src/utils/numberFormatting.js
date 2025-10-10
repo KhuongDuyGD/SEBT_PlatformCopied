@@ -73,3 +73,35 @@ export const createFormattedInputHandler = (originalOnChange, fieldName) => {
 export const getDisplayValue = (rawValue) => {
   return formatNumberWithDots(rawValue);
 };
+
+/**
+ * Format number to Vietnamese currency style without the trailing '₫' (UI will append if needed)
+ * Uses Intl for consistency and fallbacks to local regex if Intl not available.
+ * @param {number|undefined|null} value
+ */
+export const formatVnd = (value) => {
+  if (value === null || value === undefined || isNaN(value)) return '';
+  try {
+    return new Intl.NumberFormat('vi-VN').format(value);
+  } catch (_) {
+    return formatNumberWithDots(value);
+  }
+};
+
+/**
+ * Format delta percent with sign and 1 decimal.
+ * @param {number} delta
+ */
+export const formatDeltaPercent = (delta) => {
+  if (delta === null || delta === undefined || isNaN(delta)) return '';
+  const sign = delta > 0 ? '+' : (delta < 0 ? '' : '');
+  return sign + delta.toFixed(1) + '%';
+};
+
+/**
+ * Convert confidence (0..1) to percentage string (e.g., 0.934 -> 93%)
+ */
+export const formatConfidence = (c) => {
+  if (c === null || c === undefined || isNaN(c)) return '';
+  return Math.round(c * 100) + '%';
+};
