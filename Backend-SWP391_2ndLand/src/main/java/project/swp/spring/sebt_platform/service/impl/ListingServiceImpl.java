@@ -75,11 +75,11 @@ public class ListingServiceImpl implements ListingService {
                 return Page.empty(pageable);
             }
 
-            // Sử dụng repository method trả về Page
+
             Page<ListingEntity> listingsPage = listingRepository.findByTitleContainingIgnoreCaseAndStatus(
                     keyWord.trim(), ListingStatus.ACTIVE, pageable);
 
-            // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
+
             return listingsPage.map(listing -> {
                 boolean isFavorited = userId != null &&
                         favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;

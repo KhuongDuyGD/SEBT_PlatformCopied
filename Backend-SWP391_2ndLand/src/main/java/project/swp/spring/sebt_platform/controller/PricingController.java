@@ -16,6 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.Instant;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/pricing")
 public class PricingController {
@@ -69,18 +72,18 @@ public class PricingController {
             if (!verbose) {
                 return ResponseEntity.ok(java.util.Map.of(
                         "hasApiKey", hasEnv || hasProp,
-                        "timestamp", java.time.Instant.now().toString()
+                        "timestamp", Instant.now().toString()
                 ));
             }
             return ResponseEntity.ok(java.util.Map.of(
                     "hasApiKeyEnv", hasEnv,
                     "hasApiKeyProperty", hasProp,
                     "effectiveModel", model,
-                    "timestamp", java.time.Instant.now().toString()
+                    "timestamp", Instant.now().toString()
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(java.util.Map.of("error", e.getMessage()));
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 }

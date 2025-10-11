@@ -24,8 +24,10 @@ import project.swp.spring.sebt_platform.dto.request.UserRegisterFormDTO;
 import project.swp.spring.sebt_platform.dto.request.UserVerifyEmailFormDTO;
 import project.swp.spring.sebt_platform.dto.response.UserSessionResponseDTO;
 import project.swp.spring.sebt_platform.model.UserEntity;
+import project.swp.spring.sebt_platform.model.WalletEntity;
 import project.swp.spring.sebt_platform.model.enums.UserRole;
 import project.swp.spring.sebt_platform.model.enums.UserStatus;
+import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.AuthService;
 import project.swp.spring.sebt_platform.service.MailService;
 import project.swp.spring.sebt_platform.service.MemberService;
@@ -44,8 +46,6 @@ public class AuthController {
     @Autowired
     private MailService mailService;
 
-    @Autowired
-    private Utils utils;
 
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Registration verification email sent",
@@ -93,7 +93,7 @@ public class AuthController {
             }
 
             // Register user
-            String pins = utils.generatePins();
+            String pins = Utils.generatePins();
             HttpSession session = request.getSession(true);
             session.setAttribute("pins", pins);
             session.setAttribute("password", user.password());
@@ -146,12 +146,14 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Account not activated. Please verify your email first.");
             }
-            
+
+            double balance = memberService.getBalance(loggedInUser.getId()).doubleValue();
             // Tạo session
             HttpSession session = request.getSession(true);
             session.setAttribute("userId", loggedInUser.getId());
             session.setAttribute("username", loggedInUser.getUsername());
             session.setAttribute("email", loggedInUser.getEmail());
+            session.setAttribute("balacne", balance);
             session.setAttribute("role", loggedInUser.getRole());
             session.setAttribute("status", loggedInUser.getStatus());
             
@@ -160,6 +162,7 @@ public class AuthController {
                 loggedInUser.getId(),
                 loggedInUser.getUsername(),
                 loggedInUser.getEmail(),
+                    balance,
                 loggedInUser.getRole(),
                 loggedInUser.getStatus(),
                 session.getId()
@@ -264,7 +267,7 @@ public class AuthController {
             }
 
             // Generate new OTP
-            String newPins = utils.generatePins();
+            String newPins = Utils.generatePins();
             
             // Update session with new OTP
             session.setAttribute("pins", newPins);
@@ -293,25 +296,29 @@ public class AuthController {
     @GetMapping("/current-user")
     public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
         try {
+
             HttpSession session = request.getSession(false);
-            if (session == null || session.getAttribute("userId") == null) {
+            Long userId = (Long) session.getAttribute("userId");
+            if (session.getAttribute("userId") == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("No active session");
             }
-            
-            Long userId = (Long) session.getAttribute("userId");
+
+            session.setAttribute("balacne", memberService.getBalance(userId).doubleValue());
+
             String username = (String) session.getAttribute("username");
             String email = (String) session.getAttribute("email");
+            double balance = (double) session.getAttribute("balance");
             UserRole role = (UserRole) session.getAttribute("role");
             UserStatus status = (UserStatus) session.getAttribute("status");
-            
+
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Invalid session");
             }
-            
+
             UserSessionResponseDTO sessionDTO = new UserSessionResponseDTO(
-                userId, username, email, role, status, session.getId()
+                userId, username, email, balance, role, status, session.getId()
             );
             
             return ResponseEntity.ok(sessionDTO);

@@ -7,6 +7,7 @@ public class UserSessionResponseDTO {
     private Long id;
     private String username;
     private String email;
+    private double balance;
     private UserRole role;
     private UserStatus status;
     private String sessionId;
@@ -14,10 +15,11 @@ public class UserSessionResponseDTO {
     public UserSessionResponseDTO() {
     }
 
-    public UserSessionResponseDTO(Long id, String username, String email, UserRole role, UserStatus status, String sessionId) {
+    public UserSessionResponseDTO(Long id, String username, String email,double balance, UserRole role, UserStatus status, String sessionId) {
         this.id = id;
         this.username = username;
         this.email = email;
+        this.balance = balance;
         this.role = role;
         this.status = status;
         this.sessionId = sessionId;

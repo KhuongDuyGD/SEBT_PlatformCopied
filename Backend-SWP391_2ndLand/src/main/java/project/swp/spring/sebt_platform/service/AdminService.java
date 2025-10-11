@@ -16,6 +16,8 @@ public interface AdminService {
 
     public boolean rejectPostListing(Long requestId, String reason);
 
+    public boolean modifyPostListing(Long requestId, String reason);
+
     public boolean addConfig(String key, String value, ConfigDataType type, String description);
 
     public boolean updateConfig(String key, String value);
