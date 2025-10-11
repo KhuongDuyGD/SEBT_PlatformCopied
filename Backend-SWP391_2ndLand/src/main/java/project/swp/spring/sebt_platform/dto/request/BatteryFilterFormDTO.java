@@ -1,14 +1,14 @@
 package project.swp.spring.sebt_platform.dto.request;
 
-
-import java.time.LocalDateTime;
-
+/**
+ * Battery filter DTO with nullable numeric fields for optional query parameters.
+ */
 public record BatteryFilterFormDTO(
         String brand,
         String location,
         String compatibility,
-        int minBatteryCapacity,
-        int maxBatteryCapacity,
-        double minPrice,
-        double maxPrice
+        Integer minBatteryCapacity,
+        Integer maxBatteryCapacity,
+        Double minPrice,
+        Double maxPrice
 ) {}

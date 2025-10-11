@@ -54,12 +54,32 @@ npm start
 - Backend API runs on `http://localhost:8000`
 
 ## Documentation
-- Frontend documentation can be found in `/frontend/README.md`
-- Backend documentation can be found in `/backend/README.md`
 
 ## Pricing Suggestion Endpoint
 
 POST `/api/pricing/suggest`
+
+### AI Pricing Logs / Bằng chứng AI
+Hệ thống ghi log cấu trúc một dòng (one-line JSON) với prefix `PRICING_EVENT` để phục vụ audit & giải thích.
+
+File log: `logs/pricing-events.log` (cấu hình trong `logback-spring.xml`). Mỗi ngày sẽ rolling và nén sau 14 ngày.
+
+Ví dụ dòng log:
+
+```
+PRICING_EVENT {"ts":1733856000000,"cacheKey":"ev|vinfast|vf8|2025|...","aiModel":"gemini-2.5-flash","mode":"gemini","suggestedPrice":1019000000,"heuristicPrice":1177022000,"minPrice":1024009000,"maxPrice":1330035000,"clamped":true,"baselineCapApplied":true,"deltaPercent":-13.46,"confidence":0.77,"baselinePrice":1019000000,"strategyType":"LINEAR","strategyRate":0.07,"clampPercent":0.13,"fAge":1.0,"fCap":1.02,"fCond":0.99,"fKm":0.98,"fHealth":1.0,"evidence":["baseline","depreciation","heuristic","clamp","baseline-cap"],"cacheHit":false}
+```
+
+Trường bổ sung:
+- `baselineCapApplied`: true nếu giá AI bị ép xuống bằng giá baseline (xe mới) – đảm bảo không vượt giá xe mới.
+- `evidence`: danh sách các tag giải thích (baseline, depreciation, capacity, mileage, condition, health, market, adjustment, clamp, heuristic, baseline-cap).
+
+Sử dụng để:
+1. Kiểm chứng lý do clamp hoặc cap.
+2. Theo dõi drift (so sánh heuristicPrice vs suggestedPrice vs baselinePrice).
+3. Truy xuất nhanh một phiên pricing để phục vụ khiếu nại.
+
+Muốn bật đường dẫn log khác: đặt biến môi trường `LOG_PATH`.
 
 Request JSON:
 ```json

@@ -9,7 +9,10 @@ export const createListing = (formData, userId) => {
     return api.post('/listings/create', formData, { headers });
 };
 
-// Advanced search - use the same search endpoint as keyword search with additional filters
+/**
+ * Keyword + lightweight param search (same backend endpoint /listings/search)
+ * @deprecated Sẽ tách rõ filter nâng cao EV/Battery. Dùng keywordSearch hoặc evFilterListings / batteryFilterListings.
+ */
 export const advancedSearchListings = (params = {}) => {
     const { keyword = '', ...otherParams } = params;
     const query = new URLSearchParams(
@@ -44,6 +47,31 @@ export const fetchListingDetail = (id) => {
     return api.get(`/listings/detail/${id}`).then(r => r.data);
 };
 
+// Build query helper ignoring null/undefined/empty
+function buildQuery(params) {
+    return new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '')
+    ).toString()
+}
+
+/**
+ * Filter EV listings with flattened query params.
+ * Supported keys: vehicleType, year, brand, location, minBatteryCapacity, maxBatteryCapacity, minPrice, maxPrice, page, size
+ */
+export function evFilterListings(filter = {}) {
+    const query = buildQuery(filter)
+    return api.get(`/listings/ev-filter?${query}`).then(r => r.data)
+}
+
+/**
+ * Filter Battery listings with flattened query params.
+ * Supported keys: brand, location, compatibility, minBatteryCapacity, maxBatteryCapacity, minPrice, maxPrice, page, size
+ */
+export function batteryFilterListings(filter = {}) {
+    const query = buildQuery(filter)
+    return api.get(`/listings/battery-filter?${query}`).then(r => r.data)
+}
+
 export default {
     createListing,
     advancedSearchListings,
@@ -52,4 +80,6 @@ export default {
     fetchBatteryListingCarts,
     fetchMyListings,
     fetchListingDetail,
+    evFilterListings,
+    batteryFilterListings,
 };

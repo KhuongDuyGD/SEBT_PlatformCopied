@@ -1,5 +1,7 @@
 package project.swp.spring.sebt_platform.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.util.Map;
 
 /**
@@ -8,8 +10,14 @@ import java.util.Map;
  */
 public class PricingSuggestRequestDTO {
 
+    @NotBlank(message = "title không được để trống")
+    @Size(max = 150, message = "title tối đa 150 ký tự")
     private String title;
+
+    @Size(max = 4000, message = "description tối đa 4000 ký tự")
     private String description;
+
+    @NotBlank(message = "category bắt buộc (EV hoặc BATTERY)")
     private String category; // EV or BATTERY
     private Map<String, Object> product; // brand, model, year, batteryCapacity, condition, healthPercentage, mileage
     private Map<String, Object> location; // province, district

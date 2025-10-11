@@ -8,6 +8,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import project.swp.spring.sebt_platform.dto.request.PricingSuggestRequestDTO;
+import jakarta.validation.Valid;
 import project.swp.spring.sebt_platform.service.PricingService;
 import project.swp.spring.sebt_platform.dto.response.PricingSuggestResponseDTO;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -42,7 +43,7 @@ public class PricingController {
                             schema = @Schema(implementation = String.class)))
     })
     @PostMapping("/suggest")
-    public ResponseEntity<?> suggest(@RequestBody PricingSuggestRequestDTO dto) {
+    public ResponseEntity<?> suggest(@Valid @RequestBody PricingSuggestRequestDTO dto) {
         try {
             if (dto.getProduct() == null || dto.getProduct().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Thiếu thông tin sản phẩm để gợi ý giá");

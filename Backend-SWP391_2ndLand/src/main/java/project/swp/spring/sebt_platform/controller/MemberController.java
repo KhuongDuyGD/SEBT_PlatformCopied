@@ -6,12 +6,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.hibernate.query.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 import project.swp.spring.sebt_platform.dto.request.UpdateProfileFormDTO;
 import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.SessionInfoResponseDTO;
@@ -40,15 +40,43 @@ public class MemberController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class)))
     })
+    @PutMapping("/favorites/{listingId}")
+    public ResponseEntity<?> markFavoriteNew(HttpServletRequest request, @PathVariable Long listingId) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("userId") == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No active session");
+            }
+            Long userId = (Long) session.getAttribute("userId");
+            boolean result = memberService.markFavorite(userId, listingId);
+            if (result) {
+                return ResponseEntity.ok(Map.of(
+                        "listingId", listingId,
+                        "favorited", true
+                ));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to mark listing as favorite.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+        }
+    }
+
+    /**
+     * @deprecated Legacy endpoint kept temporarily for backward compatibility. Use PUT /api/members/favorites/{listingId}
+     */
+    @Deprecated
     @PutMapping("/favorite")
     public ResponseEntity<?> markFavorite(@RequestParam Long userId, @RequestParam Long listingId) {
+        return markFavoriteCompat(userId, listingId);
+    }
+
+    private ResponseEntity<?> markFavoriteCompat(Long userId, Long listingId) {
         try {
             boolean result = memberService.markFavorite(userId, listingId);
             if (result) {
-                return ResponseEntity.ok("Listing marked as favorite.");
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to mark listing as favorite.");
+                return ResponseEntity.ok("Listing marked as favorite. (legacy)");
             }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to mark listing as favorite.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
         }
@@ -65,15 +93,43 @@ public class MemberController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class)))
     })
+    @DeleteMapping("/favorites/{listingId}")
+    public ResponseEntity<?> unmarkFavoriteNew(HttpServletRequest request, @PathVariable Long listingId) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("userId") == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No active session");
+            }
+            Long userId = (Long) session.getAttribute("userId");
+            boolean result = memberService.unmarkFavorite(userId, listingId);
+            if (result) {
+                return ResponseEntity.ok(Map.of(
+                        "listingId", listingId,
+                        "favorited", false
+                ));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to unmark listing as favorite.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to unmark favorite");
+        }
+    }
+
+    /**
+     * @deprecated Legacy endpoint kept temporarily for backward compatibility. Use DELETE /api/members/favorites/{listingId}
+     */
+    @Deprecated
     @DeleteMapping("/favorite")
     public ResponseEntity<?> unmarkFavorite(@RequestParam Long userId, @RequestParam Long listingId) {
+        return unmarkFavoriteCompat(userId, listingId);
+    }
+
+    private ResponseEntity<?> unmarkFavoriteCompat(Long userId, Long listingId) {
         try {
             boolean result = memberService.unmarkFavorite(userId, listingId);
             if (result) {
-                return ResponseEntity.ok("Listing unmarked as favorite.");
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to unmark listing as favorite.");
+                return ResponseEntity.ok("Listing unmarked as favorite. (legacy)");
             }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to unmark listing as favorite.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to unmark favorite");
         }
