@@ -64,12 +64,33 @@ public class MemberController {
     /**
      * @deprecated Legacy endpoint kept temporarily for backward compatibility. Use PUT /api/members/favorites/{listingId}
      */
-    @Deprecated
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "No active session or invalid session",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @PutMapping("/favorite")
     public ResponseEntity<?> markFavorite(@RequestParam Long userId, @RequestParam Long listingId) {
         return markFavoriteCompat(userId, listingId);
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "No active session or invalid session",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     private ResponseEntity<?> markFavoriteCompat(Long userId, Long listingId) {
         try {
             boolean result = memberService.markFavorite(userId, listingId);
@@ -117,7 +138,17 @@ public class MemberController {
     /**
      * @deprecated Legacy endpoint kept temporarily for backward compatibility. Use DELETE /api/members/favorites/{listingId}
      */
-    @Deprecated
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "No active session or invalid session",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
     @DeleteMapping("/favorite")
     public ResponseEntity<?> unmarkFavorite(@RequestParam Long userId, @RequestParam Long listingId) {
         return unmarkFavoriteCompat(userId, listingId);
@@ -301,6 +332,45 @@ public class MemberController {
             System.err.println("Get session info error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Failed to get session info");
+        }
+    }
+
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Session info retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = SessionInfoResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "No active session",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
+    @GetMapping("/pay-balance")
+    public ResponseEntity<?> payByBalance(Long listingId,HttpServletRequest request) {
+        try {
+            HttpSession session = request.getSession(false);
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid session");
+            }
+
+            memberService.payByBalance(userId,listingId);
+
+            return  ResponseEntity.ok(new SessionInfoResponseDTO(
+                    session.getId(),
+                    (Long) session.getAttribute("userId"),
+                    (String) session.getAttribute("username"),
+                    (String) session.getAttribute("email"),
+                    session.getCreationTime(),
+                    session.getLastAccessedTime(),
+                    session.getMaxInactiveInterval()
+            ));
+
+        }catch (Exception e) {
+            return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Cannot get session info");
         }
     }
 

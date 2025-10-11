@@ -9,15 +9,13 @@ import project.swp.spring.sebt_platform.dto.request.UpdateProfileFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
-import project.swp.spring.sebt_platform.model.FavoriteEntity;
-import project.swp.spring.sebt_platform.model.ListingEntity;
-import project.swp.spring.sebt_platform.model.UserEntity;
-import project.swp.spring.sebt_platform.repository.FavoriteRepository;
-import project.swp.spring.sebt_platform.repository.ListingRepository;
-import project.swp.spring.sebt_platform.repository.UserRepository;
+import project.swp.spring.sebt_platform.model.*;
+import project.swp.spring.sebt_platform.model.enums.ListingStatus;
+import project.swp.spring.sebt_platform.repository.*;
 import project.swp.spring.sebt_platform.service.MemberService;
 import project.swp.spring.sebt_platform.util.Utils;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Service
@@ -29,13 +27,26 @@ public class MemberServiceImpl implements MemberService {
 
     private final ListingRepository listingRepository;
 
+    private final WalletRepository walletRepository;
+
+    private final PostRequestRepository postRequestRepository;
+
+    private final SystemConfigRepository systemConfigRepository;
+
     @Autowired
     public MemberServiceImpl(UserRepository userRepository,
                              FavoriteRepository favoriteRepository,
-                             ListingRepository listingRepository) {
+                             ListingRepository listingRepository,
+                             WalletRepository walletRepository,
+                             PostRequestRepository postRequestRepository,
+                             SystemConfigRepository systemConfigRepository) {
         this.userRepository = userRepository;
         this.favoriteRepository = favoriteRepository;
         this.listingRepository = listingRepository;
+        this.walletRepository = walletRepository;
+        this.postRequestRepository = postRequestRepository;
+        this.systemConfigRepository = systemConfigRepository;
+
     }
 
     @Override
@@ -163,13 +174,17 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
+    public UserEntity getCurrentUser(Long userId) {
+        return userRepository.findById(userId).orElse(null);
+    }
+
+    @Override
     public boolean changePassword(Long userId,String oldPassword, String newPassword) {
         UserEntity user = userRepository.findById(userId).orElse(null);
         assert user != null;
         String salt = user.getSalt();
-        Utils utils = new Utils();
-        if (user.getPassword().equals(utils.encript(oldPassword, salt))) {
-            user.setPassword(utils.encript(newPassword, salt));
+        if (user.getPassword().equals(Utils.encript(oldPassword, salt))) {
+            user.setPassword(Utils.encript(newPassword, salt));
             user.setUpdatedAt(LocalDateTime.now());
             userRepository.save(user);
             return true;
@@ -200,5 +215,36 @@ public class MemberServiceImpl implements MemberService {
         }
         return null;
     }
+
+    @Override
+    public BigDecimal getBalance(Long userId) {
+        WalletEntity wallet = walletRepository.findByUserId(userId);
+        return wallet.getBalance();
+    }
+
+    @Override
+    public Object getConfigValue(String key) {
+        return null;
+    }
+
+    @Override
+    public boolean payByBalance(Long userId, Long resquestId) {
+        try{
+            WalletEntity wallet = walletRepository.findByUserId(userId);
+            PostRequestEntity request = postRequestRepository.findPostRequestEntitiesById(resquestId);
+
+            double amount = Double.parseDouble(systemConfigRepository.findByNormalFee().getConfigValue());
+
+            if (wallet.getBalance().doubleValue() < amount) return false;
+            wallet.setBalance(wallet.getBalance().subtract(BigDecimal.valueOf(amount)));
+            request.getListing().setStatus(ListingStatus.ACTIVE);
+            wallet.setUpdated_at(LocalDateTime.now());
+            walletRepository.save(wallet);
+            return true;
+        }catch (Exception e){
+            return false;
+        }
+    }
+
 
 }

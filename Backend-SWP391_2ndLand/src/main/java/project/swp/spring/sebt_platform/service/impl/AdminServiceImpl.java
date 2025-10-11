@@ -67,7 +67,7 @@ public class AdminServiceImpl implements AdminService {
         try {
             postRequestRepository.approvePostRequest(requestId);
             ListingEntity listing = Objects.requireNonNull(postRequestRepository.findById(requestId).orElse(null)).getListing();
-            listing.setStatus(ListingStatus.ACTIVE);
+            listing.setStatus(ListingStatus.PAY_WAITING);
             listingRepository.save(listing);
             return true;
         } catch (Exception e) {
@@ -81,7 +81,21 @@ public class AdminServiceImpl implements AdminService {
         try {
             postRequestRepository.rejectPostRequest(requestId, reason);
             ListingEntity listing = Objects.requireNonNull(postRequestRepository.findById(requestId).orElse(null)).getListing();
-            listing.setStatus(ListingStatus.SUSPENDED);
+            listing.setStatus(ListingStatus.REMOVED);
+            listingRepository.save(listing);
+            return true;
+        } catch (Exception e) {
+            System.err.println("Exception in rejectPostListing: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean modifyPostListing(Long requestId, String reason) {
+        try {
+            postRequestRepository.requireChangeRequest(requestId, reason);
+            ListingEntity listing = Objects.requireNonNull(postRequestRepository.findById(requestId).orElse(null)).getListing();
+            listing.setStatus(ListingStatus.DRAFT);
             listingRepository.save(listing);
             return true;
         } catch (Exception e) {
@@ -111,8 +125,6 @@ public class AdminServiceImpl implements AdminService {
             return false;
         }
     }
-
-
 
     @Override
     public boolean updateConfig(String key, String value) {

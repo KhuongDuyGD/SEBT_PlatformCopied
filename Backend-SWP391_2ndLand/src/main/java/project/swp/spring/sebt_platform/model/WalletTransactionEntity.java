@@ -8,10 +8,19 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "wallet_transactions")
+@Table(name = "wallet_transactions", indexes = {
+        @Index(name = "idx_wallet_transactions_wallet_id", columnList = "wallet_id"),
+        @Index(name = "uk_wallet_transactions_order_id", columnList = "order_id", unique = true),
+        @Index(name = "idx_wallet_transactions_status", columnList = "status"),
+        @Index(name = "idx_wallet_transactions_created_at", columnList = "created_at")})
 public class WalletTransactionEntity {
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "order_id", length = 50, nullable = false, unique = true, columnDefinition = "NVARCHAR(50)")
+    private String OrderId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_id", nullable = false)
@@ -51,12 +60,17 @@ public class WalletTransactionEntity {
 
     public WalletTransactionEntity() {}
 
-    public Long getId() {
-        return id;
+
+    public String getOrderId() {
+        return OrderId;
     }
 
-    public  void setId(Long id) {
-        this.id = id;
+    public void setOrderId(String orderId) {
+        OrderId = orderId;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public TransactionStatus getStatus() {
@@ -109,9 +123,5 @@ public class WalletTransactionEntity {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
     }
 }
