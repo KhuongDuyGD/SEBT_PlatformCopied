@@ -6,7 +6,8 @@ const baseURL = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
 const api = axios.create({
     baseURL,
     withCredentials: true,
-    headers: { 'Content-Type': 'application/json' },
+    // Không set 'Content-Type' cố định để FormData tự sinh boundary; request json sẽ được axios tự gán.
+    headers: { 'Accept': 'application/json' },
 });
 
 // Unified error normalization

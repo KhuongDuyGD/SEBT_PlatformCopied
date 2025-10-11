@@ -205,50 +205,64 @@ function CreateListing() {
 
     // Build FormData for submission
     const buildFormData = (values) => {
-        const formData = new FormData();
+        const fd = new FormData();
+        // Chuẩn bị object JSON thuần theo DTO backend (CreateListingFormDTO)
+        const isVehicle = values.productType === 'VEHICLE';
+        const payload = {
+            title: values.title,
+            description: values.description || '',
+            price: values.price,
+            category: isVehicle ? 'EV' : 'BATTERY',
+            listingType: 'NORMAL',
+            product: isVehicle ? {
+                ev: {
+                    type: values.vehicle.type,
+                    brand: values.vehicle.brand,
+                    name: values.vehicle.name,
+                    model: values.vehicle.model,
+                    year: values.vehicle.year,
+                    mileage: values.vehicle.mileage,
+                    batteryCapacity: values.vehicle.batteryCapacity,
+                    conditionStatus: values.vehicle.conditionStatus,
+                }
+            } : {
+                battery: {
+                    brand: values.battery.brand,
+                    model: values.battery.model,
+                    capacity: values.battery.capacity,
+                    healthPercentage: values.battery.healthPercentage,
+                    compatibleVehicles: values.battery.compatibleVehicles,
+                    conditionStatus: values.battery.conditionStatus,
+                }
+            },
+            location: {
+                province: values.location.province,
+                district: values.location.district,
+                details: values.location.details
+            }
+        };
+        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        fd.append('data', blob);
 
-        // Basic fields
-        formData.append('title', values.title);
-        formData.append('description', values.description || '');
-        formData.append('price', values.price);
-    formData.append('category', values.productType === 'VEHICLE' ? 'EV' : 'BATTERY');
-        formData.append('listingType', 'NORMAL');
-
-        // Product-specific fields
-        const productData = values.productType === 'VEHICLE'
-            ? {
-                ...values.vehicle,
-                mileage: values.vehicle.mileage === '' || values.vehicle.mileage == null ? '' : parseInt(values.vehicle.mileage, 10),
-                batteryCapacity: parseFloat(values.vehicle.batteryCapacity),
-              }
-            : {
-                ...values.battery,
-                capacity: parseFloat(values.battery.capacity),
-                healthPercentage: parseInt(values.battery.healthPercentage, 10),
-              };
-
-        const prefix = values.productType === 'VEHICLE' ? 'product.ev' : 'product.battery';
-
-        Object.entries(productData).forEach(([key, val]) => {
-            formData.append(`${prefix}.${key}`, val ?? '');
-        });
-
-
-        // Location fields
-        Object.entries(values.location).forEach(([key, val]) => {
-            formData.append(`location.${key}`, val || '');
-        });
-
-        // Images - main image first
-        const sortedImages = [...values.images];
+        // Images - re-order main first
+        const sortedImages = [...(values.images || [])];
         const mainIndex = values.mainImageIndex || 0;
         if (mainIndex > 0 && mainIndex < sortedImages.length) {
             const [mainImg] = sortedImages.splice(mainIndex, 1);
             sortedImages.unshift(mainImg);
         }
-        sortedImages.forEach(file => formData.append('images', file));
+        sortedImages.forEach(file => {
+            if (file instanceof File) fd.append('images', file);
+        });
 
-        return formData;
+        if (window.__DBG_FORMDATA) {
+            console.group('[CreateListing] FormData entries (RequestPart mode)');
+            for (const [k,v] of fd.entries()) {
+                console.log('FD', k, v instanceof File ? `[File name=${v.name} size=${v.size}]` : v);
+            }
+            console.groupEnd();
+        }
+        return fd;
     };
 
     // Submit handler
@@ -267,6 +281,12 @@ function CreateListing() {
 
             const cleansed = sanitizeListingDraft(values);
             const formData = buildFormData(cleansed);
+            // TEMP DEBUG: luôn log ra để chắc chắn images có mặt
+            console.group('[DEBUG Submit] FormData just before send');
+            for (const [k,v] of formData.entries()) {
+                console.log('FD', k, v instanceof File ? `[File name=${v.name} size=${v.size}]` : v);
+            }
+            console.groupEnd();
             const response = await listingsApi.createListing(formData, currentUser?.id);
 
             if (response.status === 200 || response.status === 201) {
