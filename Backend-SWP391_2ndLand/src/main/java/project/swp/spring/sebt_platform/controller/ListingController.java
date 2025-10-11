@@ -12,6 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.Part;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -63,18 +66,21 @@ public class ListingController {
     })
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createListing(
-            @ModelAttribute CreateListingFormDTO dto,
+            @RequestPart("data") CreateListingFormDTO dto,
+            @RequestPart(value = "images", required = false) List<MultipartFile> imagesParam,
             HttpServletRequest request) {
         Long userId = getUserId(request);
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body("Vui lòng đăng nhập để tạo bài đăng");
         }
-
-        // Validate images early
+        // Gán images từ part nếu có
+        if (imagesParam != null && !imagesParam.isEmpty()) {
+            dto.setImages(imagesParam);
+        }
         if (dto.getImages() == null || dto.getImages().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body("Vui lòng tải lên ít nhất một ảnh cho bài đăng");
+                    .body("Vui lòng tải lên ít nhất một ảnh cho bài đăng (thiếu field 'images')");
         }
 
         // Manual validation & normalization
@@ -112,6 +118,33 @@ public class ListingController {
             logger.error("Error creating listing: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi khi tạo bài đăng");
+        }
+    }
+
+    /**
+     * Ghi lại thông tin multipart parts để hỗ trợ debug khi danh sách ảnh bị null.
+     * Sẽ không ảnh hưởng performance nhiều vì chỉ gọi khi lỗi thiếu ảnh.
+     */
+    private void logMultipartDiagnostics(HttpServletRequest request) {
+        try {
+            String ct = request.getContentType();
+            if (ct == null || !ct.toLowerCase().startsWith("multipart/")) {
+                logger.debug("[MULTIPART_DEBUG] contentType={} (không phải multipart?)", ct);
+                return;
+            }
+            Collection<Part> parts = request.getParts();
+            List<String> names = parts.stream().map(Part::getName).toList();
+            logger.debug("[MULTIPART_DEBUG] partCount={} names={}", parts.size(), names);
+            for (Part p : parts) {
+                List<String> headerNames = new ArrayList<>();
+                for (String h : p.getHeaderNames()) {
+                    headerNames.add(h + ':' + p.getHeaders(h));
+                }
+                logger.debug("[MULTIPART_DEBUG] part name={} size={} ct={} headers={}",
+                        p.getName(), p.getSize(), p.getContentType(), headerNames);
+            }
+        } catch (Exception ex) {
+            logger.debug("[MULTIPART_DEBUG] Lỗi khi ghi thông tin multipart: {}", ex.toString());
         }
     }
 

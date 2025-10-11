@@ -3,7 +3,6 @@ import api from './axios';
 // Create listing - GỬI MULTIPART/FORM-DATA với file ảnh
 export const createListing = (formData, userId) => {
     const headers = {
-        'Content-Type': 'multipart/form-data',
         ...(userId ? { 'X-User-ID': userId } : {})
     };
     return api.post('/listings/create', formData, { headers });
