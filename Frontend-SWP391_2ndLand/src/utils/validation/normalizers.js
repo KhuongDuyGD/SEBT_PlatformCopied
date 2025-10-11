@@ -60,7 +60,15 @@ export function buildAutoTitle({ productType, vehicle, battery }) {
  * Only adjusts local object; does not mutate original (returns new object)
  */
 export function sanitizeListingDraft(values) {
-  const clone = JSON.parse(JSON.stringify(values));
+  // Giữ nguyên File objects trong images: nếu dùng JSON stringify sẽ mất thành chuỗi
+  const { images, ...rest } = values || {};
+  const clone = JSON.parse(JSON.stringify(rest));
+  if (images) {
+    // Sao chép mảng images gốc (các phần tử vẫn là File objects)
+    clone.images = [...images];
+  } else {
+    clone.images = [];
+  }
   if (clone.vehicle) {
     clone.vehicle.brand = normalizeBrand(clone.vehicle.brand);
     clone.vehicle.model = normalizeModel(clone.vehicle.model);

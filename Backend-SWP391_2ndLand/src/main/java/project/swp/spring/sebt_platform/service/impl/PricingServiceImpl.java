@@ -575,7 +575,8 @@ public class PricingServiceImpl implements PricingService {
             m.put("evidence", dto.getEvidence());
             m.put("cacheHit", dto.getCacheHit());
             String json = objectMapper.writeValueAsString(m);
-            logger.info("PRICING_EVENT {}", json);
+            Logger pricingLogger = LoggerFactory.getLogger("PRICING_EVENT");
+            pricingLogger.info(json);
         } catch (Exception e) {
             logger.warn("Failed structured pricing log: {}", e.getMessage());
         }
