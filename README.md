@@ -10,7 +10,6 @@ This project, developed for **Topic 2, Group 4**, is a platform designed for mem
 
 **Team Members**:
 
-- **Trần Vũ Hoàng (Leader)** - SE180682
 - **Nguyễn Huy Hoàng** - SE194245
 - **Nguyễn Phước Đức Minh** - SE194233
 - **Đỗ Nguyễn Khương Duy** - SE194264
