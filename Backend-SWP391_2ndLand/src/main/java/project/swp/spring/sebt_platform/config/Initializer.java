@@ -8,6 +8,7 @@ import project.swp.spring.sebt_platform.model.enums.ConfigDataType;
 import project.swp.spring.sebt_platform.model.enums.UserRole;
 import project.swp.spring.sebt_platform.service.AdminService;
 import project.swp.spring.sebt_platform.service.AuthService;
+import project.swp.spring.sebt_platform.service.ListingService;
 
 @Configuration
 public class Initializer {
@@ -18,6 +19,9 @@ public class Initializer {
     @Autowired
     private AdminService adminService;
 
+    @Autowired
+    private ListingService listingService;
+
     @Bean
     public CommandLineRunner initAdmin() {
         return args -> {
@@ -26,6 +30,7 @@ public class Initializer {
             authService.register("123456" ,"ducminh852005@gmail.com",UserRole.MEMBER);
 
             adminService.addConfig("POST_LISTING_NORMAL_FEE","20000", ConfigDataType.NUMBER,"phi dang bai");
+
         };
     }
 }

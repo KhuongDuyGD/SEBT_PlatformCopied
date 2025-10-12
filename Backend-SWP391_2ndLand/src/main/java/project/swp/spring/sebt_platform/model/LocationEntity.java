@@ -16,7 +16,7 @@ public class LocationEntity {
     @Column(name = "province", length = 20, columnDefinition = "NVARCHAR(30)")
     private String province;
 
-    @Column(name = "district", length = 20, columnDefinition = "NVARCHAR(30)")
+    @Column(name = "district", length = 30, columnDefinition = "NVARCHAR(30)")
     private String district;
 
     @Column(name = "details", length = 255, columnDefinition = "NVARCHAR(MAX)")

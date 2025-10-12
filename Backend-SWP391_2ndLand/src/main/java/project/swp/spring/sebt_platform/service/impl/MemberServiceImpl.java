@@ -11,6 +11,7 @@ import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
 import project.swp.spring.sebt_platform.model.*;
 import project.swp.spring.sebt_platform.model.enums.ListingStatus;
+import project.swp.spring.sebt_platform.model.enums.ListingType;
 import project.swp.spring.sebt_platform.repository.*;
 import project.swp.spring.sebt_platform.service.MemberService;
 import project.swp.spring.sebt_platform.util.Utils;
@@ -233,7 +234,7 @@ public class MemberServiceImpl implements MemberService {
             WalletEntity wallet = walletRepository.findByUserId(userId);
             PostRequestEntity request = postRequestRepository.findPostRequestEntitiesById(resquestId);
 
-            double amount = Double.parseDouble(systemConfigRepository.findByNormalFee().getConfigValue());
+            double amount = verifyListingType(request.getListing().getListingType());
 
             if (wallet.getBalance().doubleValue() < amount) return false;
             wallet.setBalance(wallet.getBalance().subtract(BigDecimal.valueOf(amount)));
@@ -246,5 +247,19 @@ public class MemberServiceImpl implements MemberService {
         }
     }
 
+
+    private double verifyListingType(ListingType listingType) {
+        switch (listingType) {
+            case NORMAL -> {
+                return Double.parseDouble(systemConfigRepository.findByNormalFee().getConfigValue());
+            }
+            case PREMIUM ->{
+                return Double.parseDouble(systemConfigRepository.findByPremiumFee().getConfigValue());
+            }
+            default -> {
+                return 0.0;
+            }
+        }
+    }
 
 }

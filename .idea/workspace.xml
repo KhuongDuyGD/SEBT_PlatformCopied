@@ -5,43 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4fa67949-db7b-446f-b539-ae7cafb7c212" name="Changes" comment="modify doc">
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/VnpayConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/VnpayController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/enums/ComplaintType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/WalletRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/WalletTransactionRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/VnpayService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/VnpayServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/dataSources/0edd23fc-4a4d-4357-ab3a-31f9b954094f.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/0edd23fc-4a4d-4357-ab3a-31f9b954094f.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/.env" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/pricing/baseline/BaselinePriceData.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/pricing/baseline/BaselinePriceEntry.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/pricing/baseline/BaselinePriceRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/pricing/baseline/BaselinePriceService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/pricing/baseline/DepreciationStrategy.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/EnvVariableVerifier.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/Initializer.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/Initializer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/AuthController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/ListingController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/ListingController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/MemberController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/MemberController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/PricingController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/PricingController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/response/UserSessionResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/dto/response/UserSessionResponseDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/WalletTransactionEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/WalletTransactionEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/enums/ConfigDataType.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/enums/ConfigDataType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/enums/ListingStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/enums/ListingStatus.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/enums/PinStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/enums/BatteryStatus.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/enums/UserStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/enums/UserStatus.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/PostRequestRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/PostRequestRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/LocationEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/LocationEntity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/SystemConfigRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/SystemConfigRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/AdminService.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/AdminService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/MemberService.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/MemberService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/AdminServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/AdminServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/AuthServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/AuthServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/ListingServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/ListingServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/MemberServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/MemberServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/util/Utils.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/util/Utils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/package-lock.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -212,6 +184,7 @@
       <workItem from="1759969013692" duration="1123000" />
       <workItem from="1759979104621" duration="4140000" />
       <workItem from="1760144668799" duration="21183000" />
+      <workItem from="1760246116250" duration="4635000" />
     </task>
     <task id="LOCAL-00001" summary="add create listing">
       <option name="closed" value="true" />

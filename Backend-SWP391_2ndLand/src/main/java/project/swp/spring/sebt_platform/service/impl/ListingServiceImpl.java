@@ -509,6 +509,5 @@ public class ListingServiceImpl implements ListingService {
             return Page.empty(pageable);
         }
     }
-
 }
 
