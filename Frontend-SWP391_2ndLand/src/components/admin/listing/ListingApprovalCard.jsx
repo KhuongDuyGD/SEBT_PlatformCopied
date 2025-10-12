@@ -1,12 +1,14 @@
 
 import React, { useState } from 'react';
 import { normalizeImage } from '../../../utils/listingMapper.js';
+import ModalListingApprovalCard from './ModalListingApprovalCard.jsx';
 
 const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) => {
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
     const [approvalNote, setApprovalNote] = useState('');
     const [showApprovalNote, setShowApprovalNote] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState(false);
 
     // Production: avoid console debug logs
 
@@ -84,7 +86,17 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
 
                 <div className="flex items-center justify-between text-sm text-gray-600">
                     <span>ID: #{listing.listingId || 'N/A'}</span>
-                    <span>{listing.createdDate ? new Date(listing.createdDate).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setShowDetailModal(true)}
+                            className="px-2 py-1 text-xs rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100"
+                            title="Xem chi tiết"
+                        >
+                            Xem chi tiết
+                        </button>
+                        <span>{listing.createdDate ? new Date(listing.createdDate).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                    </div>
                 </div>
             </div>
 
@@ -106,24 +118,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
 
                     {/* Thông tin chi tiết */}
                     <div className="flex-1 space-y-2">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <span className="font-medium text-gray-700">Loại sản phẩm:</span>
-                                <p className="text-gray-600">{getVehicleInfo()}</p>
-                            </div>
-                            <div>
-                                <span className="font-medium text-gray-700">Giá bán:</span>
-                                <p className="text-gray-600 font-semibold">{formatPrice(listing.price)}</p>
-                            </div>
-                            <div>
-                                <span className="font-medium text-gray-700">Danh mục:</span>
-                                <p className="text-gray-600">{listing.category}</p>
-                            </div>
-                            <div>
-                                <span className="font-medium text-gray-700">Loại tin:</span>
-                                <p className="text-gray-600">{listing.listingType}</p>
-                            </div>
-                        </div>
+
 
                         {/* Thông tin sản phẩm chi tiết */}
                         {listing.product?.ev && (
@@ -261,6 +256,22 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Detail Modal */}
+            {showDetailModal && (
+                <ModalListingApprovalCard
+                    isOpen={showDetailModal}
+                    onClose={() => setShowDetailModal(false)}
+                    data={{
+                        requestId: listing.id ?? listing.requestId,
+                        ListingId: listing.listingId ?? listing.ListingId,
+                        thumbnailUrl: listing.thumbnailUrl || listing.thumbnail || listing.mainImage || listing.image,
+                        price: listing.price,
+                        title: listing.title,
+                        status: listing.status
+                    }}
+                />
             )}
         </div>
     );
