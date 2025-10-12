@@ -44,11 +44,11 @@ export const getPendingListings = async (params = {}) => {
         // Map PostListingCartResponseDTO -> listing-like object the UI expects
         const mapped = (Array.isArray(content) ? content : []).map(item => {
             // item may use camelCase or PascalCase (ListingId)
-            const id = item.requestId ?? item.requestID ?? item.requestid;
-            const listingId = item.listingId ?? item.ListingId ?? item.ListingID;
-            const title = item.title ?? item.name ?? '—';
+            const id = item.requestId ?? item.requestID;
+            const listingId = item.ListingId;
+            const title = item.title ?? '—';
             const price = typeof item.price === 'number' ? item.price : (item.price ? Number(item.price) : null);
-            const thumbnail = (item.thumbnailUrl ?? item.thumbnailURL ?? item.thumbnail) || null;
+            const thumbnail = item.thumbnailUrl || null;
             const status = item.status ?? 'PENDING';
             return { id, listingId, title, price, thumbnail, status, raw: item };
         });
@@ -105,11 +105,11 @@ export const getPendingListings = async (params = {}) => {
 
             // Map any combined listing objects to UI listing shape (best-effort)
             const mapped = filteredListings.map(item => ({
-                id: item.listingId ?? item.id ?? item.ListingId ?? item.ListingID,
-                title: item.title ?? item.listingTitle ?? item.name ?? '—',
+                id: item.ListingId,
+                title: item.title ?? '—',
                 price: typeof item.price === 'number' ? item.price : (item.price ? Number(item.price) : null),
-                thumbnail: item.thumbnailUrl || item.thumbnail || item.mainImage || item.image || null,
-                status: item.status || item.listingStatus || 'ACTIVE',
+                thumbnail: item.thumbnailUrl || null,
+                status: item.status || 'ACTIVE',
                 raw: item
             }));
 
