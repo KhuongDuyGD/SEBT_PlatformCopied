@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import api from '../api/axios'
 import '../css/AdminLayout.css'
 
 const menu = [
@@ -43,13 +44,14 @@ const AdminLayout = () => {
   const handleLogout = async () => {
     try {
       await api.post('/auth/logout')
-      navigate('/')
-      window.location.reload() // Refresh to clear all state
     } catch (error) {
       console.error('Logout failed:', error)
-      // Still redirect on error
-      navigate('/')
-      window.location.reload()
+    } finally {
+      // Clear all auth data
+      sessionStorage.clear()
+      localStorage.removeItem('userInfo')
+      // Redirect to login page
+      window.location.href = '/'
     }
   }
 
