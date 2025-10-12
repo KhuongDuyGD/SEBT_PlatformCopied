@@ -1,13 +1,26 @@
 package project.swp.spring.sebt_platform.model;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import project.swp.spring.sebt_platform.model.enums.BatteryCondition;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import project.swp.spring.sebt_platform.model.enums.BatteryCondition;
 
 @Entity
 @Table(name = "batteries",
@@ -22,11 +35,17 @@ public class BatteryEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "name", length = 100, nullable = false, columnDefinition = "NVARCHAR(100)")
+    private String name;
+
     @Column(name = "brand", length = 200, nullable = false, columnDefinition = "NVARCHAR(50)")
     private String brand;
 
     @Column(name = "model", length = 200, columnDefinition = "NVARCHAR(50)")
     private String model;
+
+    @Column(name = "year", nullable = false)
+    private Integer year;
 
     @Column(name = "capacity", nullable = false, precision = 10, scale = 2, columnDefinition = "DECIMAL(10,2)")
     private BigDecimal capacity;
@@ -53,8 +72,11 @@ public class BatteryEntity {
     // Constructors
     public BatteryEntity() {}
 
-    public BatteryEntity(String brand, BigDecimal capacity, Integer healthPercentage) {
+    public BatteryEntity(String name, String brand, String model, Integer year, BigDecimal capacity, Integer healthPercentage) {
+        this.name = name;
         this.brand = brand;
+        this.model = model;
+        this.year = year;
         this.capacity = capacity;
         this.healthPercentage = healthPercentage;
     }
@@ -66,6 +88,14 @@ public class BatteryEntity {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getBrand() {
@@ -82,6 +112,14 @@ public class BatteryEntity {
 
     public void setModel(String model) {
         this.model = model;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
     }
 
     public BigDecimal getCapacity() {
