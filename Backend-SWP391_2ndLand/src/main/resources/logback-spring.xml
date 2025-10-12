@@ -8,7 +8,8 @@
         </encoder>
     </appender>
 
-    <!-- Appender for pricing events (all messages from logger name PRICING_EVENT) -->
+    <!-- DISABLED: Appender for pricing events -->
+    <!--
     <appender name="PRICING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/pricing-events.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -20,13 +21,12 @@
         </encoder>
     </appender>
 
-    <!-- Dedicated logger for pricing events -->
     <logger name="PRICING_EVENT" level="INFO" additivity="false">
         <appender-ref ref="PRICING_FILE"/>
     </logger>
+    -->
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="PRICING_FILE"/>
     </root>
 </configuration>
