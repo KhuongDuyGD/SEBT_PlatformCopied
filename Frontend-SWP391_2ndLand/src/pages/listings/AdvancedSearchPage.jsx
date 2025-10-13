@@ -1,17 +1,24 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Layout, Form, Input, Select, InputNumber, Button, Card, Tag, Space, Typography, Row, Col, Empty, Pagination, Skeleton, Divider, Tooltip } from 'antd';
-import { SearchOutlined, ReloadOutlined, FilterOutlined, ClearOutlined } from '@ant-design/icons';
+import { Layout, Form, Input, Select, InputNumber, Button, Card, Tag, Space, Typography, Row, Col, Empty, Pagination, Skeleton, Divider, Tooltip, Radio, Alert } from 'antd';
+import { SearchOutlined, ReloadOutlined, FilterOutlined, ClearOutlined, CarOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import listingsApi from '../../api/listings';
 import { mapListingArray } from '../../utils/listingMapper';
+import { 
+  VEHICLE_TYPES, 
+  VEHICLE_CONDITIONS, 
+  BATTERY_CONDITIONS,
+  PROVINCES 
+} from '../../constants/filterOptions';
 
 // Ant Design aliases
 const { Title, Text } = Typography;
-const VEHICLE_TYPE_OPTIONS = [
-  { value: 'CAR', label: 'Ô tô' },
-  { value: 'MOTORBIKE', label: 'Xe máy điện' },
-  { value: 'BIKE', label: 'Xe đạp điện' }
-];
+
+// Constants cho search types
+const SEARCH_TYPES = {
+  EV: 'ev',
+  BATTERY: 'battery'
+};
 
 // Utility: build query params object -> string
 const sanitizeParams = (params) => {
@@ -25,12 +32,26 @@ const sanitizeParams = (params) => {
 };
 
 const initialFilters = {
-  title: undefined,
+  // Common filters
+  searchType: SEARCH_TYPES.EV,
+  keyword: undefined,
   brand: undefined,
-  vehicleType: undefined,
-  year: undefined,
   minPrice: undefined,
-  maxPrice: undefined
+  maxPrice: undefined,
+  minYear: undefined,
+  maxYear: undefined,
+  province: undefined,
+  district: undefined,
+  conditionStatus: undefined,
+  
+  // EV specific
+  vehicleType: undefined,
+  
+  // Battery specific
+  minCapacity: undefined,
+  maxCapacity: undefined,
+  minHealthPercentage: undefined,
+  maxHealthPercentage: undefined
 };
 
 export default function AdvancedSearchPage() {
@@ -51,13 +72,23 @@ export default function AdvancedSearchPage() {
     const f = { ...initialFilters };
     Object.keys(initialFilters).forEach(key => {
       const val = searchParams.get(key);
-      if (val !== null && val !== '') f[key] = val;
+      if (val !== null && val !== '') {
+        // Handle special cases for numeric fields
+        if (['minPrice', 'maxPrice', 'minYear', 'maxYear', 'minCapacity', 'maxCapacity', 'minHealthPercentage', 'maxHealthPercentage'].includes(key)) {
+          const numVal = Number(val);
+          if (!isNaN(numVal)) f[key] = numVal;
+        } else {
+          f[key] = val;
+        }
+      }
     });
     setFilters(f);
     form.setFieldsValue(f);
-    // If there are any URL filters, auto trigger search
-    const any = Object.values(f).some(v => v !== undefined && v !== '');
-    if (any) {
+    // If there are any URL filters (excluding defaults), auto trigger search
+    const filtered = { ...f };
+    delete filtered.searchType; // Don't count searchType as a filter since it has default value
+    const hasFilters = Object.values(filtered).some(v => v !== undefined && v !== '');
+    if (hasFilters) {
       const cleaned = sanitizeParams(f);
       setApplied(cleaned);
       fetchResults(cleaned, page, size, true);
@@ -72,20 +103,40 @@ export default function AdvancedSearchPage() {
     try {
       if (!silent) setLoading(true);
       setError(null);
-      const res = await listingsApi.advancedSearchListings({ ...paramsObj, page: pageArg, size: sizeArg, signal: controller.signal });
+      
+      const searchParams = { 
+        ...paramsObj, 
+        page: pageArg, 
+        size: sizeArg 
+      };
+      
+      // Remove searchType from API params
+      const { searchType, ...apiParams } = searchParams;
+      
+      let res;
+      if (searchType === SEARCH_TYPES.BATTERY) {
+        console.log('[ADVANCED_SEARCH] Using battery filter API:', apiParams);
+        res = await listingsApi.batteryFilterListings(apiParams);
+      } else {
+        console.log('[ADVANCED_SEARCH] Using EV filter API:', apiParams);
+        res = await listingsApi.evFilterListings(apiParams);
+      }
+      
       if (res && Array.isArray(res.content)) {
-        const arr = res.content;
-        const mapped = mapListingArray(arr);
+        const mapped = mapListingArray(res.content);
         setListings(mapped);
         setPagination(res);
       } else {
-        setListings([]); setPagination(null);
+        console.warn('API response format không đúng:', res);
+        setListings([]); 
+        setPagination(null);
       }
     } catch (e) {
       if (e.name === 'CanceledError' || e.name === 'AbortError') return; // silent cancel
       console.error('Advanced search error', e);
-      setError('Không thể tìm kiếm lúc này.');
-      setListings([]); setPagination(null);
+      setError('Không thể tìm kiếm lúc này. Vui lòng thử lại sau.');
+      setListings([]); 
+      setPagination(null);
     } finally {
       if (!silent) setLoading(false);
     }
@@ -147,48 +198,39 @@ export default function AdvancedSearchPage() {
             onFinish={handleSubmit}
             onValuesChange={(_, all) => setFilters(all)}
           >
-            <Form.Item label="Tiêu đề" name="title">
+            {/* Search Type Selector */}
+            <Form.Item label="Loại tìm kiếm" name="searchType">
+              <Radio.Group buttonStyle="solid">
+                <Radio.Button value={SEARCH_TYPES.EV}>
+                  <Space>
+                    <CarOutlined />
+                    Xe điện
+                  </Space>
+                </Radio.Button>
+                <Radio.Button value={SEARCH_TYPES.BATTERY}>
+                  <Space>
+                    <ThunderboltOutlined />
+                    Pin điện
+                  </Space>
+                </Radio.Button>
+              </Radio.Group>
+            </Form.Item>
+
+            <Divider style={{ margin: '12px 0' }} />
+
+            {/* Common Fields */}
+            <Form.Item label="Từ khóa" name="keyword">
               <Input allowClear placeholder="VD: VinFast..." prefix={<SearchOutlined style={{ color: '#999' }} />} />
             </Form.Item>
             <Form.Item label="Hãng" name="brand">
-              <Input allowClear placeholder="VinFast" />
+              <Input allowClear placeholder="VD: VinFast, Tesla..." />
             </Form.Item>
-            <Form.Item label="Loại xe" name="vehicleType">
-              <Select allowClear placeholder="Tất cả" options={VEHICLE_TYPE_OPTIONS} />
-            </Form.Item>
-            {/* Updated: Changed from InputNumber to Select dropdown for better UX */}
-            <Form.Item label="Năm sản xuất" name="year">
-              <Select
-                allowClear
-                placeholder="Chọn năm sản xuất"
-                style={{ width: '100%' }}
-                showSearch
-                filterOption={(input, option) =>
-                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                }
-                options={(() => {
-                  // Generate year options from current year back to 2010
-                  // Most electric vehicles are from recent years
-                  const currentYear = new Date().getFullYear();
-                  const startYear = 2010; // Electric vehicles became more common around this time
-                  const years = [];
-
-                  // Add years in descending order (newest first)
-                  for (let year = currentYear; year >= startYear; year--) {
-                    years.push({
-                      value: year,
-                      label: year.toString()
-                    });
-                  }
-
-                  return years;
-                })()}
-              />
-            </Form.Item>
+            
+            {/* Price Range */}
             <Row gutter={8}>
               <Col span={12}>
                 <Form.Item label="Giá từ" name="minPrice" tooltip="VND" rules={[{ validator: (_, v) => (v === undefined || v >= 0) ? Promise.resolve() : Promise.reject('>=0') }]}>
-                  <InputNumber style={{ width: '100%' }} min={0} step={1000000} placeholder="0" />
+                  <InputNumber style={{ width: '100%' }} min={0} step={1000000} placeholder="0" formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
                 </Form.Item>
               </Col>
               <Col span={12}>
@@ -199,10 +241,126 @@ export default function AdvancedSearchPage() {
                     return Promise.reject(new Error('>= Giá từ'));
                   }
                 })]}>
-                  <InputNumber style={{ width: '100%' }} min={0} step={1000000} placeholder="..." />
+                  <InputNumber style={{ width: '100%' }} min={0} step={1000000} placeholder="..." formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
                 </Form.Item>
               </Col>
             </Row>
+
+            {/* Year Range */}
+            <Row gutter={8}>
+              <Col span={12}>
+                <Form.Item label="Năm từ" name="minYear">
+                  <InputNumber style={{ width: '100%' }} min={2000} max={new Date().getFullYear()} placeholder="2020" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item label="Năm đến" name="maxYear" dependencies={['minYear']} rules={[({ getFieldValue }) => ({
+                  validator(_, value) {
+                    const min = getFieldValue('minYear');
+                    if (value === undefined || min === undefined || value >= min) return Promise.resolve();
+                    return Promise.reject(new Error('>= Năm từ'));
+                  }
+                })]}>
+                  <InputNumber style={{ width: '100%' }} min={2000} max={new Date().getFullYear()} placeholder="2024" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            {/* Location */}
+            <Form.Item label="Tỉnh/Thành phố" name="province">
+              <Select 
+                allowClear 
+                placeholder="Chọn tỉnh/thành phố" 
+                options={PROVINCES.map(p => ({ value: p, label: p }))}
+                showSearch
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+            <Form.Item label="Quận/Huyện" name="district">
+              <Input allowClear placeholder="VD: Quận 1, Huyện Củ Chi..." />
+            </Form.Item>
+
+            {/* Condition */}
+            <Form.Item label="Tình trạng" name="conditionStatus">
+              <Select 
+                allowClear 
+                placeholder="Chọn tình trạng"
+                options={
+                  filters.searchType === SEARCH_TYPES.BATTERY 
+                    ? BATTERY_CONDITIONS.map(c => ({ value: c.value, label: c.label }))
+                    : VEHICLE_CONDITIONS.map(c => ({ value: c.value, label: c.label }))
+                }
+              />
+            </Form.Item>
+
+            {/* Conditional Fields based on Search Type */}
+            <Form.Item noStyle shouldUpdate={(prev, curr) => prev.searchType !== curr.searchType}>
+              {({ getFieldValue }) => {
+                const searchType = getFieldValue('searchType');
+                
+                if (searchType === SEARCH_TYPES.EV) {
+                  return (
+                    <>
+                      <Form.Item label="Loại xe" name="vehicleType">
+                        <Select 
+                          allowClear 
+                          placeholder="Chọn loại xe"
+                          options={VEHICLE_TYPES.map(v => ({ value: v.value, label: v.label }))}
+                        />
+                      </Form.Item>
+                    </>
+                  );
+                } else if (searchType === SEARCH_TYPES.BATTERY) {
+                  return (
+                    <>
+                      {/* Battery Capacity Range */}
+                      <Row gutter={8}>
+                        <Col span={12}>
+                          <Form.Item label="Dung lượng từ (kWh)" name="minCapacity">
+                            <InputNumber style={{ width: '100%' }} min={0} step={0.1} placeholder="10" />
+                          </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                          <Form.Item label="Dung lượng đến (kWh)" name="maxCapacity" dependencies={['minCapacity']} rules={[({ getFieldValue }) => ({
+                            validator(_, value) {
+                              const min = getFieldValue('minCapacity');
+                              if (value === undefined || min === undefined || value >= min) return Promise.resolve();
+                              return Promise.reject(new Error('>= Dung lượng từ'));
+                            }
+                          })]}>
+                            <InputNumber style={{ width: '100%' }} min={0} step={0.1} placeholder="100" />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+
+                      {/* Battery Health Range */}
+                      <Row gutter={8}>
+                        <Col span={12}>
+                          <Form.Item label="Độ khỏe từ (%)" name="minHealthPercentage">
+                            <InputNumber style={{ width: '100%' }} min={0} max={100} placeholder="80" />
+                          </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                          <Form.Item label="Độ khỏe đến (%)" name="maxHealthPercentage" dependencies={['minHealthPercentage']} rules={[({ getFieldValue }) => ({
+                            validator(_, value) {
+                              const min = getFieldValue('minHealthPercentage');
+                              if (value === undefined || min === undefined || value >= min) return Promise.resolve();
+                              return Promise.reject(new Error('>= Độ khỏe từ'));
+                            }
+                          })]}>
+                            <InputNumber style={{ width: '100%' }} min={0} max={100} placeholder="100" />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                    </>
+                  );
+                }
+                
+                return null;
+              }}
+            </Form.Item>
             <Space.Compact style={{ width: '100%' }}>
               <Button type="primary" htmlType="submit" block loading={loading} icon={<SearchOutlined />}>Tìm kiếm</Button>
               <Tooltip title="Xóa tất cả">
@@ -245,12 +403,28 @@ export default function AdvancedSearchPage() {
       <Layout.Content style={{ padding: '16px 24px' }}>
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <Space style={{ justifyContent: 'space-between', width: '100%', flexWrap: 'wrap' }}>
-            <Title level={4} style={{ margin: 0 }}>Kết quả nâng cao</Title>
+            <Title level={4} style={{ margin: 0 }}>
+              {filters.searchType === SEARCH_TYPES.BATTERY ? (
+                <Space><ThunderboltOutlined />Kết quả Pin điện</Space>
+              ) : (
+                <Space><CarOutlined />Kết quả Xe điện</Space>
+              )}
+            </Title>
             <Space size={12} wrap>
               <Link to="/post-listing"><Button type="dashed" size="small">+ Đăng mới</Button></Link>
               {pagination && <Text type="secondary">Tổng: {pagination.totalElements}</Text>}
             </Space>
           </Space>
+
+          {/* Alert thông báo về tính năng mới */}
+          <Alert
+            message="Tính năng tìm kiếm nâng cao đã được cập nhật!"
+            description="Giờ đây bạn có thể tìm kiếm riêng biệt cho xe điện và pin điện với nhiều bộ lọc chi tiết hơn."
+            type="info"
+            showIcon
+            closable
+            style={{ marginBottom: '16px' }}
+          />
           {error && (
             <Card size="small" style={{ borderColor: '#ff4d4f' }}>
               <Text type="danger">{error}</Text>
@@ -299,13 +473,35 @@ export default function AdvancedSearchPage() {
                       styles={{ body: { padding: 14 } }}
                     >
                       <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                        <Text strong style={{ lineHeight: 1.25 }}>{highlight(item.title, filters.title)}</Text>
+                        <Text strong style={{ lineHeight: 1.25 }}>{highlight(item.title, filters.keyword)}</Text>
                         <Space size={[4, 4]} wrap>
-                          {item.raw?.brand && <Tag bordered={false}>{item.raw.brand}</Tag>}
-                          {item.raw?.year && <Tag bordered={false}>{item.raw.year}</Tag>}
+                          {item.brand && <Tag bordered={false}>{item.brand}</Tag>}
+                          {item.year && <Tag bordered={false}>{item.year}</Tag>}
+                          {item.conditionStatus && <Tag color="blue">{item.conditionStatus}</Tag>}
+                          {filters.searchType === SEARCH_TYPES.BATTERY && item.batteryCapacity && (
+                            <Tag color="green">{item.batteryCapacity} kWh</Tag>
+                          )}
+                          {filters.searchType === SEARCH_TYPES.BATTERY && item.healthPercentage && (
+                            <Tag color="orange">{item.healthPercentage}% Khỏe</Tag>
+                          )}
+                          {filters.searchType === SEARCH_TYPES.EV && item.vehicleType && (
+                            <Tag color="cyan">{VEHICLE_TYPES.find(v => v.value === item.vehicleType)?.label || item.vehicleType}</Tag>
+                          )}
                           {item.listingType === 'PREMIUM' && <Tag color="gold">VIP</Tag>}
                         </Space>
-                        <Text strong style={{ color: '#1677ff' }}>{typeof item.price === 'number' ? item.price.toLocaleString('vi-VN') + ' VND' : 'Liên hệ'}</Text>
+                        <Text strong style={{ color: '#1677ff' }}>
+                          {typeof item.price === 'number' ? item.price.toLocaleString('vi-VN') + ' VND' : 'Liên hệ'}
+                        </Text>
+                        {/* Location info */}
+                        {(item.province || item.district) && (
+                          <Text type="secondary" style={{ fontSize: '12px' }}>
+                            📍 {[item.district, item.province].filter(Boolean).join(', ')}
+                          </Text>
+                        )}
+                        {/* View count */}
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          👁 {item.viewsCount || 0} lượt xem
+                        </Text>
                       </Space>
                     </Card>
                   </Col>

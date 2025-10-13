@@ -47,10 +47,18 @@ function ListingPage() {
 
   // Battery filters (pin) - for pin listings
   const [batteryBrand, setBatteryBrand] = useState(""); // client-side brand filter cho pin
+  const [batteryName, setBatteryName] = useState(""); // NEW: battery name filter (server-side)
+  const [batteryYear, setBatteryYear] = useState(""); // NEW: battery production year filter (server-side)
+  const [batteryCompatibleVehicles, setBatteryCompatibleVehicles] = useState(""); // NEW: compatible vehicles filter (server-side)
   const [batteryCondition, setBatteryCondition] = useState(""); // client-side condition filter cho pin
   const [batteryCapacity, setBatteryCapacity] = useState([0, 200]); // client-side capacity range cho pin
 
+  // Vehicle filters (cars) - additional filters
+  const [carModel, setCarModel] = useState(""); // NEW: model filter (server-side)
+  const [carMileage, setCarMileage] = useState([0, 100000]); // NEW: mileage range filter (server-side)
+
   // Common filters
+  const [province, setProvince] = useState(""); // NEW: province filter (server-side for both cars and batteries)
   const [priceRange, setPriceRange] = useState([0, 2000000000]); // client-side price filter
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -58,6 +66,12 @@ function ListingPage() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(12);
   const [pagination, setPagination] = useState(null);
+
+  // Data from backend APIs for filters
+  const [provinces, setProvinces] = useState([]); // Province list from API
+  const [batteryNames, setBatteryNames] = useState([]); // Battery names from API
+  const [batteryYears, setBatteryYears] = useState([]); // Battery years from API
+  const [compatibleVehicles, setCompatibleVehicles] = useState([]); // Compatible vehicles from API
 
   // Danh sách thương hiệu pin phổ biến cho AutoComplete - dựa trên data thực tế từ database
   const batteryBrandOptions = [
@@ -90,6 +104,33 @@ function ListingPage() {
     { value: 'NEEDS_MAINTENANCE', label: 'Cần bảo trì' }
   ];
 
+  // Load filter data from API on component mount
+  useEffect(() => {
+    const loadFilterData = async () => {
+      try {
+        // Load provinces for location filter
+        const provincesRes = await api.get('/listings/filter-data/provinces');
+        setProvinces(provincesRes.data || []);
+
+        // Load battery names for battery name filter
+        const batteryNamesRes = await api.get('/listings/filter-data/battery-names');
+        setBatteryNames(batteryNamesRes.data || []);
+
+        // Load battery years for battery year filter
+        const batteryYearsRes = await api.get('/listings/filter-data/battery-years');
+        setBatteryYears(batteryYearsRes.data || []);
+
+        // Load compatible vehicles for battery compatibility filter
+        const compatibleVehiclesRes = await api.get('/listings/filter-data/compatible-vehicles');
+        setCompatibleVehicles(compatibleVehiclesRes.data || []);
+      } catch (error) {
+        console.error('Error loading filter data:', error);
+      }
+    };
+
+    loadFilterData();
+  }, []);
+
   const fetchListings = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -102,14 +143,18 @@ function ListingPage() {
       let endpoint = '';
 
       if (category === 'pin') {
-        // Pin category - backend không hỗ trợ brand filter, chỉ hỗ trợ year qua battery-filter
-        // Brand filter sẽ được xử lý client-side
-        if (year) {
-          // Pin category with year filter - use battery-filter endpoint
+        // Pin category - now supports server-side filters
+        const hasServerFilters = batteryName || batteryYear || province || batteryCompatibleVehicles;
+        
+        if (hasServerFilters) {
+          // Pin category with server-side filters - use battery-filter endpoint
           const params = new URLSearchParams();
           params.append('page', page);
           params.append('size', size);
-          params.append('year', year);
+          if (batteryName) params.append('name', batteryName);
+          if (batteryYear) params.append('year', batteryYear);
+          if (province) params.append('province', province);
+          if (batteryCompatibleVehicles) params.append('compatibility', batteryCompatibleVehicles);
           endpoint = `/listings/battery-filter?${params.toString()}`;
           usedEndpoint = endpoint;
         } else {
@@ -118,14 +163,21 @@ function ListingPage() {
           usedEndpoint = endpoint;
         }
       } else {
-        // Vehicle category (cars)
-        if (vehicleType || year) {
+        // Vehicle category (cars) - enhanced with new filters
+        const hasServerFilters = vehicleType || year || carModel || province || 
+                                carMileage[0] > 0 || carMileage[1] < 100000;
+        
+        if (hasServerFilters) {
           // Vehicle category with filters - use ev-filter endpoint
           const params = new URLSearchParams();
           params.append('page', page);
           params.append('size', size);
           if (vehicleType) params.append('vehicleType', vehicleType);
           if (year) params.append('year', year);
+          if (carModel) params.append('model', carModel);
+          if (province) params.append('province', province);
+          if (carMileage[0] > 0) params.append('minMileage', carMileage[0]);
+          if (carMileage[1] < 100000) params.append('maxMileage', carMileage[1]);
           endpoint = `/listings/ev-filter?${params.toString()}`;
           usedEndpoint = endpoint;
         } else {
@@ -395,7 +447,7 @@ function ListingPage() {
     } finally {
       setLoading(false);
     }
-  }, [category, vehicleType, page, size, year, priceRange, batteryBrand, batteryCondition, batteryCapacity, carBrand, carCondition, carBatteryCapacity]);
+  }, [category, vehicleType, page, size, year, province, batteryName, batteryYear, batteryCompatibleVehicles, carModel, carMileage, priceRange, batteryBrand, batteryCondition, batteryCapacity, carBrand, carCondition, carBatteryCapacity]);
 
   // Fetch when dependencies change
   useEffect(() => { fetchListings(); }, [fetchListings]);
@@ -419,6 +471,8 @@ function ListingPage() {
           setVehicleType(null); // clear vehicle filter khi chuyển sang pin
           // Reset car filters khi chuyển sang pin
           setCarBrand('');
+          setCarModel('');
+          setCarMileage([0, 100000]);
           setCarCondition('');
           setCarBatteryCapacity([0, 200]);
         }
@@ -427,6 +481,9 @@ function ListingPage() {
           setCategory('cars');
           // Reset battery filters khi chuyển sang cars
           setBatteryBrand('');
+          setBatteryName('');
+          setBatteryYear('');
+          setBatteryCompatibleVehicles('');
           setBatteryCondition('');
           setBatteryCapacity([0, 200]);
         }
@@ -437,6 +494,9 @@ function ListingPage() {
           setCategory('cars');
           // Reset battery filters khi chuyển sang cars
           setBatteryBrand('');
+          setBatteryName('');
+          setBatteryYear('');
+          setBatteryCompatibleVehicles('');
           setBatteryCondition('');
           setBatteryCapacity([0, 200]);
         }
@@ -446,7 +506,7 @@ function ListingPage() {
   }, [location.search, category, vehicleType]);
 
   // Reset page when filters change
-  useEffect(() => { setPage(0); }, [category, vehicleType, year, batteryBrand, batteryCondition, batteryCapacity, carBrand, carCondition, carBatteryCapacity]);
+  useEffect(() => { setPage(0); }, [category, vehicleType, year, province, batteryName, batteryYear, batteryCompatibleVehicles, carModel, carMileage, batteryBrand, batteryCondition, batteryCapacity, carBrand, carCondition, carBatteryCapacity]);
 
   // Removed unused nextPage and prevPage functions
 
@@ -474,6 +534,21 @@ function ListingPage() {
                 ]}
               />
             </Form.Item>
+
+            {/* Common Province Filter */}
+            <Form.Item label={<span>Tỉnh/Thành phố <Text type="secondary" style={{ fontSize: 12 }}>(server-side)</Text></span>}>
+              <AutoComplete
+                placeholder="Chọn tỉnh/thành phố..."
+                value={province || undefined}
+                onChange={(val) => setProvince(val || '')}
+                allowClear
+                filterOption={(inputValue, option) =>
+                  option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                }
+                options={provinces.map(provinceName => ({ value: provinceName, label: provinceName }))}
+              />
+            </Form.Item>
+
             {category === 'cars' && (
               <Form.Item label="Loại xe">
                 <Select
@@ -532,9 +607,93 @@ function ListingPage() {
                 />
               </Form.Item>
             )}
+
+            {/* Additional EV Filters */}
+            {category === 'cars' && (
+              <>
+                <Form.Item label={<span>Model xe <Text type="secondary" style={{ fontSize: 12 }}>(server-side)</Text></span>}>
+                  <AutoComplete
+                    placeholder="Nhập model xe..."
+                    value={carModel || undefined}
+                    onChange={(val) => setCarModel(val || '')}
+                    allowClear
+                  />
+                </Form.Item>
+
+                <Form.Item label={<span>Quãng đường đã đi (km) <Text type="secondary" style={{ fontSize: 12 }}>(server-side)</Text></span>}>
+                  <Slider
+                    range
+                    min={0}
+                    max={100000}
+                    step={1000}
+                    value={carMileage}
+                    tooltip={{ formatter: (v) => `${v?.toLocaleString('vi-VN')} km` }}
+                    onChange={(vals) => setCarMileage(vals)}
+                  />
+                  <Space style={{ width: '100%', justifyContent: 'space-between' }} size={8}>
+                    <InputNumber
+                      value={carMileage[0]}
+                      min={0}
+                      max={carMileage[1]}
+                      step={1000}
+                      addonAfter="km"
+                      size="small"
+                      onChange={(v) => setCarMileage([v || 0, carMileage[1]])}
+                    />
+                    <InputNumber
+                      value={carMileage[1]}
+                      min={carMileage[0]}
+                      max={100000}
+                      step={1000}
+                      addonAfter="km"
+                      size="small"
+                      onChange={(v) => setCarMileage([carMileage[0], v || 100000])}
+                    />
+                  </Space>
+                </Form.Item>
+              </>
+            )}
+
             {/* Filters cho Pin Listings */}
             {category === 'pin' && (
               <>
+                <Form.Item label={<span>Năm sản xuất pin <Text type="secondary" style={{ fontSize: 12 }}>(server-side)</Text></span>}>
+                  <Select
+                    placeholder="Chọn năm sản xuất"
+                    value={batteryYear || undefined}
+                    style={{ width: '100%' }}
+                    allowClear
+                    onChange={(val) => setBatteryYear(val || '')}
+                    options={batteryYears.map(year => ({ value: String(year), label: String(year) }))}
+                  />
+                </Form.Item>
+
+                <Form.Item label={<span>Tên pin <Text type="secondary" style={{ fontSize: 12 }}>(server-side)</Text></span>}>
+                  <AutoComplete
+                    placeholder="Nhập tên pin..."
+                    value={batteryName || undefined}
+                    onChange={(val) => setBatteryName(val || '')}
+                    allowClear
+                    filterOption={(inputValue, option) =>
+                      option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                    }
+                    options={batteryNames.map(name => ({ value: name, label: name }))}
+                  />
+                </Form.Item>
+
+                <Form.Item label={<span>Xe tương thích <Text type="secondary" style={{ fontSize: 12 }}>(server-side)</Text></span>}>
+                  <AutoComplete
+                    placeholder="Chọn xe tương thích..."
+                    value={batteryCompatibleVehicles || undefined}
+                    onChange={(val) => setBatteryCompatibleVehicles(val || '')}
+                    allowClear
+                    filterOption={(inputValue, option) =>
+                      option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                    }
+                    options={compatibleVehicles.map(vehicle => ({ value: vehicle, label: vehicle }))}
+                  />
+                </Form.Item>
+
                 <Form.Item label={<span>Thương hiệu pin <Text type="secondary" style={{ fontSize: 12 }}>(client-side)</Text></span>}>
                   <AutoComplete
                     placeholder="Nhập thương hiệu pin..."
@@ -694,7 +853,7 @@ function ListingPage() {
               </Button>
             </Space.Compact>
             <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 12 }}>
-              * Server-side: Năm sản xuất, Loại xe.
+              * Server-side: Tỉnh/TP, Năm sản xuất, Loại xe, Model xe, Quãng đường, Tên pin, Xe tương thích.
               <br />
               * Client-side: Giá, Thương hiệu, Tình trạng, Dung lượng pin.
             </Text>

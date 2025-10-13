@@ -7,7 +7,7 @@ info:
     publish endpoint with listing fee debit. Wallet supports top-up and listing
     fee only. Favorites legacy endpoints remain deprecated.
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8080/
     description: Local dev
 components:
   securitySchemes:

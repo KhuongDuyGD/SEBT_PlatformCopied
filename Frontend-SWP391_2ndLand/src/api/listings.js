@@ -54,8 +54,10 @@ function buildQuery(params) {
 }
 
 /**
- * Filter EV listings with flattened query params.
- * Supported keys: vehicleType, year, brand, location, minBatteryCapacity, maxBatteryCapacity, minPrice, maxPrice, page, size
+ * Filter EV listings với các tham số đầy đủ theo database mới
+ * Supported keys: vehicleType, year, minYear, maxYear, brand, province, district, 
+ * conditionStatus, minMileage, maxMileage, minBatteryCapacity, maxBatteryCapacity, 
+ * minPrice, maxPrice, page, size
  */
 export function evFilterListings(filter = {}) {
     const query = buildQuery(filter)
@@ -63,13 +65,76 @@ export function evFilterListings(filter = {}) {
 }
 
 /**
- * Filter Battery listings with flattened query params.
- * Supported keys: brand, location, compatibility, minBatteryCapacity, maxBatteryCapacity, minPrice, maxPrice, page, size
+ * Filter Battery listings với các tham số đầy đủ theo database mới
+ * Supported keys: brand, name, year, minYear, maxYear, province, district, 
+ * conditionStatus, compatibility, minBatteryCapacity, maxBatteryCapacity, 
+ * minHealthPercentage, maxHealthPercentage, minPrice, maxPrice, page, size
  */
 export function batteryFilterListings(filter = {}) {
     const query = buildQuery(filter)
     return api.get(`/listings/battery-filter?${query}`).then(r => r.data)
 }
+
+// ==========================
+// FILTER DATA APIs - Lấy dữ liệu cho dropdown và autocomplete
+// ==========================
+
+/**
+ * Lấy danh sách tỉnh thành để hiển thị trong filter location
+ */
+export const getProvinces = () => {
+    return api.get('/listings/filter-data/provinces').then(r => r.data);
+};
+
+/**
+ * Lấy danh sách quận huyện theo tỉnh (hoặc tất cả nếu không có tỉnh)
+ */
+export const getDistricts = (province = null) => {
+    const query = province ? `?province=${encodeURIComponent(province)}` : '';
+    return api.get(`/listings/filter-data/districts${query}`).then(r => r.data);
+};
+
+/**
+ * Lấy danh sách thương hiệu xe điện
+ */
+export const getEvBrands = () => {
+    return api.get('/listings/filter-data/ev-brands').then(r => r.data);
+};
+
+/**
+ * Lấy danh sách năm sản xuất xe điện
+ */
+export const getEvYears = () => {
+    return api.get('/listings/filter-data/ev-years').then(r => r.data);
+};
+
+/**
+ * Lấy danh sách thương hiệu pin
+ */
+export const getBatteryBrands = () => {
+    return api.get('/listings/filter-data/battery-brands').then(r => r.data);
+};
+
+/**
+ * Lấy danh sách tên pin cho autocomplete
+ */
+export const getBatteryNames = () => {
+    return api.get('/listings/filter-data/battery-names').then(r => r.data);
+};
+
+/**
+ * Lấy danh sách năm sản xuất pin
+ */
+export const getBatteryYears = () => {
+    return api.get('/listings/filter-data/battery-years').then(r => r.data);
+};
+
+/**
+ * Lấy danh sách xe tương thích cho filter pin
+ */
+export const getCompatibleVehicles = () => {
+    return api.get('/listings/filter-data/compatible-vehicles').then(r => r.data);
+};
 
 export default {
     createListing,
@@ -81,4 +146,13 @@ export default {
     fetchListingDetail,
     evFilterListings,
     batteryFilterListings,
+    // Filter data APIs
+    getProvinces,
+    getDistricts,
+    getEvBrands,
+    getEvYears,
+    getBatteryBrands,
+    getBatteryNames,
+    getBatteryYears,
+    getCompatibleVehicles,
 };
