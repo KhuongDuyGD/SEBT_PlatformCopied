@@ -14,11 +14,10 @@ public class Battery {
     public Battery() {}
 
     // Constructor with parameters
-    public Battery(String brand, String model, double capacity,
+    public Battery(String brand, double capacity,
                    int healthPercentage, String compatibleVehicles,
                    BatteryCondition conditionStatus) {
         this.brand = brand;
-        this.model = model;
         this.capacity = capacity;
         this.healthPercentage = healthPercentage;
         this.compatibleVehicles = compatibleVehicles;

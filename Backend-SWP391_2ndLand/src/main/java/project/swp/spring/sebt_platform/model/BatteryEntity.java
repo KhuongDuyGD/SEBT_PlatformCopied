@@ -41,9 +41,6 @@ public class BatteryEntity {
     @Column(name = "brand", length = 200, nullable = false, columnDefinition = "NVARCHAR(50)")
     private String brand;
 
-    @Column(name = "model", length = 200, columnDefinition = "NVARCHAR(50)")
-    private String model;
-
     @Column(name = "year", nullable = false)
     private Integer year;
 
@@ -72,10 +69,9 @@ public class BatteryEntity {
     // Constructors
     public BatteryEntity() {}
 
-    public BatteryEntity(String name, String brand, String model, Integer year, BigDecimal capacity, Integer healthPercentage) {
+    public BatteryEntity(String name, String brand, Integer year, BigDecimal capacity, Integer healthPercentage) {
         this.name = name;
         this.brand = brand;
-        this.model = model;
         this.year = year;
         this.capacity = capacity;
         this.healthPercentage = healthPercentage;
@@ -104,14 +100,6 @@ public class BatteryEntity {
 
     public void setBrand(String brand) {
         this.brand = brand;
-    }
-
-    public String getModel() {
-        return model;
-    }
-
-    public void setModel(String model) {
-        this.model = model;
     }
 
     public Integer getYear() {

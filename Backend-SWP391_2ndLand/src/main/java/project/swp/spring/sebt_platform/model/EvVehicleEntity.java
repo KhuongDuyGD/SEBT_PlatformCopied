@@ -1,14 +1,27 @@
 package project.swp.spring.sebt_platform.model;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import project.swp.spring.sebt_platform.model.enums.VehicleType;
-import project.swp.spring.sebt_platform.model.enums.VehicleCondition;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import project.swp.spring.sebt_platform.model.enums.VehicleCondition;
+import project.swp.spring.sebt_platform.model.enums.VehicleType;
 
 @Entity
 @Table(name = "ev_vehicles",
@@ -29,9 +42,6 @@ public class EvVehicleEntity {
 
     @Column(name = "name", length = 200, nullable = false, columnDefinition = "NVARCHAR(100)")
     private String name;
-
-    @Column(name = "model", length = 200, columnDefinition = "NVARCHAR(50)")
-    private String model;
 
     @Column(name = "brand", length = 200, nullable = false, columnDefinition = "NVARCHAR(50)")
     private String brand;
@@ -91,14 +101,6 @@ public class EvVehicleEntity {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getModel() {
-        return model;
-    }
-
-    public void setModel(String model) {
-        this.model = model;
     }
 
     public String getBrand() {
