@@ -54,7 +54,7 @@ public class VnpayController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("amount must be positive");
             }
 
-            String paymentUrl = vnpayService.createPaymentUrl(amount,userId, request);
+            String paymentUrl = vnpayService.createPaymentUrl(amount,userId,request);
             return ResponseEntity.ok(Map.of("paymentUrl", paymentUrl));
         } catch (NumberFormatException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("invalid amount");

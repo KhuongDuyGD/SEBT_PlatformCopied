@@ -46,7 +46,6 @@ public class AuthController {
     @Autowired
     private MailService mailService;
 
-
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Registration verification email sent",
                     content = @Content(mediaType = "application/json",

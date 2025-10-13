@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.web.bind.annotation.RequestParam;
 import project.swp.spring.sebt_platform.model.ListingEntity;
 import project.swp.spring.sebt_platform.model.enums.ListingStatus;
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
@@ -20,11 +21,15 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
 
     ListingEntity findById(long id);
 
+    @Query("SELECT l FROM ListingEntity l " +
+            "WHERE l.seller.id =: userId " +
+            "AND l.status =: listingStatus " +
+            "ORDER BY l.createdAt ")
+    List<ListingEntity> findByListingUserID(@Param("userId") Long userId, @Param("listingStatus") ListingStatus listingStatus);
+
     List<ListingEntity> findByStatusOrderByCreatedAtDesc(ListingStatus status);
 
-
     Page<ListingEntity> findByTitleContainingIgnoreCaseAndStatus(String keyword, ListingStatus status, Pageable pageable);
-
 
     @Query("SELECT l FROM ListingEntity l " +
             "WHERE l.status = :status " +
@@ -32,16 +37,13 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
             "ORDER BY l.createdAt DESC")
     Page<ListingEntity> findEvListingsByStatus(@Param("status") ListingStatus status, Pageable pageable);
 
-
     @Query("SELECT l FROM ListingEntity l " +
             "WHERE l.status = :status " +
             "AND l.product.battery IS NOT NULL " +
             "ORDER BY l.createdAt DESC")
     Page<ListingEntity> findBatteryListingsByStatus(@Param("status") ListingStatus status, Pageable pageable);
 
-
     Page<ListingEntity> findBySellerIdOrderByCreatedAtDesc(Long sellerId, Pageable pageable);
-
 
     @Query("SELECT l FROM ListingEntity l " +
             "WHERE l.status = 'ACTIVE' " +
@@ -98,18 +100,17 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
             @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable);
 
-
-    @Query("SELECT l FROM ListingEntity l " +
-            "WHERE l.status = 'ACTIVE' " +
+         @Query("SELECT l FROM ListingEntity l " +
+            "WHERE l.status = :status " +
             "ORDER BY l.createdAt DESC")
-    List<ListingEntity> findAllActiveListings();
+         List<ListingEntity> findAllListingsByStatus(@Param("status") ListingStatus status);
 
 
         @Query("SELECT l FROM ListingEntity l " +
                         "WHERE l.status = :status AND l.product.evVehicle.type = :type ORDER BY l.createdAt DESC")
-        Page<ListingEntity> findByStatusAndVehicleType(@Param("status") ListingStatus status, @Param("type") VehicleType type, Pageable pageable);
-
-        //static method
+        Page<ListingEntity> findByStatusAndVehicleType(@Param("status") ListingStatus status,
+                                                       @Param("type") VehicleType type,
+                                                       Pageable pageable);
 
         @Query("SELECT l FROM ListingEntity l WHERE l.product.evVehicle.type = :type ORDER BY l.createdAt DESC")
         List<ListingEntity> findAllByVehicleTypeNoStatus(@Param("type") VehicleType type);
@@ -122,7 +123,7 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
         )
         long countListingsHavingEvVehicle();
 
-    @Query(
+        @Query(
             "SELECT Count(l) FROM ListingEntity l " +
                     "WHERE l.product.battery IS NOT NULL "
     )
