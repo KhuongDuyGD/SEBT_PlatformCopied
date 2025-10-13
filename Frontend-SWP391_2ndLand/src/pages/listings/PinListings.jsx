@@ -1,125 +1,274 @@
-// DEPRECATED: PinListings page logic đã được hợp nhất vào ListingPage (category=pin)
 import React, { useState, useEffect, useCallback } from "react";
-import ListingPage from "./ListingPage";
+import { Layout, Row, Col, Pagination, Spin, Alert, Typography, Space } from "antd";
+import { ThunderboltOutlined } from '@ant-design/icons';
+import BatteryAdvancedFilter from "../../components/listings/BatteryAdvancedFilter";
+import { mapListingArray } from "../../utils/listingMapper";
+import { formatPrice, formatBatteryCapacity, formatBatteryHealth } from "../../constants/filterOptions";
 import listingsApi from "../../api/listings";
 
+const { Content } = Layout;
+const { Title } = Typography;
+
+/**
+ * Trang danh sách pin điện với filter nâng cao
+ * Đã cập nhật để sử dụng API filter mới và database schema mới
+ */
 function PinListings() {
-  const [pinListings, setPinListings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [listings, setListings] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [currentFilters, setCurrentFilters] = useState({});
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 12;
 
   /**
-   * Fetch danh sách pin từ API
+   * Fetch danh sách pin từ API với filter
    */
-  const fetchPinListings = useCallback(async () => {
+  const fetchBatteryListings = useCallback(async (filters = {}, page = 0) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await listingsApi.fetchBatteryListingCarts(0, 30); // lấy 30 đầu tiên cho page này
-      console.log('Battery Response from API:', response); // Debug log
+      const filterParams = {
+        ...filters,
+        page: page,
+        size: pageSize
+      };
       
-      // Response theo format từ API docs: Page<ListingCartResponseDTO>
-      const listings = response?.content || [];
+      console.log('[PIN_LISTINGS] Fetching with filters:', filterParams);
       
-      if (Array.isArray(listings)) {
-        // Chuyển đổi dữ liệu từ API thành format phù hợp với ListingPage
-        const formattedListings = listings.map(listing => ({
-          id: listing.listingId,
-          image: listing.thumbnailUrl || "/images/default-battery.jpg",
-          brand: listing.title, // Sử dụng title làm brand
-          location: "Không rõ", // Chưa có trong ListingCartResponseDTO
-          km: "—", // Chưa có trong ListingCartResponseDTO
-          left: '—',
-          price: formatPrice(listing.price),
-          owner: listing.sellerPhoneNumber || "Liên hệ",
-          comments: 0, // Tạm thời để 0, sau này sẽ implement comment system
-          description: "Chưa có mô tả", // Chưa có trong ListingCartResponseDTO
-          certified: listing.favorite, // Sử dụng favorite status
-          capacity: "—", // Chưa có trong ListingCartResponseDTO
-          condition: "—", // Chưa có trong ListingCartResponseDTO
-          compatibleVehicles: "—", // Chưa có trong ListingCartResponseDTO
-          viewsCount: listing.viewCount || 0,
-          createdAt: null // Chưa có trong ListingCartResponseDTO
-        }));
-        
-        setPinListings(formattedListings);
+      const response = await listingsApi.batteryFilterListings(filterParams);
+      console.log('[PIN_LISTINGS] API Response:', response);
+      
+      if (response && Array.isArray(response.content)) {
+        const mappedListings = mapListingArray(response.content);
+        setListings(mappedListings);
+        setPagination(response);
       } else {
-        console.warn('API response content không đúng format:', response);
-        setPinListings([]);
+        console.warn('API response format không đúng:', response);
+        setListings([]);
+        setPagination(null);
       }
     } catch (err) {
-      console.error('Lỗi khi fetch pin listings:', err);
-      setError('Không thể tải danh sách pin. Vui lòng thử lại sau.');
-      setPinListings([]);
+      console.error('Lỗi khi fetch battery listings:', err);
+      setError('Không thể tải danh sách pin điện. Vui lòng thử lại sau.');
+      setListings([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
   }, []);
 
   /**
-   * Tính toán thời gian còn lại của listing
-   * Removed calculateTimeLeft function as it's not used in current implementation
+   * Handle filter change từ BatteryAdvancedFilter component
    */
+  const handleFilterChange = useCallback((filters) => {
+    console.log('[PIN_LISTINGS] Filter changed:', filters);
+    setCurrentFilters(filters);
+    setCurrentPage(0);
+    fetchBatteryListings(filters, 0);
+  }, [fetchBatteryListings]);
 
   /**
-   * Format giá tiền
-   * @param {number} price - Giá
-   * @returns {string} - Chuỗi giá đã format
+   * Handle pagination change
    */
-  const formatPrice = (price) => {
-    if (!price) return "Liên hệ";
-    
-    if (price >= 1000000000) {
-      return `${(price / 1000000000).toFixed(1)} tỷ`;
-    } else if (price >= 1000000) {
-      return `${(price / 1000000).toFixed(0)} triệu`;
-    } else {
-      return `${price.toLocaleString()} VND`;
-    }
-  };
+  const handlePageChange = useCallback((page) => {
+    const pageIndex = page - 1; // Ant Design uses 1-based, API uses 0-based
+    setCurrentPage(pageIndex);
+    fetchBatteryListings(currentFilters, pageIndex);
+  }, [currentFilters, fetchBatteryListings]);
 
-  // Fetch data khi component mount
+  // Load initial data khi component mount
   useEffect(() => {
-    fetchPinListings();
-  }, [fetchPinListings]);
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang tải danh sách pin...</p>
-        </div>
-      </div>
-    );
-  }
+    fetchBatteryListings({}, 0);
+  }, [fetchBatteryListings]);
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={fetchPinListings}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Thử lại
-          </button>
-        </div>
-      </div>
+      <Layout style={{ minHeight: '100vh', padding: '24px' }}>
+        <Content>
+          <Alert
+            message="Lỗi tải dữ liệu"
+            description={error}
+            type="error"
+            showIcon
+            action={
+              <button 
+                onClick={() => fetchBatteryListings(currentFilters, currentPage)}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Thử lại
+              </button>
+            }
+          />
+        </Content>
+      </Layout>
     );
   }
 
   return (
-    <ListingPage
-      pageTitle="Các pin mới nhất"
-      searchPlaceholder="Tìm kiếm pin..."
-      brandPlaceholder="VD: Lithium-ion, LFP..."
-      items={pinListings}
-      showStatusFilter={false}
-      onRefresh={fetchPinListings}
-    />
+    <Layout style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+      <Content style={{ padding: '24px' }}>
+        {/* Page Header */}
+        <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+          <Space>
+            <ThunderboltOutlined style={{ fontSize: '32px', color: '#52c41a' }} />
+            <Title level={2} style={{ margin: 0 }}>
+              Pin Điện
+            </Title>
+          </Space>
+          <p style={{ color: '#666', fontSize: '16px', marginTop: '8px' }}>
+            Tìm kiếm và lọc pin điện theo nhu cầu của bạn
+          </p>
+        </div>
+
+        {/* Advanced Filter */}
+        <BatteryAdvancedFilter 
+          onFilter={handleFilterChange}
+          loading={loading}
+          initialValues={currentFilters}
+        />
+
+        {/* Results Section */}
+        <div style={{ marginTop: '24px' }}>
+          {/* Results Summary */}
+          {pagination && (
+            <div style={{ marginBottom: '16px', color: '#666' }}>
+              Tìm thấy <strong>{pagination.totalElements}</strong> pin điện
+              {Object.keys(currentFilters).length > 0 && ' với bộ lọc hiện tại'}
+            </div>
+          )}
+
+          {/* Loading State */}
+          {loading && (
+            <div style={{ textAlign: 'center', padding: '60px 0' }}>
+              <Spin size="large" />
+              <p style={{ marginTop: '16px', color: '#666' }}>Đang tải dữ liệu...</p>
+            </div>
+          )}
+
+          {/* Listings Grid */}
+          {!loading && (
+            <>
+              <Row gutter={[16, 16]}>
+                {listings.map((listing) => (
+                  <Col xs={24} sm={12} md={8} lg={6} key={listing.id}>
+                    <div className="listing-card" style={{
+                      backgroundColor: 'white',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      height: '100%',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                    }}>
+                      {/* Image */}
+                      <div style={{ marginBottom: '12px' }}>
+                        <img 
+                          src={listing.image || "/images/default-battery.jpg"} 
+                          alt={listing.title}
+                          style={{
+                            width: '100%',
+                            height: '160px',
+                            objectFit: 'cover',
+                            borderRadius: '6px'
+                          }}
+                        />
+                      </div>
+
+                      {/* Title */}
+                      <h3 style={{ 
+                        fontSize: '16px', 
+                        marginBottom: '8px',
+                        fontWeight: '600',
+                        lineHeight: '1.4',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {listing.title}
+                      </h3>
+
+                      {/* Price */}
+                      <div style={{ 
+                        fontSize: '18px', 
+                        fontWeight: 'bold', 
+                        color: '#d4380d',
+                        marginBottom: '8px'
+                      }}>
+                        {formatPrice(listing.price)}
+                      </div>
+
+                      {/* Battery Info */}
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#666',
+                        marginBottom: '8px',
+                        display: 'flex',
+                        justifyContent: 'space-between'
+                      }}>
+                        <span>⚡ {listing.batteryCapacity ? formatBatteryCapacity(listing.batteryCapacity) : 'N/A'}</span>
+                        <span>🔋 {listing.healthPercentage ? formatBatteryHealth(listing.healthPercentage) : 'N/A'}</span>
+                      </div>
+
+                      {/* Stats */}
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#666',
+                        display: 'flex',
+                        justifyContent: 'space-between'
+                      }}>
+                        <span>👁 {listing.viewsCount || 0} lượt xem</span>
+                        <span>📱 {listing.sellerPhone || 'Liên hệ'}</span>
+                      </div>
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+
+              {/* Empty State */}
+              {listings.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                  <ThunderboltOutlined style={{ fontSize: '64px', color: '#d9d9d9' }} />
+                  <h3 style={{ color: '#666', marginTop: '16px' }}>
+                    Không tìm thấy pin điện nào
+                  </h3>
+                  <p style={{ color: '#999' }}>
+                    Thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác
+                  </p>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {pagination && pagination.totalElements > pageSize && (
+                <div style={{ textAlign: 'center', marginTop: '32px' }}>
+                  <Pagination
+                    current={currentPage + 1} // Ant Design uses 1-based
+                    total={pagination.totalElements}
+                    pageSize={pageSize}
+                    showSizeChanger={false}
+                    showQuickJumper
+                    showTotal={(total, range) => 
+                      `${range[0]}-${range[1]} của ${total} pin điện`
+                    }
+                    onChange={handlePageChange}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </Content>
+    </Layout>
   );
 }
 

@@ -1,121 +1,262 @@
-// DEPRECATED: CarListings page logic đã được hợp nhất vào ListingPage thông qua query param
 import React, { useState, useEffect, useCallback } from "react";
-import ListingPage from "./ListingPage";
+import { Layout, Row, Col, Pagination, Spin, Alert, Typography, Space } from "antd";
+import { CarOutlined } from '@ant-design/icons';
+import EvAdvancedFilter from "../../components/listings/EvAdvancedFilter";
+import { mapListingArray } from "../../utils/listingMapper";
+import { formatPrice } from "../../constants/filterOptions";
 import listingsApi from "../../api/listings";
 
+const { Content } = Layout;
+const { Title } = Typography;
+
+/**
+ * Trang danh sách xe điện với filter nâng cao
+ * Đã cập nhật để sử dụng API filter mới và database schema mới
+ */
 function CarListings() {
-  const [carListings, setCarListings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [listings, setListings] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [currentFilters, setCurrentFilters] = useState({});
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 12;
 
   /**
-   * Fetch danh sách xe từ API
+   * Fetch danh sách xe từ API với filter
    */
-  const fetchCarListings = useCallback(async () => {
+  const fetchEvListings = useCallback(async (filters = {}, page = 0) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await listingsApi.fetchEvListingCarts(0, 30); // lấy 30 đầu tiên cho page này
-      console.log('Response from API:', response); // Debug log
+      const filterParams = {
+        ...filters,
+        page: page,
+        size: pageSize
+      };
       
-      // Response theo format từ API docs: Page<ListingCartResponseDTO>
-      const listings = response?.content || [];
-
-      if (Array.isArray(listings)) {
-        const formattedListings = listings.map(listing => ({
-          id: listing.listingId,
-          image: listing.thumbnailUrl || "/images/default-car.jpg",
-          brand: listing.title, // Sử dụng title làm brand
-          location: "Không rõ", // Chưa có trong ListingCartResponseDTO
-          km: "—", // Chưa có trong ListingCartResponseDTO
-          left: '—',
-          price: formatPrice(listing.price),
-          owner: listing.sellerPhoneNumber || "Liên hệ",
-          comments: 0,
-          description: "Chưa có mô tả", // Chưa có trong ListingCartResponseDTO
-          certified: listing.favorite, // Sử dụng favorite status
-          year: "—", // Chưa có trong ListingCartResponseDTO
-          condition: "—", // Chưa có trong ListingCartResponseDTO
-          batteryCapacity: "—", // Chưa có trong ListingCartResponseDTO
-          viewsCount: listing.viewCount || 0,
-          createdAt: null // Chưa có trong ListingCartResponseDTO
-        }));
-        
-        setCarListings(formattedListings);
+      console.log('[CAR_LISTINGS] Fetching with filters:', filterParams);
+      
+      const response = await listingsApi.evFilterListings(filterParams);
+      console.log('[CAR_LISTINGS] API Response:', response);
+      
+      if (response && Array.isArray(response.content)) {
+        const mappedListings = mapListingArray(response.content);
+        setListings(mappedListings);
+        setPagination(response);
       } else {
-        console.warn('API response content không đúng format:', response);
-        setCarListings([]);
+        console.warn('API response format không đúng:', response);
+        setListings([]);
+        setPagination(null);
       }
     } catch (err) {
-      console.error('Lỗi khi fetch car listings:', err);
-      setError('Không thể tải danh sách xe. Vui lòng thử lại sau.');
-      setCarListings([]);
+      console.error('Lỗi khi fetch EV listings:', err);
+      setError('Không thể tải danh sách xe điện. Vui lòng thử lại sau.');
+      setListings([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Removed calculateTimeLeft function as it's not used in current implementation
+  /**
+   * Handle filter change từ EvAdvancedFilter component
+   */
+  const handleFilterChange = useCallback((filters) => {
+    console.log('[CAR_LISTINGS] Filter changed:', filters);
+    setCurrentFilters(filters);
+    setCurrentPage(0);
+    fetchEvListings(filters, 0);
+  }, [fetchEvListings]);
 
   /**
-   * Format giá tiền
-   * @param {number} price - Giá
-   * @returns {string} - Chuỗi giá đã format
+   * Handle pagination change
    */
-  const formatPrice = (price) => {
-    if (!price) return "Liên hệ";
-    
-    if (price >= 1000000000) {
-      return `${(price / 1000000000).toFixed(1)} tỷ`;
-    } else if (price >= 1000000) {
-      return `${(price / 1000000).toFixed(0)} triệu`;
-    } else {
-      return `${price.toLocaleString()} VND`;
-    }
-  };
+  const handlePageChange = useCallback((page) => {
+    const pageIndex = page - 1; // Ant Design uses 1-based, API uses 0-based
+    setCurrentPage(pageIndex);
+    fetchEvListings(currentFilters, pageIndex);
+  }, [currentFilters, fetchEvListings]);
 
-  // Fetch data khi component mount
+  // Load initial data khi component mount
   useEffect(() => {
-    fetchCarListings();
-  }, [fetchCarListings]);
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang tải danh sách xe...</p>
-        </div>
-      </div>
-    );
-  }
+    fetchEvListings({}, 0);
+  }, [fetchEvListings]);
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={fetchCarListings}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Thử lại
-          </button>
-        </div>
-      </div>
+      <Layout style={{ minHeight: '100vh', padding: '24px' }}>
+        <Content>
+          <Alert
+            message="Lỗi tải dữ liệu"
+            description={error}
+            type="error"
+            showIcon
+            action={
+              <button 
+                onClick={() => fetchEvListings(currentFilters, currentPage)}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Thử lại
+              </button>
+            }
+          />
+        </Content>
+      </Layout>
     );
   }
 
   return (
-    <ListingPage
-      pageTitle="Các xe mới nhất"
-      searchPlaceholder="Tìm kiếm xe..."
-      brandPlaceholder="VD: Vinfast, Peugeot..."
-      items={carListings}
-      showStatusFilter={true}
-      onRefresh={fetchCarListings}
-    />
+    <Layout style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+      <Content style={{ padding: '24px' }}>
+        {/* Page Header */}
+        <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+          <Space>
+            <CarOutlined style={{ fontSize: '32px', color: '#1890ff' }} />
+            <Title level={2} style={{ margin: 0 }}>
+              Xe Điện
+            </Title>
+          </Space>
+          <p style={{ color: '#666', fontSize: '16px', marginTop: '8px' }}>
+            Tìm kiếm và lọc xe điện theo nhu cầu của bạn
+          </p>
+        </div>
+
+        {/* Advanced Filter */}
+        <EvAdvancedFilter 
+          onFilter={handleFilterChange}
+          loading={loading}
+          initialValues={currentFilters}
+        />
+
+        {/* Results Section */}
+        <div style={{ marginTop: '24px' }}>
+          {/* Results Summary */}
+          {pagination && (
+            <div style={{ marginBottom: '16px', color: '#666' }}>
+              Tìm thấy <strong>{pagination.totalElements}</strong> xe điện
+              {Object.keys(currentFilters).length > 0 && ' với bộ lọc hiện tại'}
+            </div>
+          )}
+
+          {/* Loading State */}
+          {loading && (
+            <div style={{ textAlign: 'center', padding: '60px 0' }}>
+              <Spin size="large" />
+              <p style={{ marginTop: '16px', color: '#666' }}>Đang tải dữ liệu...</p>
+            </div>
+          )}
+
+          {/* Listings Grid */}
+          {!loading && (
+            <>
+              <Row gutter={[16, 16]}>
+                {listings.map((listing) => (
+                  <Col xs={24} sm={12} md={8} lg={6} key={listing.id}>
+                    <div className="listing-card" style={{
+                      backgroundColor: 'white',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      height: '100%',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                    }}>
+                      {/* Image */}
+                      <div style={{ marginBottom: '12px' }}>
+                        <img 
+                          src={listing.image || "/images/default-car.jpg"} 
+                          alt={listing.title}
+                          style={{
+                            width: '100%',
+                            height: '160px',
+                            objectFit: 'cover',
+                            borderRadius: '6px'
+                          }}
+                        />
+                      </div>
+
+                      {/* Title */}
+                      <h3 style={{ 
+                        fontSize: '16px', 
+                        marginBottom: '8px',
+                        fontWeight: '600',
+                        lineHeight: '1.4',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {listing.title}
+                      </h3>
+
+                      {/* Price */}
+                      <div style={{ 
+                        fontSize: '18px', 
+                        fontWeight: 'bold', 
+                        color: '#d4380d',
+                        marginBottom: '8px'
+                      }}>
+                        {formatPrice(listing.price)}
+                      </div>
+
+                      {/* Stats */}
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#666',
+                        display: 'flex',
+                        justifyContent: 'space-between'
+                      }}>
+                        <span>👁 {listing.viewsCount || 0} lượt xem</span>
+                        <span>📱 {listing.sellerPhone || 'Liên hệ'}</span>
+                      </div>
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+
+              {/* Empty State */}
+              {listings.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                  <CarOutlined style={{ fontSize: '64px', color: '#d9d9d9' }} />
+                  <h3 style={{ color: '#666', marginTop: '16px' }}>
+                    Không tìm thấy xe điện nào
+                  </h3>
+                  <p style={{ color: '#999' }}>
+                    Thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác
+                  </p>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {pagination && pagination.totalElements > pageSize && (
+                <div style={{ textAlign: 'center', marginTop: '32px' }}>
+                  <Pagination
+                    current={currentPage + 1} // Ant Design uses 1-based
+                    total={pagination.totalElements}
+                    pageSize={pageSize}
+                    showSizeChanger={false}
+                    showQuickJumper
+                    showTotal={(total, range) => 
+                      `${range[0]}-${range[1]} của ${total} xe điện`
+                    }
+                    onChange={handlePageChange}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </Content>
+    </Layout>
   );
 }
 

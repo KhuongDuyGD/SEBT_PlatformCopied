@@ -13,7 +13,9 @@ import org.springframework.stereotype.Repository;
 
 import org.springframework.web.bind.annotation.RequestParam;
 import project.swp.spring.sebt_platform.model.ListingEntity;
+import project.swp.spring.sebt_platform.model.enums.BatteryCondition;
 import project.swp.spring.sebt_platform.model.enums.ListingStatus;
+import project.swp.spring.sebt_platform.model.enums.VehicleCondition;
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
 
 @Repository
@@ -52,14 +54,20 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
 
     @Query(
             "SELECT l FROM ListingEntity l " +
-                    "JOIN LocationEntity lt " +
-                    "Where l.status = 'ACTIVE' " +
+                    "JOIN LocationEntity lt ON l.id = lt.listing.id " +
+                    "WHERE l.status = 'ACTIVE' " +
                     "AND (:year IS NULL OR l.product.evVehicle.year = :year) " +
+                    "AND (:minYear IS NULL OR l.product.evVehicle.year >= :minYear) " +
+                    "AND (:maxYear IS NULL OR l.product.evVehicle.year <= :maxYear) " +
                     "AND (:type IS NULL OR l.product.evVehicle.type = :type) " +
                     "AND (:brand IS NULL OR LOWER(l.product.evVehicle.brand) = LOWER(:brand)) " +
-                    "AND (:location IS NULL OR LOWER(lt.province) LIKE LOWER(CONCAT('%', :location, '%'))) " +
-                    "AND (:minBatteryCapacity IS NULL OR l.product.battery.capacity >= :minBatteryCapacity) " +
-                    "AND (:maxBatteryCapacity IS NULL OR l.product.battery.capacity <= :maxBatteryCapacity) " +
+                    "AND (:province IS NULL OR LOWER(lt.province) LIKE LOWER(CONCAT('%', :province, '%'))) " +
+                    "AND (:district IS NULL OR LOWER(lt.district) LIKE LOWER(CONCAT('%', :district, '%'))) " +
+                    "AND (:conditionStatus IS NULL OR l.product.evVehicle.conditionStatus = :conditionStatus) " +
+                    "AND (:minMileage IS NULL OR l.product.evVehicle.mileage >= :minMileage) " +
+                    "AND (:maxMileage IS NULL OR l.product.evVehicle.mileage <= :maxMileage) " +
+                    "AND (:minBatteryCapacity IS NULL OR l.product.evVehicle.batteryCapacity >= :minBatteryCapacity) " +
+                    "AND (:maxBatteryCapacity IS NULL OR l.product.evVehicle.batteryCapacity <= :maxBatteryCapacity) " +
                     "AND (:minPrice IS NULL OR l.price >= :minPrice) " +
                     "AND (:maxPrice IS NULL OR l.price <= :maxPrice) " +
                     "AND l.product.evVehicle IS NOT NULL " +
@@ -67,9 +75,15 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
     )
     Page<ListingEntity> filterEvListings(
             @Param("year") Integer year,
+            @Param("minYear") Integer minYear,
+            @Param("maxYear") Integer maxYear,
             @Param("type") VehicleType type,
             @Param("brand") String brand,
-            @Param("location") String location,
+            @Param("province") String province,
+            @Param("district") String district,
+            @Param("conditionStatus") VehicleCondition conditionStatus,
+            @Param("minMileage") Integer minMileage,
+            @Param("maxMileage") Integer maxMileage,
             @Param("minBatteryCapacity") Integer minBatteryCapacity,
             @Param("maxBatteryCapacity") Integer maxBatteryCapacity,
             @Param("minPrice") BigDecimal minPrice,
@@ -78,13 +92,21 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
 
     @Query(
             "SELECT l FROM ListingEntity l " +
-                    "JOIN LocationEntity lt " +
-                    "Where l.status = 'ACTIVE' " +
+                    "JOIN LocationEntity lt ON l.id = lt.listing.id " +
+                    "WHERE l.status = 'ACTIVE' " +
                     "AND (:brand IS NULL OR LOWER(l.product.battery.brand) = LOWER(:brand)) " +
+                    "AND (:name IS NULL OR LOWER(l.product.battery.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+                    "AND (:year IS NULL OR l.product.battery.year = :year) " +
+                    "AND (:minYear IS NULL OR l.product.battery.year >= :minYear) " +
+                    "AND (:maxYear IS NULL OR l.product.battery.year <= :maxYear) " +
+                    "AND (:province IS NULL OR LOWER(lt.province) LIKE LOWER(CONCAT('%', :province, '%'))) " +
+                    "AND (:district IS NULL OR LOWER(lt.district) LIKE LOWER(CONCAT('%', :district, '%'))) " +
+                    "AND (:conditionStatus IS NULL OR l.product.battery.conditionStatus = :conditionStatus) " +
                     "AND (:compatibility IS NULL OR LOWER(l.product.battery.compatibleVehicles) LIKE LOWER(CONCAT('%', :compatibility, '%'))) " +
-                    "AND (:location IS NULL OR LOWER(lt.province) LIKE LOWER(CONCAT('%', :location, '%'))) " +
                     "AND (:minBatteryCapacity IS NULL OR l.product.battery.capacity >= :minBatteryCapacity) " +
                     "AND (:maxBatteryCapacity IS NULL OR l.product.battery.capacity <= :maxBatteryCapacity) " +
+                    "AND (:minHealthPercentage IS NULL OR l.product.battery.healthPercentage >= :minHealthPercentage) " +
+                    "AND (:maxHealthPercentage IS NULL OR l.product.battery.healthPercentage <= :maxHealthPercentage) " +
                     "AND (:minPrice IS NULL OR l.price >= :minPrice) " +
                     "AND (:maxPrice IS NULL OR l.price <= :maxPrice) " +
                     "AND l.product.battery IS NOT NULL " +
@@ -92,10 +114,18 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
     )
     Page<ListingEntity> filterBatteryListings(
             @Param("brand") String brand,
-            @Param("location") String location,
+            @Param("name") String name,
+            @Param("year") Integer year,
+            @Param("minYear") Integer minYear,
+            @Param("maxYear") Integer maxYear,
+            @Param("province") String province,
+            @Param("district") String district,
+            @Param("conditionStatus") BatteryCondition conditionStatus,
             @Param("compatibility") String compatibility,
             @Param("minBatteryCapacity") Integer minBatteryCapacity,
             @Param("maxBatteryCapacity") Integer maxBatteryCapacity,
+            @Param("minHealthPercentage") Integer minHealthPercentage,
+            @Param("maxHealthPercentage") Integer maxHealthPercentage,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable);
