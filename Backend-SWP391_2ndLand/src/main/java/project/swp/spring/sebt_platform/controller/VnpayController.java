@@ -84,16 +84,18 @@ public class VnpayController {
         request.getParameterMap().forEach((k, v) -> params.put(k, v[0]));
 
         try {
-            boolean valid = vnpayService.validateReturn(params);
-            String txnRef = params.get("vnp_TxnRef");
-            String responseCode = params.get("vnp_ResponseCode");
-            if (valid && "00".equals(responseCode)) {
-                // TODO: (Hardening) validate that vnp_Amount matches pending transaction amount before crediting.
-                vnpayService.updateTransactionStatus(txnRef, true);
-                response.sendRedirect("http://localhost:5173/payment-success?orderId="+txnRef);
+            VnpayService.VnpayReturnValidation validation = vnpayService.validateReturn(params);
+            String txnRef = validation.orderId();
+            if (txnRef == null) {
+                response.sendRedirect("http://localhost:5173/payment-failed?reason=missing-orderId");
+                return;
+            }
+            boolean success = validation.validSignature() && "00".equals(validation.responseCode());
+            vnpayService.updateTransactionStatus(txnRef, success, validation.amount(), validation.rawParams());
+            if (success) {
+                response.sendRedirect("http://localhost:5173/payment-success?orderId=" + txnRef);
             } else {
-                vnpayService.updateTransactionStatus(txnRef, false);
-                response.sendRedirect("http://localhost:5173/payment-failed?orderId="+txnRef);
+                response.sendRedirect("http://localhost:5173/payment-failed?orderId=" + txnRef + "&code=" + validation.responseCode());
             }
         } catch (Exception e) {
             response.sendRedirect("http://localhost:5173/payment-failed");

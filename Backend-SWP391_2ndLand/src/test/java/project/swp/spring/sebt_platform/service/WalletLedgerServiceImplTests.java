@@ -57,11 +57,11 @@ public class WalletLedgerServiceImplTests {
         when(walletTransactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        ledgerService.completeTopUp("ORDER123", true, "{}");
+    ledgerService.completeTopUp("ORDER123", true, "{}", BigDecimal.valueOf(50_000));
         assertEquals(0, wallet.getBalance().compareTo(BigDecimal.valueOf(50_000)));
 
         // second call should be idempotent (status already COMPLETED)
-        ledgerService.completeTopUp("ORDER123", true, "{}");
+    ledgerService.completeTopUp("ORDER123", true, "{}", BigDecimal.valueOf(50_000));
         assertEquals(0, wallet.getBalance().compareTo(BigDecimal.valueOf(50_000)));
     }
 }

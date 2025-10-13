@@ -13,7 +13,7 @@ public interface WalletLedgerService {
     /**
      * Complete a pending top-up (idempotent). Returns the updated transaction or existing completed one.
      */
-    WalletTransactionEntity completeTopUp(String orderId, boolean success, String metadataJson);
+    WalletTransactionEntity completeTopUp(String orderId, boolean success, String metadataJson, BigDecimal callbackAmount);
 
     /**
      * Debit listing publication fee atomically and persist a ledger entry.

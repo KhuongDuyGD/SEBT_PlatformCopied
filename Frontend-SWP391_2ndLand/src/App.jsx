@@ -22,6 +22,7 @@ import MyListings from "./pages/listings/MyListings";
 import AdvancedSearchPage from "./pages/listings/AdvancedSearchPage";
 import SearchResults from "./pages/listings/SearchResults";
 import ListingDetail from "./pages/listings/ListingDetail";
+import WalletTransactions from "./pages/wallet/WalletTransactions";
 
 //============================= ADMIN PAGES =============================
 import AdminDashboard from "./AdminDashboard";          // đảm bảo file này tồn tại
@@ -80,6 +81,7 @@ function AppContent({
           <Route path="/my-listings" element={isLoggedIn ? <MyListings /> : <Navigate to="/login" replace />} />
           <Route path="/advanced-search" element={<AdvancedSearchPage />} />
           <Route path="/search" element={<SearchResults />} />
+          <Route path="/wallet" element={isLoggedIn ? <WalletTransactions /> : <Navigate to="/login" replace />} />
 
           <Route
             path="/post-listing"

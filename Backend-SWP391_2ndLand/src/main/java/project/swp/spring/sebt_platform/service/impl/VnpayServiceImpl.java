@@ -38,7 +38,8 @@ public class VnpayServiceImpl implements VnpayService {
     @Override
     public String createPaymentUrl(double amount, Long userId, HttpServletRequest request) throws UnsupportedEncodingException {
 
-        String vnp_TxnRef = "ORDER" + System.currentTimeMillis() + "USER" + String.format("%05d", userId);
+    String random = java.util.UUID.randomUUID().toString().replace("-", "").substring(0,8).toUpperCase();
+    String vnp_TxnRef = "TOPUP-" + (System.currentTimeMillis()/1000) + "-U" + userId + "-" + random; // harder to guess
         String vnp_OrderInfo = "To up wallet of platform " + vnp_TxnRef;
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
@@ -122,40 +123,53 @@ public class VnpayServiceImpl implements VnpayService {
     }
 
     @Override
-    public boolean validateReturn(Map<String, String> params) throws UnsupportedEncodingException {
-        String secureHash = params.remove("vnp_SecureHash");
-
-        List<String> fieldNames = new ArrayList<>(params.keySet());
+    public VnpayService.VnpayReturnValidation validateReturn(Map<String, String> params) throws UnsupportedEncodingException {
+        // Copy to avoid mutating original map outside
+        Map<String,String> working = new HashMap<>(params);
+        String secureHash = working.remove("vnp_SecureHash");
+        List<String> fieldNames = new ArrayList<>(working.keySet());
         Collections.sort(fieldNames);
         StringBuilder hashData = new StringBuilder();
-        StringBuilder query = new StringBuilder();
         Iterator<String> itr = fieldNames.iterator();
         while (itr.hasNext()) {
             String fieldName = itr.next();
-            String fieldValue = params.get(fieldName);
-            if ((fieldValue != null) && (!fieldValue.isEmpty())) {
-                //Build hash data
-                hashData.append(fieldName);
-                hashData.append('=');
-                hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
-                //Build query
-                query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII));
-                query.append('=');
-                query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
-                if (itr.hasNext()) {
-                    query.append('&');
-                    hashData.append('&');
-                }
+            String fieldValue = working.get(fieldName);
+            if (fieldValue != null && !fieldValue.isEmpty()) {
+                hashData.append(fieldName).append('=')
+                        .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
+                if (itr.hasNext()) hashData.append('&');
             }
         }
-
-        String checkHash = Utils.hmacSHA512(config.getHashSecret(), String.valueOf(hashData));
-        return secureHash != null && secureHash.equalsIgnoreCase(checkHash);
+        String checkHash = Utils.hmacSHA512(config.getHashSecret(), hashData.toString());
+        boolean valid = secureHash != null && secureHash.equalsIgnoreCase(checkHash);
+        String orderId = working.get("vnp_TxnRef");
+        String amountStr = working.get("vnp_Amount");
+        java.math.BigDecimal amount = null;
+        if (amountStr != null) {
+            try { amount = new java.math.BigDecimal(amountStr).movePointLeft(2); } catch (NumberFormatException ignored) {}
+        }
+        String responseCode = working.get("vnp_ResponseCode");
+        return new VnpayService.VnpayReturnValidation(valid, orderId, amount, responseCode, Collections.unmodifiableMap(params));
     }
 
     @Override
-    public void updateTransactionStatus(String orderId, boolean isSuccess) {
-        walletLedgerService.completeTopUp(orderId, isSuccess, null);
+    public void updateTransactionStatus(String orderId, boolean isSuccess, java.math.BigDecimal amount, Map<String,String> callbackMeta) {
+        // Persist metadata JSON (simple key=value join or use a JSON lib if available)
+        String metadataJson = null;
+        if (callbackMeta != null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append('{');
+            boolean first = true;
+            for (Map.Entry<String,String> e : callbackMeta.entrySet()) {
+                if (!first) sb.append(',');
+                first = false;
+                sb.append('"').append(e.getKey()).append('"').append(':')
+                        .append('"').append(e.getValue().replace("\"","\\\"")).append('"');
+            }
+            sb.append('}');
+            metadataJson = sb.toString();
+        }
+        walletLedgerService.completeTopUp(orderId, isSuccess, metadataJson, amount);
     }
 
     @Override
