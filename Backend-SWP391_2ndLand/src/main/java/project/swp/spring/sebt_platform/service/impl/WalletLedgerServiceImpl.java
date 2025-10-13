@@ -1,0 +1,97 @@
+package project.swp.spring.sebt_platform.service.impl;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import project.swp.spring.sebt_platform.model.WalletEntity;
+import project.swp.spring.sebt_platform.model.WalletTransactionEntity;
+import project.swp.spring.sebt_platform.model.enums.TransactionStatus;
+import project.swp.spring.sebt_platform.model.enums.WalletPurpose;
+import project.swp.spring.sebt_platform.model.enums.WalletEntryType;
+import project.swp.spring.sebt_platform.exception.InsufficientFundsException;
+import project.swp.spring.sebt_platform.repository.WalletRepository;
+import project.swp.spring.sebt_platform.repository.WalletTransactionRepository;
+import project.swp.spring.sebt_platform.service.WalletLedgerService;
+
+import java.math.BigDecimal;
+
+@Service
+public class WalletLedgerServiceImpl implements WalletLedgerService {
+
+    private final WalletRepository walletRepository;
+    private final WalletTransactionRepository walletTransactionRepository;
+
+    public WalletLedgerServiceImpl(WalletRepository walletRepository,
+                                   WalletTransactionRepository walletTransactionRepository) {
+        this.walletRepository = walletRepository;
+        this.walletTransactionRepository = walletTransactionRepository;
+    }
+
+    @Override
+    @Transactional
+    public WalletTransactionEntity createPendingTopUp(Long userId, String orderId, BigDecimal amount) {
+        WalletTransactionEntity existing = walletTransactionRepository.findByOrderId(orderId);
+        if (existing != null) {
+            return existing; // idempotent safeguard
+        }
+        WalletEntity wallet = walletRepository.findByUserId(userId);
+        // NOTE: ensure wallet exists (could auto-create if business allows)
+        WalletTransactionEntity tx = WalletTransactionEntity.pendingTopUp(orderId, wallet, amount, userId);
+        walletTransactionRepository.save(tx);
+        return tx;
+    }
+
+    @Override
+    @Transactional
+    public WalletTransactionEntity completeTopUp(String orderId, boolean success, String metadataJson) {
+        WalletTransactionEntity tx = walletTransactionRepository.findByOrderId(orderId);
+        if (tx == null) {
+            return null;
+        }
+        if (tx.getStatus() != TransactionStatus.PENDING) {
+            return tx; // already processed
+        }
+        if (success) {
+            WalletEntity wallet = tx.getWallet();
+            // TODO: Validate external callback amount matches tx.getAmount() to prevent tampering.
+            tx.setBalanceBefore(wallet.getBalance());
+            wallet.setBalance(wallet.getBalance().add(tx.getAmount()));
+            tx.setBalanceAfter(wallet.getBalance());
+            tx.setStatus(TransactionStatus.COMPLETED);
+            tx.setDescription("VNPay top-up completed");
+            tx.setMetadata(metadataJson);
+            walletRepository.save(wallet); // optimistic lock via @Version
+        } else {
+            tx.setStatus(TransactionStatus.FAILED);
+            tx.setDescription("VNPay top-up failed");
+            tx.setMetadata(metadataJson);
+        }
+        walletTransactionRepository.save(tx);
+        return tx;
+    }
+
+    @Override
+    @Transactional
+    public WalletTransactionEntity debitListingFee(Long userId, Long listingId, BigDecimal fee) {
+        WalletEntity wallet = walletRepository.findByUserId(userId);
+        if (wallet == null) return null;
+        if (wallet.getBalance().compareTo(fee) < 0) {
+            throw new InsufficientFundsException(fee, wallet.getBalance());
+        }
+        WalletTransactionEntity tx = new WalletTransactionEntity();
+        tx.setOrderId("LISTING_FEE-" + listingId + "-" + System.currentTimeMillis());
+        tx.setWallet(wallet);
+        tx.setAmount(fee.negate()); // store negative to represent debit OR keep positive with entryType=DEBIT
+        tx.setBalanceBefore(wallet.getBalance());
+        wallet.setBalance(wallet.getBalance().subtract(fee));
+        tx.setBalanceAfter(wallet.getBalance());
+        tx.setStatus(TransactionStatus.COMPLETED);
+        tx.setPurpose(WalletPurpose.LISTING_FEE);
+        tx.setEntryType(WalletEntryType.DEBIT);
+        tx.setUserId(userId);
+        tx.setListingId(listingId);
+        tx.setDescription("Listing publication fee");
+        walletRepository.save(wallet);
+        walletTransactionRepository.save(tx);
+        return tx;
+    }
+}

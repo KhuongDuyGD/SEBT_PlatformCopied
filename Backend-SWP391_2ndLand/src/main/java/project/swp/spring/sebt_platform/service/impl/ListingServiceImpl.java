@@ -2,15 +2,9 @@ package project.swp.spring.sebt_platform.service.impl;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.LinkedHashSet;
 
-import org.springframework.data.domain.PageImpl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -30,6 +24,9 @@ import project.swp.spring.sebt_platform.model.*;
 import project.swp.spring.sebt_platform.model.enums.*;
 import project.swp.spring.sebt_platform.repository.*;
 import project.swp.spring.sebt_platform.service.ListingService;
+import project.swp.spring.sebt_platform.service.ListingFeePolicy;
+import project.swp.spring.sebt_platform.service.WalletLedgerService;
+import project.swp.spring.sebt_platform.exception.InsufficientFundsException;
 
 @Service
 public class ListingServiceImpl implements ListingService {
@@ -45,6 +42,8 @@ public class ListingServiceImpl implements ListingService {
     private final ListingImageRepository listingImageRepository;
     private final LocationRepository locationRepository;
     private final FavoriteRepository favoriteRepository;
+    private final ListingFeePolicy listingFeePolicy;
+    private final WalletLedgerService walletLedgerService;
 
     @Autowired
     public ListingServiceImpl(PostRequestRepository postRequestRepository,
@@ -55,7 +54,9 @@ public class ListingServiceImpl implements ListingService {
                               ListingRepository listingRepository,
                               ListingImageRepository listingImageRepository,
                               LocationRepository locationRepository,
-                              FavoriteRepository favoriteRepository) {
+                              FavoriteRepository favoriteRepository,
+                              ListingFeePolicy listingFeePolicy,
+                              WalletLedgerService walletLedgerService) {
         this.postRequestRepository = postRequestRepository;
         this.userRepository = userRepository;
         this.listingRepository = listingRepository;
@@ -63,8 +64,10 @@ public class ListingServiceImpl implements ListingService {
         this.locationRepository = locationRepository;
         this.evVehicleRepository = evVehicleRepository;
         this.batteryRepository = batteryRepository;
-        this.productRepository = productRepository;
-        this.favoriteRepository = favoriteRepository;
+    this.productRepository = productRepository;
+    this.favoriteRepository = favoriteRepository;
+    this.listingFeePolicy = listingFeePolicy;
+    this.walletLedgerService = walletLedgerService;
     }
 
     @Override
@@ -168,7 +171,6 @@ public class ListingServiceImpl implements ListingService {
             EvVehicleEntity evVehicleEntity = new EvVehicleEntity();
             evVehicleEntity.setName(evDto.getName());
             evVehicleEntity.setBrand(evDto.getBrand());
-            evVehicleEntity.setModel(evDto.getModel());
             evVehicleEntity.setYear(evDto.getYear());
             if (evDto.getBatteryCapacity() > 0) {
                 evVehicleEntity.setBatteryCapacity(BigDecimal.valueOf(evDto.getBatteryCapacity()));
@@ -186,7 +188,6 @@ public class ListingServiceImpl implements ListingService {
                     b.getBrand(), b.getModel(), b.getCapacity(), b.getHealthPercentage(), b.getConditionStatus());
             BatteryEntity batteryEntity = new BatteryEntity();
             batteryEntity.setBrand(b.getBrand());
-            batteryEntity.setModel(b.getModel());
             batteryEntity.setHealthPercentage(b.getHealthPercentage());
             batteryEntity.setCapacity(BigDecimal.valueOf(b.getCapacity()));
             batteryEntity.setCompatibleVehicles(b.getCompatibleVehicles());
@@ -221,9 +222,22 @@ public class ListingServiceImpl implements ListingService {
             return false;
         }
 
-        // Save listing first to get ID
+        // Save listing first to get ID (fee will be charged after building related entities)
         listingEntity = listingRepository.save(listingEntity);
         logger.debug("[CREATE_LISTING] Saved listing id={}", listingEntity.getId());
+
+        // --- Listing fee charging logic ---
+        boolean hasEv = productEntity.getEvVehicle() != null;
+        boolean hasBattery = productEntity.getBattery() != null;
+        BigDecimal fee = listingFeePolicy.computeFee(new ListingFeePolicy.ListingContext(hasEv, hasBattery, listingEntity.getPrice()));
+        try {
+            walletLedgerService.debitListingFee(user.getId(), listingEntity.getId(), fee);
+            logger.info("[LISTING_FEE] Charged sellerId={} listingId={} fee={}", user.getId(), listingEntity.getId(), fee);
+        } catch (InsufficientFundsException e) {
+            logger.warn("[CREATE_LISTING] Insufficient funds sellerId={} required={} current={}", user.getId(), e.getRequired(), e.getCurrent());
+            // propagate by returning false OR rethrow; rethrow for handler clarity
+            throw e;
+        }
 
         // Save listing images với URL và publicId từ Cloudinary
         if (listingImages != null && !listingImages.isEmpty()) {
@@ -306,7 +320,6 @@ public class ListingServiceImpl implements ListingService {
         if (product.getEvVehicle() != null) {
             productResp = new Product(new Ev(evVehicleEntity.getType(),
                     evVehicleEntity.getName(),
-                    evVehicleEntity.getModel(),
                     evVehicleEntity.getBrand(),
                     evVehicleEntity.getYear(),
                     evVehicleEntity.getMileage(),
@@ -315,7 +328,6 @@ public class ListingServiceImpl implements ListingService {
         } else {
             productResp = new Product(null,
                     new Battery(batteryEntity.getBrand(),
-                            batteryEntity.getModel(),
                             batteryEntity.getCapacity().doubleValue(),
                             batteryEntity.getHealthPercentage(),
                             batteryEntity.getCompatibleVehicles(),

@@ -8,11 +8,9 @@ import project.swp.spring.sebt_platform.model.enums.UserRole;
 import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.repository.WalletRepository;
 import project.swp.spring.sebt_platform.service.AuthService;
-import project.swp.spring.sebt_platform.service.MailService;
 import project.swp.spring.sebt_platform.util.Utils;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -63,12 +61,9 @@ public class AuthServiceImpl implements AuthService {
             newUser.setRole(role);
             WalletEntity wallet = new WalletEntity();
             wallet.setUser(newUser);
-            wallet.setBalance(BigDecimal.valueOf(0.0));
-            wallet.setUpdated_at(LocalDateTime.now());
+            wallet.setBalance(BigDecimal.ZERO);
 
-            wallet.setUser(newUser);
-            walletRepository.save(wallet);
-
+            walletRepository.save(wallet); // cascade persist user via wallet's user reference if configured, else save user first
             userRepository.save(newUser);
 
             return true;

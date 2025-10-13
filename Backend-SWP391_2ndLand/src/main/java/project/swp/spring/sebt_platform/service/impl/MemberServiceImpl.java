@@ -239,7 +239,7 @@ public class MemberServiceImpl implements MemberService {
             if (wallet.getBalance().doubleValue() < amount) return false;
             wallet.setBalance(wallet.getBalance().subtract(BigDecimal.valueOf(amount)));
             request.getListing().setStatus(ListingStatus.ACTIVE);
-            wallet.setUpdated_at(LocalDateTime.now());
+            // TODO: Replace direct balance modification with WalletLedgerService debit (purpose=FEE) for audit
             walletRepository.save(wallet);
             return true;
         }catch (Exception e){

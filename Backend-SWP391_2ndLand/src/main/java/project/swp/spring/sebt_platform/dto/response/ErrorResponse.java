@@ -13,6 +13,9 @@ public class ErrorResponse {
     private String message;
     private String code; // optional application code
     private List<FieldErrorDetail> fieldErrors;
+    // Optional monetary context
+    private String requiredFee;
+    private String currentBalance;
 
     public Instant getTimestamp() { return timestamp; }
     public void setTimestamp(Instant timestamp) { this.timestamp = timestamp; }
@@ -28,4 +31,8 @@ public class ErrorResponse {
     public void setCode(String code) { this.code = code; }
     public List<FieldErrorDetail> getFieldErrors() { return fieldErrors; }
     public void setFieldErrors(List<FieldErrorDetail> fieldErrors) { this.fieldErrors = fieldErrors; }
+    public String getRequiredFee() { return requiredFee; }
+    public void setRequiredFee(String requiredFee) { this.requiredFee = requiredFee; }
+    public String getCurrentBalance() { return currentBalance; }
+    public void setCurrentBalance(String currentBalance) { this.currentBalance = currentBalance; }
 }

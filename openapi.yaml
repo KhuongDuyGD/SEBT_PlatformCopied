@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
   title: SEBT_platform API
-  version: 1.1.0
+  version: 1.3.1
   description: >-
-    OpenAPI spec synchronized with recent refactors: favorites RESTful endpoints
-    and filter query parameters (no GET bodies). Legacy /favorite endpoints are
-    deprecated and subject to removal.
+    Scope simplified: removed escrow & withdrawal (out-of-scope). Added listing
+    publish endpoint with listing fee debit. Wallet supports top-up and listing
+    fee only. Favorites legacy endpoints remain deprecated.
 servers:
   - url: http://localhost:8080
     description: Local dev
@@ -69,6 +69,45 @@ components:
         thumbnailUrl: { type: string }
         favorited: { type: boolean }
       required: [id, title, price]
+    WalletBalanceResponse:
+      type: object
+      properties:
+        balance: { type: number, format: double }
+      required: [balance]
+    WalletTransaction:
+      type: object
+      properties:
+        orderId: { type: string }
+        amount: { type: number, format: double }
+        balanceBefore: { type: number, format: double }
+        balanceAfter: { type: number, format: double }
+        status: { type: string }
+        purpose: { type: string }
+        entryType: { type: string }
+        createdAt: { type: string, format: date-time }
+        description: { type: string }
+      required: [orderId, amount, status]
+    TopUpRequest:
+      type: object
+      properties:
+        amount: { type: number, format: double, minimum: 1 }
+      required: [amount]
+    TopUpIntentResponse:
+      type: object
+      properties:
+        orderId: { type: string }
+        paymentUrl: { type: string }
+        amount: { type: number, format: double }
+        expiresAt: { type: string, format: date-time }
+      required: [orderId, paymentUrl, amount]
+    ListingPublishResult:
+      type: object
+      properties:
+        listingId: { type: integer, format: int64 }
+        status: { type: string, description: 'Expected ACTIVE on success' }
+        feeCharged: { type: number, format: double }
+        balanceAfter: { type: number, format: double }
+      required: [listingId, status, feeCharged]
 paths:
   /pricing/suggest:
     post:
@@ -200,6 +239,85 @@ paths:
         - { name: userId, in: query, required: true, schema: { type: integer, format: int64 } }
       responses:
         '200': { description: OK }
+  /wallet/me:
+    get:
+      summary: Lấy số dư ví hiện tại
+      tags: [Wallet]
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Wallet balance
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WalletBalanceResponse' }
+        '401': { description: Unauthorized }
+  /wallet/transactions:
+    get:
+      summary: Lịch sử giao dịch ví
+      tags: [Wallet]
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - { name: page, in: query, schema: { type: integer, default: 0 } }
+        - { name: size, in: query, schema: { type: integer, default: 10 } }
+        - { name: purpose, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Page of transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items: { $ref: '#/components/schemas/WalletTransaction' }
+                  totalElements: { type: integer }
+                  totalPages: { type: integer }
+                  size: { type: integer }
+                  number: { type: integer }
+        '401': { description: Unauthorized }
+  /wallet/topups:
+  /api/listings/fee/preview:
+    get:
+      summary: Preview listing publication fee
+      tags: [Listings]
+      parameters:
+        - { name: category, in: query, required: false, schema: { type: string }, description: "EV | BATTERY (case-insensitive)" }
+        - { name: price, in: query, required: false, schema: { type: integer, format: int64 }, description: "Price value used for EV tier threshold" }
+      responses:
+        '200':
+          description: Fee preview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fee: { type: string }
+                  currency: { type: string }
+  /api/listings/create:
+    post:
+      summary: Create listing (charges listing fee from wallet)
+      tags: [Listings]
+      responses:
+        '200': { description: Listing created }
+        '409': { description: Insufficient funds, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+    post:
+      summary: Tạo yêu cầu nạp tiền VNPay
+      tags: [Wallet]
+      security: [{ sessionCookie: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TopUpRequest' }
+      responses:
+        '201':
+          description: Top-up intent created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TopUpIntentResponse' }
+        '400': { description: Invalid amount }
+        '401': { description: Unauthorized }
     delete:
       deprecated: true
       summary: LEGACY unmark favorite (will be removed)
@@ -209,3 +327,23 @@ paths:
         - { name: userId, in: query, required: true, schema: { type: integer, format: int64 } }
       responses:
         '200': { description: OK }
+  /listings/{id}/publish:
+    post:
+      summary: Publish listing (trừ phí đăng bài từ ví)
+      tags: [Listings]
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '201':
+          description: Listing published
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListingPublishResult' }
+        '400': { description: Validation failed }
+        '401': { description: Unauthorized }
+        '404': { description: Listing not found }
+        '409': { description: Insufficient funds or already active, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }

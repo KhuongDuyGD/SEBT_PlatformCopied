@@ -68,6 +68,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resp);
     }
 
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficient(InsufficientFundsException ex, HttpServletRequest request) {
+        String cid = correlationId(request);
+        log.warn("[CID={}] Insufficient funds: required={} current={}", cid, ex.getRequired(), ex.getCurrent());
+        ErrorResponse resp = baseError(HttpStatus.CONFLICT, request, "WALLET_INSUFFICIENT_FUNDS", "Insufficient balance for listing fee");
+        resp.setRequiredFee(ex.getRequired().toPlainString());
+        resp.setCurrentBalance(ex.getCurrent().toPlainString());
+        resp.setMessage("Need more funds to pay listing fee");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);
+    }
+
     private Object safeRejectedValue(FieldError fe) {
         Object val = fe.getRejectedValue();
         if (val == null) return null;

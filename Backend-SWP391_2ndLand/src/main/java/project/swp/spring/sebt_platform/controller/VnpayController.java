@@ -45,6 +45,9 @@ public class VnpayController {
                                            HttpServletRequest request) {
         try{
             HttpSession session = request.getSession(false);
+            if (session == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login required");
+            }
             Long userId = (Long) session.getAttribute("userId");
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login required");
@@ -54,6 +57,7 @@ public class VnpayController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("amount must be positive");
             }
 
+            // NOTE: Prefer using POST /api/wallet/topups (WalletController) for new integrations.
             String paymentUrl = vnpayService.createPaymentUrl(amount,userId,request);
             return ResponseEntity.ok(Map.of("paymentUrl", paymentUrl));
         } catch (NumberFormatException e) {
@@ -83,13 +87,13 @@ public class VnpayController {
             boolean valid = vnpayService.validateReturn(params);
             String txnRef = params.get("vnp_TxnRef");
             String responseCode = params.get("vnp_ResponseCode");
-
             if (valid && "00".equals(responseCode)) {
+                // TODO: (Hardening) validate that vnp_Amount matches pending transaction amount before crediting.
                 vnpayService.updateTransactionStatus(txnRef, true);
-                response.sendRedirect("http://localhost:5173/payment-success");
+                response.sendRedirect("http://localhost:5173/payment-success?orderId="+txnRef);
             } else {
                 vnpayService.updateTransactionStatus(txnRef, false);
-                response.sendRedirect("http://localhost:5173/payment-failed");
+                response.sendRedirect("http://localhost:5173/payment-failed?orderId="+txnRef);
             }
         } catch (Exception e) {
             response.sendRedirect("http://localhost:5173/payment-failed");
