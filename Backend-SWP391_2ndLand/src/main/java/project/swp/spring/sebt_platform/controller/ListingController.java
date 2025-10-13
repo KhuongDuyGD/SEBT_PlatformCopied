@@ -1,6 +1,8 @@
 package project.swp.spring.sebt_platform.controller;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,27 +13,33 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.servlet.http.Part;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import project.swp.spring.sebt_platform.dto.object.*;
+import jakarta.servlet.http.Part;
+import project.swp.spring.sebt_platform.dto.object.Image;
 import project.swp.spring.sebt_platform.dto.request.BatteryFilterFormDTO;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.request.EvFilterFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
+import project.swp.spring.sebt_platform.model.enums.BatteryCondition;
+import project.swp.spring.sebt_platform.model.enums.VehicleCondition;
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
-import project.swp.spring.sebt_platform.service.AdminService;
 import project.swp.spring.sebt_platform.service.CloudinaryService;
 import project.swp.spring.sebt_platform.service.ListingService;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.media.Content;
 
 /**
  * REST Controller for Listings - Base URL: /api/listings
@@ -306,8 +314,14 @@ public class ListingController {
             HttpServletRequest request,
             @RequestParam(required = false) VehicleType vehicleType,
             @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer minYear,
+            @RequestParam(required = false) Integer maxYear,
             @RequestParam(required = false) String brand,
-            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String province,
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) VehicleCondition conditionStatus,
+            @RequestParam(required = false) Integer minMileage,
+            @RequestParam(required = false) Integer maxMileage,
             @RequestParam(required = false) Integer minBatteryCapacity,
             @RequestParam(required = false) Integer maxBatteryCapacity,
             @RequestParam(required = false) Double minPrice,
@@ -317,16 +331,29 @@ public class ListingController {
 
         try {
             Pageable pageable = PageRequest.of(Math.max(0, page), validateSize(size));
+            
+            // Tạo DTO với các tham số mở rộng cho filter xe điện
             EvFilterFormDTO dto = new EvFilterFormDTO(
                     vehicleType,
                     year,
+                    minYear,
+                    maxYear,
                     brand,
-                    location,
+                    province,
+                    district,
+                    conditionStatus,
+                    minMileage,
+                    maxMileage,
                     minBatteryCapacity,
                     maxBatteryCapacity,
                     minPrice,
                     maxPrice
             );
+            
+            logger.info("[EV_FILTER] userId={} filters: vehicleType={}, year={}, minYear={}, maxYear={}, brand={}, province={}, district={}, condition={}, mileage=[{}-{}], batteryCapacity=[{}-{}], price=[{}-{}]",
+                    getUserId(request), vehicleType, year, minYear, maxYear, brand, province, district, conditionStatus,
+                    minMileage, maxMileage, minBatteryCapacity, maxBatteryCapacity, minPrice, maxPrice);
+            
             Page<ListingCartResponseDTO> results = listingService.filterEvListings(
                     dto, getUserId(request), pageable);
 
@@ -334,7 +361,7 @@ public class ListingController {
         } catch (Exception e) {
             logger.error("Error filtering EV listings: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Lỗi khi lọc EV");
+                    .body("Lỗi khi lọc xe điện. Vui lòng thử lại sau.");
         }
     }
 
@@ -353,32 +380,55 @@ public class ListingController {
     public ResponseEntity<?> filterBatteryListings(
             HttpServletRequest request,
             @RequestParam(required = false) String brand,
-            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer minYear,
+            @RequestParam(required = false) Integer maxYear,
+            @RequestParam(required = false) String province,
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) BatteryCondition conditionStatus,
             @RequestParam(required = false) String compatibility,
             @RequestParam(required = false) Integer minBatteryCapacity,
             @RequestParam(required = false) Integer maxBatteryCapacity,
+            @RequestParam(required = false) Integer minHealthPercentage,
+            @RequestParam(required = false) Integer maxHealthPercentage,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         try {
             Pageable pageable = PageRequest.of(Math.max(0, page), validateSize(size));
+            
+            // Tạo DTO với các tham số mở rộng cho filter pin điện
             BatteryFilterFormDTO dto = new BatteryFilterFormDTO(
                     brand,
-                    location,
+                    name,
+                    year,
+                    minYear,
+                    maxYear,
+                    province,
+                    district,
+                    conditionStatus,
                     compatibility,
                     minBatteryCapacity,
                     maxBatteryCapacity,
+                    minHealthPercentage,
+                    maxHealthPercentage,
                     minPrice,
                     maxPrice
             );
+            
+            logger.info("[BATTERY_FILTER] userId={} filters: brand={}, name={}, year={}, minYear={}, maxYear={}, province={}, district={}, condition={}, compatibility={}, capacity=[{}-{}], health=[{}-{}], price=[{}-{}]",
+                    getUserId(request), brand, name, year, minYear, maxYear, province, district, conditionStatus, 
+                    compatibility, minBatteryCapacity, maxBatteryCapacity, minHealthPercentage, maxHealthPercentage, minPrice, maxPrice);
+            
             Page<ListingCartResponseDTO> results = listingService.filterBatteryListings(
                     dto, getUserId(request), pageable);
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             logger.error("Error filtering battery listings: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Lỗi khi lọc pin");
+                    .body("Lỗi khi lọc pin điện. Vui lòng thử lại sau.");
         }
     }
 
@@ -417,6 +467,128 @@ public class ListingController {
             logger.error("Error getting my listings: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Lỗi khi lấy danh sách của bạn");
+        }
+    }
+
+    /**
+     * GET /api/listings/filter-data/provinces - Get all provinces for location filter
+     */
+    @GetMapping("/filter-data/provinces")
+    public ResponseEntity<?> getProvinces() {
+        try {
+            List<String> provinces = listingService.getAllProvinces();
+            return ResponseEntity.ok(provinces);
+        } catch (Exception e) {
+            logger.error("Error getting provinces: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy danh sách tỉnh thành");
+        }
+    }
+
+    /**
+     * GET /api/listings/filter-data/districts - Get all districts for location filter
+     */
+    @GetMapping("/filter-data/districts")
+    public ResponseEntity<?> getDistricts(@RequestParam(required = false) String province) {
+        try {
+            List<String> districts = listingService.getAllDistricts(province);
+            return ResponseEntity.ok(districts);
+        } catch (Exception e) {
+            logger.error("Error getting districts: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy danh sách quận huyện");
+        }
+    }
+
+    /**
+     * GET /api/listings/filter-data/ev-brands - Get all EV brands for filter
+     */
+    @GetMapping("/filter-data/ev-brands")
+    public ResponseEntity<?> getEvBrands() {
+        try {
+            List<String> brands = listingService.getAllEvBrands();
+            return ResponseEntity.ok(brands);
+        } catch (Exception e) {
+            logger.error("Error getting EV brands: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy danh sách thương hiệu xe điện");
+        }
+    }
+
+    /**
+     * GET /api/listings/filter-data/battery-brands - Get all battery brands for filter
+     */
+    @GetMapping("/filter-data/battery-brands")
+    public ResponseEntity<?> getBatteryBrands() {
+        try {
+            List<String> brands = listingService.getAllBatteryBrands();
+            return ResponseEntity.ok(brands);
+        } catch (Exception e) {
+            logger.error("Error getting battery brands: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy danh sách thương hiệu pin");
+        }
+    }
+
+    /**
+     * GET /api/listings/filter-data/battery-names - Get all battery names for autocomplete
+     */
+    @GetMapping("/filter-data/battery-names")
+    public ResponseEntity<?> getBatteryNames() {
+        try {
+            List<String> names = listingService.getAllBatteryNames();
+            return ResponseEntity.ok(names);
+        } catch (Exception e) {
+            logger.error("Error getting battery names: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy danh sách tên pin");
+        }
+    }
+
+    /**
+     * GET /api/listings/filter-data/compatible-vehicles - Get all compatible vehicles for battery filter
+     */
+    @GetMapping("/filter-data/compatible-vehicles")
+    public ResponseEntity<?> getCompatibleVehicles() {
+        try {
+            List<String> vehicles = listingService.getAllCompatibleVehicles();
+            return ResponseEntity.ok(vehicles);
+        } catch (Exception e) {
+            logger.error("Error getting compatible vehicles: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy danh sách xe tương thích");
+        }
+    }
+
+
+
+    /**
+     * GET /api/listings/filter-data/ev-years - Get all EV production years for dropdown
+     */
+    @GetMapping("/filter-data/ev-years")
+    public ResponseEntity<?> getEvYears() {
+        try {
+            List<Integer> years = listingService.getAllEvYears();
+            return ResponseEntity.ok(years);
+        } catch (Exception e) {
+            logger.error("Error getting EV years: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy danh sách năm sản xuất xe điện");
+        }
+    }
+
+    /**
+     * GET /api/listings/filter-data/battery-years - Get all battery production years for dropdown
+     */
+    @GetMapping("/filter-data/battery-years")
+    public ResponseEntity<?> getBatteryYears() {
+        try {
+            List<Integer> years = listingService.getAllBatteryYears();
+            return ResponseEntity.ok(years);
+        } catch (Exception e) {
+            logger.error("Error getting battery years: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi khi lấy danh sách năm sản xuất pin");
         }
     }
 

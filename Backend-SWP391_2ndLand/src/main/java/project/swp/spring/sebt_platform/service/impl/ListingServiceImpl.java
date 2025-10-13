@@ -2,33 +2,53 @@ package project.swp.spring.sebt_platform.service.impl;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.LinkedHashSet;
 
-import org.springframework.data.domain.PageImpl;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import project.swp.spring.sebt_platform.dto.object.*;
+import project.swp.spring.sebt_platform.dto.object.Battery;
+import project.swp.spring.sebt_platform.dto.object.Ev;
+import project.swp.spring.sebt_platform.dto.object.Image;
+import project.swp.spring.sebt_platform.dto.object.Location;
+import project.swp.spring.sebt_platform.dto.object.Product;
+import project.swp.spring.sebt_platform.dto.object.Seller;
 import project.swp.spring.sebt_platform.dto.request.BatteryFilterFormDTO;
 import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.request.EvFilterFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
-import project.swp.spring.sebt_platform.model.*;
-import project.swp.spring.sebt_platform.model.enums.*;
-import project.swp.spring.sebt_platform.repository.*;
+import project.swp.spring.sebt_platform.model.BatteryEntity;
+import project.swp.spring.sebt_platform.model.EvVehicleEntity;
+import project.swp.spring.sebt_platform.model.ListingEntity;
+import project.swp.spring.sebt_platform.model.ListingImageEntity;
+import project.swp.spring.sebt_platform.model.LocationEntity;
+import project.swp.spring.sebt_platform.model.PostRequestEntity;
+import project.swp.spring.sebt_platform.model.ProductEntity;
+import project.swp.spring.sebt_platform.model.UserEntity;
+import project.swp.spring.sebt_platform.model.enums.ApprovalStatus;
+import project.swp.spring.sebt_platform.model.enums.ListingStatus;
+import project.swp.spring.sebt_platform.model.enums.UserRole;
+import project.swp.spring.sebt_platform.model.enums.VehicleCondition;
+import project.swp.spring.sebt_platform.repository.BatteryRepository;
+import project.swp.spring.sebt_platform.repository.EvVehicleRepository;
+import project.swp.spring.sebt_platform.repository.FavoriteRepository;
+import project.swp.spring.sebt_platform.repository.ListingImageRepository;
+import project.swp.spring.sebt_platform.repository.ListingRepository;
+import project.swp.spring.sebt_platform.repository.LocationRepository;
+import project.swp.spring.sebt_platform.repository.PostRequestRepository;
+import project.swp.spring.sebt_platform.repository.ProductRepository;
+import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.ListingService;
 
 @Service
@@ -144,8 +164,8 @@ public class ListingServiceImpl implements ListingService {
 
         if (createListingForm.getProduct().getEv() != null) {
             Ev evDto = createListingForm.getProduct().getEv();
-            logger.debug("[CREATE_LISTING] EV DTO -> type={} name='{}' brand='{}' model='{}' year={} mileage={} batteryCapacity={} condition={}",
-                    evDto.getType(), evDto.getName(), evDto.getBrand(), evDto.getModel(), evDto.getYear(), evDto.getMileage(), evDto.getBatteryCapacity(), evDto.getConditionStatus());
+            logger.debug("[CREATE_LISTING] EV DTO -> type={} name='{}' brand='{}' year={} mileage={} batteryCapacity={} condition={}",
+                    evDto.getType(), evDto.getName(), evDto.getBrand(), evDto.getYear(), evDto.getMileage(), evDto.getBatteryCapacity(), evDto.getConditionStatus());
 
             // Defensive validation for required EV fields
             if (evDto.getName() == null || evDto.getName().isBlank()) {
@@ -168,7 +188,6 @@ public class ListingServiceImpl implements ListingService {
             EvVehicleEntity evVehicleEntity = new EvVehicleEntity();
             evVehicleEntity.setName(evDto.getName());
             evVehicleEntity.setBrand(evDto.getBrand());
-            evVehicleEntity.setModel(evDto.getModel());
             evVehicleEntity.setYear(evDto.getYear());
             if (evDto.getBatteryCapacity() > 0) {
                 evVehicleEntity.setBatteryCapacity(BigDecimal.valueOf(evDto.getBatteryCapacity()));
@@ -182,11 +201,10 @@ public class ListingServiceImpl implements ListingService {
 
         if (createListingForm.getProduct().getBattery() != null) {
             Battery b = createListingForm.getProduct().getBattery();
-            logger.debug("[CREATE_LISTING] Battery DTO -> brand={} model={} capacity={} health%={} condition={}",
-                    b.getBrand(), b.getModel(), b.getCapacity(), b.getHealthPercentage(), b.getConditionStatus());
+            logger.debug("[CREATE_LISTING] Battery DTO -> brand={} capacity={} health%={} condition={}",
+                    b.getBrand(), b.getCapacity(), b.getHealthPercentage(), b.getConditionStatus());
             BatteryEntity batteryEntity = new BatteryEntity();
             batteryEntity.setBrand(b.getBrand());
-            batteryEntity.setModel(b.getModel());
             batteryEntity.setHealthPercentage(b.getHealthPercentage());
             batteryEntity.setCapacity(BigDecimal.valueOf(b.getCapacity()));
             batteryEntity.setCompatibleVehicles(b.getCompatibleVehicles());
@@ -306,7 +324,6 @@ public class ListingServiceImpl implements ListingService {
         if (product.getEvVehicle() != null) {
             productResp = new Product(new Ev(evVehicleEntity.getType(),
                     evVehicleEntity.getName(),
-                    evVehicleEntity.getModel(),
                     evVehicleEntity.getBrand(),
                     evVehicleEntity.getYear(),
                     evVehicleEntity.getMileage(),
@@ -315,7 +332,6 @@ public class ListingServiceImpl implements ListingService {
         } else {
             productResp = new Product(null,
                     new Battery(batteryEntity.getBrand(),
-                            batteryEntity.getModel(),
                             batteryEntity.getCapacity().doubleValue(),
                             batteryEntity.getHealthPercentage(),
                             batteryEntity.getCompatibleVehicles(),
@@ -445,19 +461,30 @@ public class ListingServiceImpl implements ListingService {
             Long userId,
             Pageable pageable) {
         try {
-        return listingRepository.filterEvListings(
-            evFilterFormDTO.year(),
-            evFilterFormDTO.vehicleType(),
-            evFilterFormDTO.brand(),
-            evFilterFormDTO.location(),
-            evFilterFormDTO.minBatteryCapacity(),
-            evFilterFormDTO.maxBatteryCapacity(),
-            evFilterFormDTO.minPrice() != null ? BigDecimal.valueOf(evFilterFormDTO.minPrice()) : null,
-            evFilterFormDTO.maxPrice() != null ? BigDecimal.valueOf(evFilterFormDTO.maxPrice()) : null,
-                    pageable
+            logger.info("[FILTER_EV_SERVICE] Starting EV filter with criteria: {}", evFilterFormDTO);
+            
+            return listingRepository.filterEvListings(
+                evFilterFormDTO.year(),
+                evFilterFormDTO.minYear(),
+                evFilterFormDTO.maxYear(),
+                evFilterFormDTO.vehicleType(),
+                evFilterFormDTO.brand(),
+                evFilterFormDTO.province(),
+                evFilterFormDTO.district(),
+                evFilterFormDTO.conditionStatus(),
+                evFilterFormDTO.minMileage(),
+                evFilterFormDTO.maxMileage(),
+                evFilterFormDTO.minBatteryCapacity(),
+                evFilterFormDTO.maxBatteryCapacity(),
+                evFilterFormDTO.minPrice() != null ? BigDecimal.valueOf(evFilterFormDTO.minPrice()) : null,
+                evFilterFormDTO.maxPrice() != null ? BigDecimal.valueOf(evFilterFormDTO.maxPrice()) : null,
+                pageable
             ).map(listing -> {
+                        // Kiểm tra favorite status cho user hiện tại
                         boolean isFavorited = userId != null &&
                                 favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
+                        
+                        // Tạo response DTO với thông tin đầy đủ
                         return new ListingCartResponseDTO(
                                 listing.getId(),
                                 listing.getTitle(),
@@ -470,7 +497,7 @@ public class ListingServiceImpl implements ListingService {
                     }
             );
         } catch (Exception e) {
-            logger.error("Error in searchListingsAdvanced: ", e);
+            logger.error("Error in filterEvListings: ", e);
             return Page.empty(pageable);
         }
     }
@@ -480,19 +507,31 @@ public class ListingServiceImpl implements ListingService {
                                                               Long userId,
                                                               Pageable pageable) {
         try {
+            logger.info("[FILTER_BATTERY_SERVICE] Starting battery filter with criteria: {}", batteryFilterFormDTO);
+            
             return listingRepository.filterBatteryListings(
                     batteryFilterFormDTO.brand(),
-                    batteryFilterFormDTO.location(),
+                    batteryFilterFormDTO.name(),
+                    batteryFilterFormDTO.year(),
+                    batteryFilterFormDTO.minYear(),
+                    batteryFilterFormDTO.maxYear(),
+                    batteryFilterFormDTO.province(),
+                    batteryFilterFormDTO.district(),
+                    batteryFilterFormDTO.conditionStatus(),
                     batteryFilterFormDTO.compatibility(),
-            batteryFilterFormDTO.minBatteryCapacity(),
-            batteryFilterFormDTO.maxBatteryCapacity(),
-            batteryFilterFormDTO.minPrice() != null ? BigDecimal.valueOf(batteryFilterFormDTO.minPrice()) : null,
-            batteryFilterFormDTO.maxPrice() != null ? BigDecimal.valueOf(batteryFilterFormDTO.maxPrice()) : null,
+                    batteryFilterFormDTO.minBatteryCapacity(),
+                    batteryFilterFormDTO.maxBatteryCapacity(),
+                    batteryFilterFormDTO.minHealthPercentage(),
+                    batteryFilterFormDTO.maxHealthPercentage(),
+                    batteryFilterFormDTO.minPrice() != null ? BigDecimal.valueOf(batteryFilterFormDTO.minPrice()) : null,
+                    batteryFilterFormDTO.maxPrice() != null ? BigDecimal.valueOf(batteryFilterFormDTO.maxPrice()) : null,
                     pageable
             ).map(listing -> {
+                        // Kiểm tra favorite status cho user hiện tại
                         boolean isFavorited = userId != null &&
                                 favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
 
+                        // Tạo response DTO với thông tin đầy đủ
                         return new ListingCartResponseDTO(
                                 listing.getId(),
                                 listing.getTitle(),
@@ -505,8 +544,111 @@ public class ListingServiceImpl implements ListingService {
                     }
             );
         } catch (Exception e) {
-            logger.error("Error in searchListingsAdvanced: ", e);
+            logger.error("Error in filterBatteryListings: ", e);
             return Page.empty(pageable);
+        }
+    }
+
+    @Override
+    public List<String> getAllProvinces() {
+        try {
+            return locationRepository.findDistinctProvinces();
+        } catch (Exception e) {
+            logger.error("Error getting all provinces: ", e);
+            return List.of();
+        }
+    }
+
+    @Override 
+    public List<String> getAllDistricts(String province) {
+        try {
+            if (province != null && !province.trim().isEmpty()) {
+                return locationRepository.findDistinctDistrictsByProvince(province.trim());
+            } else {
+                return locationRepository.findDistinctDistricts();
+            }
+        } catch (Exception e) {
+            logger.error("Error getting districts for province {}: ", province, e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<String> getAllEvBrands() {
+        try {
+            return evVehicleRepository.findDistinctBrands();
+        } catch (Exception e) {
+            logger.error("Error getting all EV brands: ", e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<String> getAllBatteryBrands() {
+        try {
+            return batteryRepository.findDistinctBrands();
+        } catch (Exception e) {
+            logger.error("Error getting all battery brands: ", e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<String> getAllBatteryNames() {
+        try {
+            return batteryRepository.findDistinctBatteryNames();
+        } catch (Exception e) {
+            logger.error("Error getting all battery names: ", e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<String> getAllCompatibleVehicles() {
+        try {
+            List<String> allCompatibleVehicles = batteryRepository.findAllCompatibleVehicles();
+            Set<String> uniqueVehicles = new HashSet<>();
+            
+            // Parse comma-separated compatible vehicles and extract unique values
+            for (String compatibleVehiclesStr : allCompatibleVehicles) {
+                if (compatibleVehiclesStr != null && !compatibleVehiclesStr.trim().isEmpty()) {
+                    String[] vehicles = compatibleVehiclesStr.split(",");
+                    for (String vehicle : vehicles) {
+                        String trimmedVehicle = vehicle.trim();
+                        if (!trimmedVehicle.isEmpty()) {
+                            uniqueVehicles.add(trimmedVehicle);
+                        }
+                    }
+                }
+            }
+            
+            return new ArrayList<>(uniqueVehicles);
+        } catch (Exception e) {
+            logger.error("Error getting all compatible vehicles: ", e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<Integer> getAllEvYears() {
+        try {
+            return evVehicleRepository.findDistinctYears();
+        } catch (Exception e) {
+            logger.error("Error getting all EV years: ", e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<Integer> getAllBatteryYears() {
+        try {
+            return batteryRepository.findDistinctBatteryYears()
+                    .stream()
+                    .sorted(Collections.reverseOrder()) // Latest years first
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error getting all battery years: ", e);
+            return List.of();
         }
     }
 }

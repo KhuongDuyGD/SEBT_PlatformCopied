@@ -1,8 +1,9 @@
 package project.swp.spring.sebt_platform.service;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 
 import project.swp.spring.sebt_platform.dto.object.Image;
 import project.swp.spring.sebt_platform.dto.request.BatteryFilterFormDTO;
@@ -10,8 +11,6 @@ import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
 import project.swp.spring.sebt_platform.dto.request.EvFilterFormDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingCartResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
-import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
-import project.swp.spring.sebt_platform.model.enums.VehicleType;
 
 public interface ListingService {
 
@@ -41,4 +40,21 @@ public interface ListingService {
     Page<ListingCartResponseDTO> getListingCartsBySeller(Long sellerId, Pageable pageable);
 
     int deleteListingImages(List<String> publicIds);
+
+    // Filter data endpoints - Cung cấp dữ liệu cho filter UI
+    List<String> getAllProvinces();
+    
+    List<String> getAllDistricts(String province);
+    
+    List<String> getAllEvBrands();
+    
+    List<String> getAllBatteryBrands();
+    
+    List<String> getAllBatteryNames();
+    
+    List<String> getAllCompatibleVehicles();
+    
+    List<Integer> getAllEvYears();
+    
+    List<Integer> getAllBatteryYears();
 }
