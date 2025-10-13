@@ -31,7 +31,7 @@ public class GeminiResponseParser {
         try {
             JsonNode root = mapper.readTree(body);
             JsonNode candidates = root.path("candidates");
-            if (candidates.isArray() && candidates.size() > 0) {
+            if (candidates.isArray() && !candidates.isEmpty()) {
                 StringBuilder agg = new StringBuilder();
                 candidates.forEach(c -> {
                     JsonNode parts = c.path("content").path("parts");

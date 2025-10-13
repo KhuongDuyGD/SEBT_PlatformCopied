@@ -13,13 +13,13 @@ public class LocationEntity {
     @JoinColumn(name = "listing_id")
     private ListingEntity listing;
 
-    @Column(name = "province", length = 20, columnDefinition = "NVARCHAR(30)")
+    @Column(name = "province", length = 30, columnDefinition = "NVARCHAR(30)")
     private String province;
 
-    @Column(name = "district", length = 30, columnDefinition = "NVARCHAR(30)")
+    @Column(name = "district", length = 50, columnDefinition = "NVARCHAR(50)")
     private String district;
 
-    @Column(name = "details", length = 255, columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "details", columnDefinition = "NVARCHAR(MAX)")
     private String details;
 
     // Constructors
@@ -76,11 +76,11 @@ public class LocationEntity {
             fullAddress.append(this.details);
         }
         if (district != null && !district.isEmpty()) {
-            if (fullAddress.length() > 0) fullAddress.append(", ");
+            if (!fullAddress.isEmpty()) fullAddress.append(", ");
             fullAddress.append(district);
         }
         if (province != null && !province.isEmpty()) {
-            if (fullAddress.length() > 0) fullAddress.append(", ");
+            if (!fullAddress.isEmpty()) fullAddress.append(", ");
             fullAddress.append(province);
         }
         return fullAddress.toString();
