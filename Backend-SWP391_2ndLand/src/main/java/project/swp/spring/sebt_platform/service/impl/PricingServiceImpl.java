@@ -3,11 +3,13 @@ package project.swp.spring.sebt_platform.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import project.swp.spring.sebt_platform.config.AiConfig;
 import project.swp.spring.sebt_platform.dto.request.PricingSuggestRequestDTO;
 import project.swp.spring.sebt_platform.dto.response.PricingSuggestResponseDTO;
 import project.swp.spring.sebt_platform.service.PricingService;
@@ -22,25 +24,8 @@ public class PricingServiceImpl implements PricingService {
 
     private static final Logger logger = LoggerFactory.getLogger(PricingServiceImpl.class);
 
-    @Value("${app.ai.gemini.apiKey:}")
-    private String geminiApiKey;
-
-    @Value("${app.ai.gemini.model:gemini-2.5-flash}")
-    private String geminiModel;
-
-    // New configurable knobs
-    @Value("${app.pricing.clamp.percent:0.15}")
-    private double clampPercent; // e.g. 0.15 = ±15%
-    @Value("${app.pricing.retry.attempts:3}")
-    private int retryAttempts; // total attempts including first
-    @Value("${app.pricing.retry.initialDelayMillis:400}")
-    private long initialDelayMillis; // backoff base
-    @Value("${app.pricing.fallback.model:gemini-1.5-flash-latest}")
-    private String fallbackModel;
-    @Value("${app.pricing.cache.enabled:true}")
-    private boolean cacheEnabled;
-    @Value("${app.pricing.cache.maxSize:500}")
-    private int cacheMaxSize;
+    @Autowired
+    private AiConfig  aiConfig;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
@@ -73,7 +58,7 @@ public class PricingServiceImpl implements PricingService {
         Long max = heuristic == null ? null : Math.round(heuristic * (1 + pct) / 1000.0) * 1000L;
     final String promptVersion = "v3"; // upgraded prompt
 
-        if (geminiApiKey == null || geminiApiKey.isBlank()) {
+        if (aiConfig.getGeminiApiKey() == null || aiConfig.getGeminiApiKey().isBlank()) {
             logger.warn("Gemini API key not configured (app.ai.gemini.apiKey / GEMINI_API_KEY). Using heuristic fallback only.");
         PricingSuggestResponseDTO resp = baseResponseFromHeuristic(heuristic, min, max, promptVersion,
             "Heuristic (không dùng AI)");
@@ -83,7 +68,7 @@ public class PricingServiceImpl implements PricingService {
             CACHE.put(cacheKey, resp);
             return resp;
         }
-        String primaryModel = (geminiModel == null || geminiModel.isBlank()) ? "gemini-2.5-flash" : geminiModel.trim();
+        String primaryModel = (aiConfig.getGeminiModel() == null || aiConfig.getGeminiModel().isBlank()) ? "gemini-2.5-flash" : aiConfig.getGeminiModel().trim();
         String modelInUse = primaryModel;
     String prompt = buildPromptV3(request, heuristic, min, max, promptVersion, heur, pct);
 
@@ -91,8 +76,8 @@ public class PricingServiceImpl implements PricingService {
         while (true) {
             attempts++;
             try {
-                String endpoint = GEMINI_BASE + String.format(GEMINI_API_PATH_TEMPLATE, modelInUse) + geminiApiKey;
-                logger.debug("Calling Gemini attempt={} model='{}' endpoint='{}'", attempts, modelInUse, endpoint.replace(geminiApiKey, "***"));
+                String endpoint = GEMINI_BASE + String.format(GEMINI_API_PATH_TEMPLATE, modelInUse) + aiConfig.getGeminiApiKey();
+                logger.debug("Calling Gemini attempt={} model='{}' endpoint='{}'", attempts, modelInUse, endpoint.replace(aiConfig.getGeminiApiKey(), "***"));
                 Map<String, Object> body = Map.of(
                         "contents", List.of(Map.of(
                                 "parts", List.of(Map.of("text", prompt))
@@ -113,8 +98,8 @@ public class PricingServiceImpl implements PricingService {
                     if (shouldRetry(response.getStatusCode().value(), attempts)) {
                         sleepBackoff(attempts);
                         // đổi sang fallback model nếu primary lỗi liên tục mã 503 / 500
-                        if ((response.getStatusCode().value() == 503 || response.getStatusCode().value() == 500) && fallbackModel != null && !fallbackModel.isBlank()) {
-                            modelInUse = fallbackModel;
+                        if ((response.getStatusCode().value() == 503 || response.getStatusCode().value() == 500) && aiConfig.getFallbackModel() != null && !aiConfig.getFallbackModel().isBlank()) {
+                            modelInUse = aiConfig.getFallbackModel();
                         }
                         continue;
                     }
@@ -132,8 +117,8 @@ public class PricingServiceImpl implements PricingService {
                 logger.warn("Gemini HTTP ex attempt={} status={} snippet={}", attempts, code, truncate(httpEx.getResponseBodyAsString(), 160));
                 if (shouldRetry(code, attempts)) {
                     sleepBackoff(attempts);
-                    if ((code == 503 || code == 500) && fallbackModel != null && !fallbackModel.isBlank()) {
-                        modelInUse = fallbackModel;
+                    if ((code == 503 || code == 500) && aiConfig.getFallbackModel() != null && !aiConfig.getFallbackModel().isBlank()) {
+                        modelInUse = aiConfig.getFallbackModel() ;
                     }
                     continue;
                 }
@@ -151,7 +136,7 @@ public class PricingServiceImpl implements PricingService {
                 return resp;
             } catch (Exception e) {
                 logger.error("Gemini exception attempt={} type={} msg={}", attempts, e.getClass().getSimpleName(), e.getMessage());
-                if (attempts < retryAttempts) {
+                if (attempts < aiConfig.getRetryAttempts()) {
                     sleepBackoff(attempts);
                     continue;
                 }
@@ -203,7 +188,7 @@ public class PricingServiceImpl implements PricingService {
                 // Build corrective mini prompt: instruct model to ONLY output JSON with required fields.
                 String corrective = prompt + "\nCHỈ TRẢ VỀ JSON HỢP LỆ duy nhất dạng: {\\\"suggestedPrice\\\": <int>, \\\"reasoning\\\": \\\"<=2 câu\\\", \\\"evidence\\\":[...]}";
                 try {
-                    String endpoint = GEMINI_BASE + String.format(GEMINI_API_PATH_TEMPLATE, model) + geminiApiKey;
+                    String endpoint = GEMINI_BASE + String.format(GEMINI_API_PATH_TEMPLATE, model) + aiConfig.getGeminiModel();
                     Map<String, Object> bodyMap = Map.of(
                             "contents", List.of(Map.of(
                                     "parts", List.of(Map.of("text", corrective))
@@ -232,10 +217,10 @@ public class PricingServiceImpl implements PricingService {
     private String buildPromptV3(PricingSuggestRequestDTO req, Long heuristic, Long min, Long max, String version, HeuristicResult heur, double clampPct) {
         StringBuilder sb = new StringBuilder();
         sb.append("PROMPT_VERSION=").append(version).append('\n');
-        sb.append("ROLE: Bạn là chuyên gia thẩm định giá xe điện & pin tại Việt Nam.\n");
-        sb.append("OUTPUT: Chỉ trả về 1 dòng JSON hợp lệ dạng: {\"suggestedPrice\": <int>, \"reasoning\": \"<=2 câu giải thích chênh lệch so với heuristic\", \"evidence\": [\"tag1\",\"tag2\",...] }\n");
-        sb.append("evidence tags hợp lệ (chỉ dùng những tag này, chọn 2-6 tag mô tả logic): baseline,depreciation,capacity,mileage,condition,health,market,adjustment,clamp.\n");
-        sb.append("KHÔNG thêm text khác. Không định dạng số bằng dấu chấm. Không giải thích ngoài JSON.\n");
+        sb.append("ROLE: You are an expert in electric vehicle and battery valuation in Vietnam.\n");
+        sb.append("OUTPUT: Return only ONE valid JSON line in the format: {\"suggestedPrice\": <int>, \"reasoning\": \"<=2 short sentences explaining the difference from heuristic\", \"evidence\": [\"tag1\",\"tag2\",...] }\n");
+        sb.append("Valid evidence tags (only use from this list, select 2–6 tags describing your logic): baseline, depreciation, capacity, mileage, condition, health, market, adjustment, clamp.\n");
+        sb.append("DO NOT include any extra text. DO NOT format numbers with dots. DO NOT explain anything outside the JSON.\n");
         if (heuristic != null) {
             sb.append("HEURISTIC_RESULT=").append(heuristic).append('\n');
             sb.append("ALLOWED_RANGE=[").append(min).append(',').append(max).append("]\n");
@@ -248,7 +233,8 @@ public class PricingServiceImpl implements PricingService {
                 sb.append("FACTORS: ").append(heur.factorSummary).append(" clampPercent=")
                   .append(String.format(java.util.Locale.US, "%.2f", clampPct*100)).append('%').append('\n');
             }
-            sb.append("Nếu vượt ngoài range hãy giữ trong range và giải thích ngắn gọn.\n");
+            sb.append("If the result exceeds the allowed range, keep it within the range and give a short explanation.\n");
+            sb.append("Answering by VietNamese.\n");
         }
         sb.append("DỮ LIỆU:\n");
         sb.append("category=").append(req.getCategory()).append('\n');
@@ -404,20 +390,20 @@ public class PricingServiceImpl implements PricingService {
     private static final Map<String, PricingSuggestResponseDTO> CACHE = new ConcurrentHashMap<>();
 
     private boolean shouldRetry(int statusCode, int attempts) {
-        if (attempts >= retryAttempts) return false;
+        if (attempts >= aiConfig.getRetryAttempts()) return false;
         return statusCode == 503 || statusCode == 500 || statusCode == 429; // transient
     }
 
     private void sleepBackoff(int attempts) {
         try {
-            long delay = (long) (initialDelayMillis * Math.pow(2, Math.max(0, attempts - 1))); // exp backoff
+            long delay = (long) (aiConfig.getInitialDelayMillis() * Math.pow(2, Math.max(0, attempts - 1))); // exp backoff
             Thread.sleep(Math.min(delay, 4000));
         } catch (InterruptedException ignored) {}
     }
 
     private void putCache(String key, PricingSuggestResponseDTO value) {
-        if (!cacheEnabled) return;
-        if (CACHE.size() >= cacheMaxSize) {
+        if (!aiConfig.isCacheEnabled()) return;
+        if (CACHE.size() >= aiConfig.getCacheMaxSize()) {
             // simple eviction: clear half (could be improved to LRU but fine for now)
             int removeCount = CACHE.size() / 2;
             Iterator<String> it = CACHE.keySet().iterator();
@@ -484,7 +470,7 @@ public class PricingServiceImpl implements PricingService {
             baselineCapApplied = true;
         }
         Double deltaPercent = null, confidence = null;
-        if (heuristic != null && finalPrice != null) {
+        if (heuristic != null) {
             deltaPercent = (finalPrice - heuristic) * 100.0 / heuristic;
             confidence = 1.0 - Math.min(1.0, Math.abs(finalPrice - heuristic) / (double) heuristic);
             // Confidence calibration: if raw AI (pre-clamp) deviated >10%, subtract 0.10 (floor 0.1)
