@@ -22,7 +22,7 @@ To set up the project locally:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/BoDjtSoAi/SWP391_2ndLand
+   git clone https://github.com/SatohTofu/SEBT_Platform.git
    ```
 2. **Frontend Setup**:
    - Navigate to the frontend directory: `cd frontend`

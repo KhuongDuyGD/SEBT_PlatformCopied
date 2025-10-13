@@ -4,14 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4fa67949-db7b-446f-b539-ae7cafb7c212" name="Changes" comment="modiy LocationEntity, Pricing promte">
+    <list default="true" id="4fa67949-db7b-446f-b539-ae7cafb7c212" name="Changes" comment="modify payment">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/AuthController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/VnpayController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/VnpayController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/WalletTransactionEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/WalletTransactionEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/ListingRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/ListingRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/WalletRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/WalletRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/VnpayServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/VnpayServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/ListingServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/ListingServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/openapi.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/openapi.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -43,12 +38,12 @@
     &quot;assignee&quot;: &quot;NguyenPhuocDucMinh&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/SatohTofu/SEBT_Platform.git",
-    "accountId": "1629b045-2178-4124-b723-84a8e285a646"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/SatohTofu/SEBT_Platform.git&quot;,
+    &quot;accountId&quot;: &quot;1629b045-2178-4124-b723-84a8e285a646&quot;
   }
-}]]></component>
+}</component>
   <component name="KubernetesApiPersistence">{}</component>
   <component name="KubernetesApiProvider">{
   &quot;isMigrated&quot;: true
@@ -80,7 +75,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Spring Boot.SebtPlatformApplication.executor": "Run",
-    "git-widget-placeholder": "MinhBe/modify-location",
+    "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",

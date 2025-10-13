@@ -168,7 +168,6 @@ public class ListingServiceImpl implements ListingService {
             EvVehicleEntity evVehicleEntity = new EvVehicleEntity();
             evVehicleEntity.setName(evDto.getName());
             evVehicleEntity.setBrand(evDto.getBrand());
-
             evVehicleEntity.setYear(evDto.getYear());
             if (evDto.getBatteryCapacity() > 0) {
                 evVehicleEntity.setBatteryCapacity(BigDecimal.valueOf(evDto.getBatteryCapacity()));
@@ -186,7 +185,6 @@ public class ListingServiceImpl implements ListingService {
                     b.getBrand(), b.getCapacity(), b.getHealthPercentage(), b.getConditionStatus());
             BatteryEntity batteryEntity = new BatteryEntity();
             batteryEntity.setBrand(b.getBrand());
-
             batteryEntity.setHealthPercentage(b.getHealthPercentage());
             batteryEntity.setCapacity(BigDecimal.valueOf(b.getCapacity()));
             batteryEntity.setCompatibleVehicles(b.getCompatibleVehicles());
@@ -306,7 +304,6 @@ public class ListingServiceImpl implements ListingService {
         if (product.getEvVehicle() != null) {
             productResp = new Product(new Ev(evVehicleEntity.getType(),
                     evVehicleEntity.getName(),
-
                     evVehicleEntity.getBrand(),
                     evVehicleEntity.getYear(),
                     evVehicleEntity.getMileage(),
