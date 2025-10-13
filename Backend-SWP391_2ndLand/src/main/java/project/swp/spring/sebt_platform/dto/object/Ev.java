@@ -17,12 +17,11 @@ public class Ev {
     public Ev() {}
 
     // Constructor with parameters
-    public Ev(VehicleType type, String name, String model, String brand,
+    public Ev(VehicleType type, String name, String brand,
               Integer year, Integer mileage, double batteryCapacity,
               VehicleCondition conditionStatus) {
         this.type = type;
         this.name = name;
-        this.model = model;
         this.brand = brand;
         this.year = year;
         this.mileage = mileage;

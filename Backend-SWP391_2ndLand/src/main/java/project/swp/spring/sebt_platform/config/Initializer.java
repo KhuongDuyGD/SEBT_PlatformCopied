@@ -71,12 +71,12 @@ public class Initializer {
     @Autowired
     private PostRequestRepository postRequestRepository;
 
-    // Danh sách email của người dùng (10 thành viên + 2 admin)
+    // Danh sách email của người dùng (11 thành viên + 2 admin)
     private static final String[] USER_EMAILS = {
         "noreplysebtplatform@gmail.com",      // Admin chính
         "nguyentantai22032005@gmail.com",     // Admin phụ  
         "ducminh852005@gmail.com",            // Member từ cũ
-        "donguyenkhuongduy1202@gmail.com",    // 9 Members mới
+        "donguyenkhuongduy1202@gmail.com",    // 10 Members mới
         "mutoy4351@gmail.com",
         "loriesandy4@gmail.com",
         "jennieandre8@gmail.com",
@@ -84,23 +84,25 @@ public class Initializer {
         "kingroyalelol20@gmail.com",
         "ducdaonguyen378@gmail.com",
         "satokazuo155@gmail.com",
-        "otakugamer73565@gmail.com"
+        "otakugamer73565@gmail.com",
+        "npln.0307@gmail.com"                 // Member mới được thêm
     };
 
-    // Danh sách mật khẩu tương ứng cho từng tài khoản
+    // Danh sách mật khẩu tương ứng cho từng tài khoản - tất cả đổi thành 123456
     private static final String[] PASSWORDS = {
-        "admin123",      // Admin chính
-        "admin456",      // Admin phụ
+        "123456",        // Admin chính
+        "123456",        // Admin phụ
         "123456",        // Member từ cũ
-        "Password123@",  // 9 tài khoản còn lại dùng cùng mật khẩu
-        "Password123@",
-        "Password123@",
-        "Password123@",
-        "Password123@",
-        "Password123@",
-        "Password123@",
-        "Password123@",
-        "Password123@"
+        "123456",        // 10 members
+        "123456",
+        "123456",
+        "123456",
+        "123456",
+        "123456",
+        "123456",
+        "123456",
+        "123456",
+        "123456"         // Member mới được thêm
     };
 
     // Danh sách vai trò tương ứng
@@ -108,7 +110,7 @@ public class Initializer {
         UserRole.ADMIN,   // Admin chính
         UserRole.ADMIN,   // Admin phụ
         UserRole.MEMBER,  // Member từ cũ
-        UserRole.MEMBER,  // 9 members mới
+        UserRole.MEMBER,  // 10 members mới
         UserRole.MEMBER,
         UserRole.MEMBER,
         UserRole.MEMBER,
@@ -116,7 +118,8 @@ public class Initializer {
         UserRole.MEMBER,
         UserRole.MEMBER,
         UserRole.MEMBER,
-        UserRole.MEMBER
+        UserRole.MEMBER,
+        UserRole.MEMBER   // Member mới được thêm
     };
 
     // Danh sách các thương hiệu xe điện
@@ -183,6 +186,65 @@ public class Initializer {
         "Quận Hai Bà Trưng", "Quận Cầu Giấy", "Quận Tây Hồ",
         "Quận Ninh Kiều", "Quận Cái Răng", "Quận Ô Môn"
     };
+
+    // Danh sách tiêu đề cho xe điện (tiếng Việt)
+    private static final String[] EV_TITLES = {
+        "Xe điện thông minh - Tiết kiệm năng lượng vượt trội",
+        "Ô tô điện cao cấp - Công nghệ hiện đại",
+        "Xe điện gia đình - An toàn và tiện nghi",
+        "Xe điện thể thao - Hiệu suất mạnh mẽ",
+        "Ô tô điện sang trọng - Đẳng cấp doanh nhân",
+        "Xe điện compact - Phù hợp đô thị",
+        "Xe điện SUV - Phiêu lưu mọi địa hình",
+        "Ô tô điện hybrid - Kết hợp hoàn hảo",
+        "Xe điện premium - Trải nghiệm đỉnh cao",
+        "Ô tô điện eco - Thân thiện môi trường"
+    };
+
+    // Danh sách mô tả cho xe điện (tiếng Việt)
+    private static final String[] EV_DESCRIPTIONS = {
+        "Xe điện chất lượng cao với công nghệ tiên tiến. Thiết kế hiện đại, tiết kiệm năng lượng. Được bảo dưỡng định kỳ, vận hành ổn định. Phù hợp di chuyển hàng ngày trong thành phố. Liên hệ để xem xe và lái thử.",
+        "Ô tô điện sang trọng với trang bị đầy đủ tiện nghi. Hệ thống an toàn thông minh, nội thất cao cấp. Động cơ điện mạnh mẽ, vận hành êm ái. Đã qua kiểm định chất lượng. Bảo hành chính hãng.",
+        "Xe điện gia đình an toàn và tiện lợi. Không gian rộng rãi, ghế ngồi thoải mái. Pin dung lượng lớn, quãng đường di chuyển xa. Hệ thống sạc nhanh hiện đại. Giá cả hợp lý.",
+        "Ô tô điện hiệu suất cao với khả năng tăng tốc ấn tượng. Công nghệ pin tiên tiến, thời gian sạc ngắn. Thiết kế thể thao năng động. Hệ thống điều khiển thông minh. Phù hợp người yêu tốc độ.",
+        "Xe điện cao cấp dành cho doanh nhân thành đạt. Nội thất da thật, âm thanh hi-end. Công nghệ tự lái, hệ thống an toàn 5 sao. Bảo dưỡng tại đại lý chính hãng. Còn bảo hành dài hạn.",
+        "Ô tô điện compact thích hợp cho thành phố đông đúc. Kích thước nhỏ gọn, dễ đỗ xe. Tiêu thụ năng lượng thấp, chi phí vận hành rẻ. Vận hành êm ái, không tiếng ồn. Lựa chọn lý tưởng cho gia đình trẻ."
+    };
+
+    // Danh sách tiêu đề cho pin điện (tiếng Việt)
+    private static final String[] BATTERY_TITLES = {
+        "Pin lithium cao cấp - Dung lượng lớn, bền bỉ",
+        "Bộ pin điện chính hãng - Chất lượng đảm bảo",
+        "Pin xe điện thương hiệu - Công nghệ tiên tiến",
+        "Bộ pin ắc quy điện - Hiệu suất cao",
+        "Pin lithium-ion - Sạc nhanh, độ bền vượt trội",
+        "Pin xe điện nhập khẩu - Tiêu chuẩn quốc tế",
+        "Bộ pin thông minh - Hệ thống quản lý BMS",
+        "Pin điện cao cấp - Tuổi thọ dài, ổn định",
+        "Pin xe điện mới - Chưa sử dụng, seal nguyên",
+        "Bộ pin chính hãng - Bảo hành dài hạn"
+    };
+
+    // Danh sách mô tả cho pin điện (tiếng Việt)
+    private static final String[] BATTERY_DESCRIPTIONS = {
+        "Pin lithium dung lượng cao, chất lượng đảm bảo. Đã qua kiểm tra kỹ thuật, hoạt động ổn định. Tương thích với nhiều loại xe điện phổ biến. Bảo hành chính thức, hỗ trợ kỹ thuật.",
+        "Bộ pin điện chính hãng với công nghệ tiên tiến. Tuổi thọ cao, khả năng giữ điện tốt. Hệ thống quản lý pin thông minh. Lắp đặt và bảo trì chuyên nghiệp. Giá cả cạnh tranh.",
+        "Pin xe điện nhập khẩu chất lượng cao. Dung lượng lớn, thời gian sạc nhanh. Độ an toàn cao, chống cháy nổ. Tương thích đa dạng loại xe. Có chứng nhận chất lượng quốc tế.",
+        "Bộ pin lithium-ion hiệu suất vượt trội. Công nghệ sạc nhanh, tuổi thọ dài. Thiết kế nhỏ gọn, trọng lượng nhẹ. Hệ thống bảo vệ quá áp, quá dòng. Lựa chọn tin cậy cho xe điện.",
+        "Pin điện cao cấp với độ bền vượt trội. Khả năng chịu nhiệt tốt, hoạt động ổn định. Dung lượng thực cao, ít suy giảm theo thời gian. Bảo hành 2 năm, đổi mới nếu lỗi.",
+        "Bộ pin thông minh có hệ thống quản lý BMS. Theo dõi trạng thái pin real-time. Cảnh báo sớm khi có vấn đề. Tối ưu hóa quá trình sạc và xả. Tăng tuổi thọ pin đáng kể."
+    };
+
+    // Danh sách địa chỉ chi tiết (tiếng Việt)
+    private static final String[] VIETNAMESE_STREET_NAMES = {
+        "Đường Nguyễn Văn Linh", "Đường Lê Lợi", "Đường Trần Hưng Đạo", "Đường Hai Bà Trưng",
+        "Đường Nguyễn Huệ", "Đường Lý Thường Kiệt", "Đường Phan Bội Châu", "Đường Điện Biên Phủ",
+        "Đường Cách Mạng Tháng Tám", "Đường 3 Tháng 2", "Đường Võ Văn Tần", "Đường Nam Kỳ Khởi Nghĩa",
+        "Đường Pasteur", "Đường Đồng Khởi", "Đường Nguyễn Thị Minh Khai", "Đường Cao Thắng"
+    };
+
+    // Biến đếm để đảm bảo mỗi tỉnh có ít nhất 1 listing
+    private static int provinceIndex = 0;
 
     @Bean
     public CommandLineRunner initDatabase() {
@@ -266,6 +328,9 @@ public class Initializer {
     private void createListings(List<UserEntity> users) {
         Random random = new Random();
         
+        // Reset province index to ensure all provinces get listings
+        provinceIndex = 0;
+        
         // Filter only members (exclude all admins)
         List<UserEntity> members = new ArrayList<>();
         for (UserEntity user : users) {
@@ -281,12 +346,12 @@ public class Initializer {
             return;
         }
 
-        // Create status distribution with exact ratios: 70% ACTIVE, 20% SOLD, 10% SUSPENDED
+        // Create status distribution with exact ratios: 40% PENDING, 35% ACTIVE, 15% SOLD, 10% SUSPENDED
         List<ListingStatus> statusDistribution = createStatusDistribution();
 
-        // Create 50 EV listings
-        logger.info("Starting to create 50 EV listings...");
-        for (int i = 0; i < 50; i++) {
+        // Create 100 EV listings
+        logger.info("Starting to create 100 EV listings...");
+        for (int i = 0; i < 100; i++) {
             try {
                 // Randomly select a member as seller
                 UserEntity seller = members.get(random.nextInt(members.size()));
@@ -323,20 +388,20 @@ public class Initializer {
                 postRequestRepository.saveAndFlush(postRequest);
                 logger.debug("Saved PostRequest with ID: {} for Listing: {}", postRequest.getId(), savedListing.getId());
                 
-                // Log progress every 10 listings
-                if ((i + 1) % 10 == 0) {
-                    logger.info("Created {}/50 EV listings", i + 1);
+                // Log progress every 20 listings
+                if ((i + 1) % 20 == 0) {
+                    logger.info("Created {}/100 EV listings", i + 1);
                 }
                 
             } catch (Exception e) {
                 logger.error("Error creating EV listing #{}: {}", i + 1, e.getMessage());
             }
         }
-        logger.info("Completed creating 50 EV listings");
+        logger.info("Completed creating 100 EV listings");
 
-        // Create 50 battery listings
-        logger.info("Starting to create 50 battery listings...");
-        for (int i = 0; i < 50; i++) {
+        // Create 100 battery listings
+        logger.info("Starting to create 100 battery listings...");
+        for (int i = 0; i < 100; i++) {
             try {
                 // Randomly select a member as seller
                 UserEntity seller = members.get(random.nextInt(members.size()));
@@ -354,7 +419,7 @@ public class Initializer {
                 logger.debug("Saved Product with ID: {}", savedProduct.getId());
                 
                 // Step 3: Create Listing linked to Product and Seller - use status from distribution
-                ListingStatus listingStatus = statusDistribution.get(50 + i); // Offset 50 to get remaining distribution
+                ListingStatus listingStatus = statusDistribution.get(100 + i); // Offset 100 to get remaining distribution
                 ListingEntity listing = createListingForProduct(seller, savedProduct, "BATTERY", random, listingStatus);
                 ListingEntity savedListing = listingRepository.saveAndFlush(listing);
                 logger.debug("Saved Listing with ID: {} with status: {}", savedListing.getId(), listingStatus);
@@ -373,16 +438,16 @@ public class Initializer {
                 postRequestRepository.saveAndFlush(postRequest);
                 logger.debug("Saved PostRequest with ID: {} for Listing: {}", postRequest.getId(), savedListing.getId());
                 
-                // Log progress every 10 listings
-                if ((i + 1) % 10 == 0) {
-                    logger.info("Created {}/50 battery listings", i + 1);
+                // Log progress every 20 listings
+                if ((i + 1) % 20 == 0) {
+                    logger.info("Created {}/100 battery listings", i + 1);
                 }
                 
             } catch (Exception e) {
                 logger.error("Error creating battery listing #{}: {}", i + 1, e.getMessage());
             }
         }
-        logger.info("Completed creating 50 battery listings");
+        logger.info("Completed creating 100 battery listings");
         
         // Log final status distribution results
         logStatusDistributionResult();
@@ -405,8 +470,7 @@ public class Initializer {
         // Set basic information
         ev.setBrand(brand);
         ev.setType(type);
-        ev.setName(brand + " " + type.name() + " Model " + (index + 1));
-        ev.setModel("Model-" + (2020 + random.nextInt(5))); // Model from 2020-2024
+        ev.setName(brand + " " + type.name() + " " + (index + 1));
         ev.setYear(2018 + random.nextInt(7)); // Manufacturing year from 2018-2024
         
         // Set technical specifications
@@ -437,7 +501,6 @@ public class Initializer {
         // Set basic information
         battery.setName(brand + " Battery Pack " + (index + 1)); // Battery name
         battery.setBrand(brand);
-        battery.setModel("BAT-" + (index + 1) + "-" + (2020 + random.nextInt(5)));
         battery.setYear(year); // Manufacturing year
         
         // Set technical specifications
@@ -470,15 +533,16 @@ public class Initializer {
         listing.setSeller(seller);
         listing.setProduct(product);
         
-        // Create title based on product type - use generic title to avoid lazy loading
+        // Create title and description based on product type with Vietnamese content
         if ("EV".equals(productType)) {
-            listing.setTitle("High-quality Electric Vehicle - Energy Efficient");
+            listing.setTitle(EV_TITLES[random.nextInt(EV_TITLES.length)]);
+            listing.setDescription(EV_DESCRIPTIONS[random.nextInt(EV_DESCRIPTIONS.length)]);
+            listing.setThumbnailImage("https://res.cloudinary.com/dkvldb91c/image/upload/v1759568865/swp391/listings/c5jic9fai7l0rq87ojng.webp");
         } else {
-            listing.setTitle("High-capacity Electric Battery - Durable");
+            listing.setTitle(BATTERY_TITLES[random.nextInt(BATTERY_TITLES.length)]);
+            listing.setDescription(BATTERY_DESCRIPTIONS[random.nextInt(BATTERY_DESCRIPTIONS.length)]);
+            listing.setThumbnailImage("https://res.cloudinary.com/dkvldb91c/image/upload/v1760317167/images_2_mrdrjy.jpg");
         }
-        
-        // Create detailed description - use generic description to avoid lazy loading
-        listing.setDescription(generateGenericDescription(productType));
         
         // Set random price from 50 million to 2 billion VND
         BigDecimal price = new BigDecimal(50000000 + random.nextInt(1950000000));
@@ -519,15 +583,24 @@ public class Initializer {
         // Link location with listing
         location.setListing(listing);
         
-        // Randomly select province/city from 63 provinces in Vietnam
-        location.setProvince(PROVINCES[random.nextInt(PROVINCES.length)]);
+        // Ensure all provinces have at least one listing by cycling through provinces first,
+        // then random distribution for remaining listings
+        String selectedProvince;
+        if (provinceIndex < PROVINCES.length) {
+            selectedProvince = PROVINCES[provinceIndex];
+            provinceIndex++;
+        } else {
+            // After covering all provinces, use random selection
+            selectedProvince = PROVINCES[random.nextInt(PROVINCES.length)];
+        }
+        location.setProvince(selectedProvince);
         
         // Randomly select district
         location.setDistrict(DISTRICTS[random.nextInt(DISTRICTS.length)]);
         
-        // Create random detailed address
-        location.setDetails("No. " + (random.nextInt(999) + 1) + " " + 
-                          "Nguyen Van " + ((char)('A' + random.nextInt(26))) + " Street");
+        // Create random detailed address with Vietnamese street names
+        location.setDetails("Số " + (random.nextInt(999) + 1) + " " + 
+                          VIETNAMESE_STREET_NAMES[random.nextInt(VIETNAMESE_STREET_NAMES.length)]);
         
         return location;
     }
@@ -552,83 +625,75 @@ public class Initializer {
     }
 
     /**
-     * Generate generic product description to avoid lazy loading issues
-     */
-    private String generateGenericDescription(String productType) {
-        if ("EV".equals(productType)) {
-            return "High-quality electric vehicle, energy efficient. " +
-                   "Regularly maintained, stable operation. " +
-                   "Suitable for daily urban transportation. " +
-                   "Contact for vehicle inspection and test drive.";
-        } else {
-            return "High-capacity electric battery, durable. " +
-                   "Quality tested, stable operation. " +
-                   "Compatible with many popular electric vehicles. " +
-                   "Official warranty, technical support.";
-        }
-    }
-
-    /**
      * Create listing status list with accurate ratios
-     * 70% ACTIVE (70 items), 20% SOLD (20 items), 10% SUSPENDED (10 items)
-     * Total 100 items to distribute among 100 listings
+     * 40% PENDING (80 items), 35% ACTIVE (70 items), 15% SOLD (30 items), 10% SUSPENDED (20 items)
+     * Total 200 items to distribute among 200 listings
      */
     private List<ListingStatus> createStatusDistribution() {
         List<ListingStatus> statusList = new ArrayList<>();
         
-        // Add 70 ACTIVE (70%)
+        // Add 80 PENDING (40%)
+        for (int i = 0; i < 80; i++) {
+            statusList.add(ListingStatus.PENDING);
+        }
+        
+        // Add 70 ACTIVE (35%)
         for (int i = 0; i < 70; i++) {
             statusList.add(ListingStatus.ACTIVE);
         }
         
-        // Add 20 SOLD (20%)
-        for (int i = 0; i < 20; i++) {
+        // Add 30 SOLD (15%)
+        for (int i = 0; i < 30; i++) {
             statusList.add(ListingStatus.SOLD);
         }
         
-        // Add 10 SUSPENDED (10%)
-        for (int i = 0; i < 10; i++) {
+        // Add 20 SUSPENDED (10%)
+        for (int i = 0; i < 20; i++) {
             statusList.add(ListingStatus.SUSPENDED);
         }
         
         // Shuffle list to create randomness
         java.util.Collections.shuffle(statusList);
         
-        logger.info("Created status distribution: {} ACTIVE, {} SOLD, {} SUSPENDED", 
-                   70, 20, 10);
+        logger.info("Created status distribution: {} PENDING, {} ACTIVE, {} SOLD, {} SUSPENDED", 
+                   80, 70, 30, 20);
         
         return statusList;
     }
 
     /**
      * Log kết quả phân phối trạng thái listing từ database
-     * Để xác minh tỷ lệ đã đúng theo yêu cầu: 70% ACTIVE, 20% SOLD, 10% SUSPENDED
+     * Để xác minh tỷ lệ đã đúng theo yêu cầu: 40% PENDING, 35% ACTIVE, 15% SOLD, 10% SUSPENDED
      */
     private void logStatusDistributionResult() {
         try {
             long totalListings = listingRepository.count();
+            long pendingCount = listingRepository.countListingEntitiesByStatus(ListingStatus.PENDING);
             long activeCount = listingRepository.countListingEntitiesByStatus(ListingStatus.ACTIVE);
             long soldCount = listingRepository.countListingEntitiesByStatus(ListingStatus.SOLD);
             long suspendedCount = listingRepository.countListingEntitiesByStatus(ListingStatus.SUSPENDED);
             
             // Calculate percentages
+            double pendingPercent = totalListings > 0 ? (pendingCount * 100.0 / totalListings) : 0;
             double activePercent = totalListings > 0 ? (activeCount * 100.0 / totalListings) : 0;
             double soldPercent = totalListings > 0 ? (soldCount * 100.0 / totalListings) : 0;
             double suspendedPercent = totalListings > 0 ? (suspendedCount * 100.0 / totalListings) : 0;
             
             logger.info("=== LISTING STATUS DISTRIBUTION RESULTS ===");
             logger.info("Total listings: {}", totalListings);
+            logger.info("PENDING: {} listings ({:.1f}%)", pendingCount, pendingPercent);
             logger.info("ACTIVE: {} listings ({:.1f}%)", activeCount, activePercent);
             logger.info("SOLD: {} listings ({:.1f}%)", soldCount, soldPercent);
             logger.info("SUSPENDED: {} listings ({:.1f}%)", suspendedCount, suspendedPercent);
             
             // Check if the distribution meets expected ratios
-            if (Math.abs(activePercent - 70.0) < 2.0 && 
-                Math.abs(soldPercent - 20.0) < 2.0 && 
+            if (Math.abs(pendingPercent - 40.0) < 2.0 && 
+                Math.abs(activePercent - 35.0) < 2.0 && 
+                Math.abs(soldPercent - 15.0) < 2.0 && 
                 Math.abs(suspendedPercent - 10.0) < 2.0) {
                 logger.info("Status distribution is ACCURATE!");
             } else {
-                logger.warn("Status distribution is INACCURATE. Expected: 70% ACTIVE, 20% SOLD, 10% SUSPENDED");
+                logger.warn("Status distribution is INACCURATE. Expected: 40% PENDING, 35% ACTIVE, 15% SOLD, 10% SUSPENDED");
             }
             
         } catch (Exception e) {

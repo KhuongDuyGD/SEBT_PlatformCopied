@@ -24,7 +24,6 @@
   "product.ev": {
     "type": "CAR | BIKE | MOTORBIKE",
     "name": "string",
-    "model": "string",
     "brand": "string",
     "year": "number",
     "mileage": "number",
@@ -33,7 +32,6 @@
   },
   "product.battery": {
     "brand": "string",
-    "model": "string",
     "capacity": "number",
     "healthPercentage": "number",
     "compatibleVehicles": "string",
@@ -113,7 +111,7 @@
       "thumbnailImage": "string",
       "thumbnailPublicId": "string",
       "description": "string",
-      "status": "PENDING | APPROVED | REJECTED | EXPIRED | SOLD",
+      "status": "PENDING | ACTIVE | SOLD | SUSPENDED",
       "listingType": "NORMAL",
       "viewsCount": "number",
       "createdAt": "string (ISO date)",
@@ -159,7 +157,7 @@ Same format as EV Listings
   "title": "string",
   "description": "string",
   "price": "number",
-  "status": "PENDING | APPROVED | REJECTED | EXPIRED | SOLD",
+  "status": "PENDING | ACTIVE | SOLD | SUSPENDED",
   "listingType": "NORMAL",
   "viewsCount": "number",
   "createdAt": "string (ISO date)",
@@ -179,9 +177,8 @@ Same format as EV Listings
   ],
   "product": {
     // For EV
-    "type": "CAR | BIKE | SCOOTER",
+    "type": "CAR | BIKE | MOTORBIKE",
     "name": "string",
-    "model": "string",
     "brand": "string",
     "year": "number",
     "mileage": "number",
@@ -189,7 +186,6 @@ Same format as EV Listings
     "conditionStatus": "GOOD | FAIR | POOR"
     // OR for Battery
     "brand": "string",
-    "model": "string",
     "capacity": "number",
     "healthPercentage": "number",
     "compatibleVehicles": "string",
@@ -239,12 +235,13 @@ Same format as EV/Battery Listings response
 **Endpoint:** `GET /api/listings/ev-filter`
 
 ### Query Parameters (tất cả optional)
-- `vehicleType`: CAR | BIKE | SCOOTER
+- `vehicleType`: CAR | BIKE | MOTORBIKE
 - `year`: Năm sản xuất
-- `brand`: Hãng
-- `location`: Địa điểm (tỉnh/thành)
-- `minBatteryCapacity` / `maxBatteryCapacity`: Khoảng dung lượng pin (Wh hoặc kWh tùy chuẩn nội bộ)
-- `minPrice` / `maxPrice`: Khoảng giá
+- `brand`: Hãng xe
+- `province`: Tỉnh/thành phố
+- `minMileage` / `maxMileage`: Khoảng số km đã đi
+- `minBatteryCapacity` / `maxBatteryCapacity`: Khoảng dung lượng pin (kWh)
+- `minPrice` / `maxPrice`: Khoảng giá (VND)
 - `page` (default: 0)
 - `size` (default: 12)
 
@@ -256,10 +253,10 @@ Giống format danh sách EV Listings (có thể thêm `favorited` nếu ngườ
 
 ### Query Parameters (tất cả optional)
 - `brand`: Hãng pin
-- `location`: Địa điểm
-- `compatibility`: Chuỗi mô tả tương thích (ví dụ "CAR,Bike")
-- `minBatteryCapacity` / `maxBatteryCapacity`: Khoảng dung lượng
-- `minPrice` / `maxPrice`: Khoảng giá
+- `name`: Tên pin (autocomplete search)
+- `year`: Năm sản xuất pin
+- `province`: Tỉnh/thành phố
+- `minPrice` / `maxPrice`: Khoảng giá (VND)
 - `page` (default: 0)
 - `size` (default: 12)
 
@@ -272,7 +269,7 @@ Giống format Battery Listings (kèm `favorited` nếu có phiên đăng nhập
 ### Query Parameters
 - `page` (optional, default: 0)
 - `size` (optional, default: 12)
-- `status` (optional): Filter by status (PENDING | APPROVED | REJECTED | EXPIRED | SOLD)
+- `status` (optional): Filter by status (PENDING | ACTIVE | SOLD | SUSPENDED)
 
 ### Response
 Same format as EV/Battery Listings response
@@ -366,4 +363,113 @@ try {
   const errorResult = handleError(error);
   // Show error message to user
 }
+```
+
+---
+
+## Database Seeding Changes & New Features
+
+### Recent Updates (Phiên bản mới nhất)
+
+#### 1. **Loại bỏ trường `model`**
+- **Thay đổi**: Đã xóa hoàn toàn trường `model` khỏi cả `EvVehicleEntity` và `BatteryEntity`
+- **Ảnh hưởng**: 
+  - API không còn nhận/trả về field `model` trong request/response
+  - Filter API đã được cập nhật để loại bỏ parameter `model`
+  - Database schema không còn cột `model`
+
+#### 2. **Trạng thái mới: PENDING**
+- **Thêm mới**: Trạng thái `PENDING` cho listings chờ admin duyệt
+- **Ý nghĩa các trạng thái**:
+  - `PENDING`: Chờ admin duyệt (40% listings)
+  - `ACTIVE`: Đã được duyệt và đang bán (35% listings)  
+  - `SOLD`: Đã được bán (15% listings)
+  - `SUSPENDED`: Bị admin cấm/tạm ngưng (10% listings)
+
+#### 3. **Nâng cấp Database Seeding**
+- **Số lượng**: Tăng từ 100 lên **200 listings** (100 xe điện + 100 pin)
+- **Nội dung tiếng Việt**: 
+  - Tiêu đề và mô tả đa dạng, chuyên nghiệp
+  - Địa chỉ sử dụng tên đường tiếng Việt
+- **Phân bổ địa lý**: Đảm bảo tất cả **63 tỉnh thành** Việt Nam đều có listings
+- **URL ảnh mặc định**:
+  - Xe điện: `https://res.cloudinary.com/dkvldb91c/image/upload/v1759568865/swp391/listings/c5jic9fai7l0rq87ojng.webp`
+  - Pin điện: `https://res.cloudinary.com/dkvldb91c/image/upload/v1760317167/images_2_mrdrjy.jpg`
+
+#### 4. **Cải tiến Account Management**
+- **Tài khoản**: 13 tài khoản (2 admin + 11 member)
+- **Mật khẩu thống nhất**: Tất cả đều là `123456`
+- **Email mới**: Thêm `npln.0307@gmail.com`
+
+#### 5. **Filter API Enhancements**
+- **EV Filter**: Loại bỏ `model`, thêm `minMileage/maxMileage`, `province`
+- **Battery Filter**: Loại bỏ `model`, thêm `name`, `year`, `province`
+- **Location Support**: Tất cả filter đều support tìm kiếm theo tỉnh thành
+
+### Migration Notes cho Frontend
+
+#### Breaking Changes
+```javascript
+// CŨ - sẽ gây lỗi
+const evData = {
+  name: "Tesla Model 3",
+  model: "Model 3",  // ❌ Field này không còn tồn tại
+  brand: "Tesla"
+};
+
+// MỚI - format đúng
+const evData = {
+  name: "Tesla Model 3",
+  brand: "Tesla"      // ✅ Chỉ cần name và brand
+};
+```
+
+#### Status Handling
+```javascript
+// Cập nhật enum status
+const LISTING_STATUS = {
+  PENDING: 'PENDING',     // ✅ Mới
+  ACTIVE: 'ACTIVE',       // ✅ Đổi từ APPROVED
+  SOLD: 'SOLD',          // ✅ Giữ nguyên
+  SUSPENDED: 'SUSPENDED'  // ✅ Đổi từ REJECTED
+};
+
+// Cập nhật UI status display
+const getStatusDisplay = (status) => {
+  switch(status) {
+    case 'PENDING': return 'Chờ duyệt';
+    case 'ACTIVE': return 'Đang bán';
+    case 'SOLD': return 'Đã bán';
+    case 'SUSPENDED': return 'Bị cấm';
+    default: return 'Không xác định';
+  }
+};
+```
+
+#### Filter Updates
+```javascript
+// EV Filter - loại bỏ model
+const evFilters = {
+  vehicleType: 'CAR',
+  year: 2023,
+  brand: 'VinFast',
+  // model: 'VF8',        // ❌ Xóa field này
+  province: 'TP. Hồ Chí Minh',  // ✅ Mới
+  minMileage: 0,                 // ✅ Mới
+  maxMileage: 50000,            // ✅ Mới
+  minBatteryCapacity: 50,
+  maxBatteryCapacity: 100,
+  minPrice: 500000000,
+  maxPrice: 2000000000
+};
+
+// Battery Filter - cập nhật parameters
+const batteryFilters = {
+  brand: 'CATL',
+  name: 'Battery Pack',      // ✅ Mới - autocomplete
+  year: 2023,               // ✅ Mới
+  province: 'Hà Nội',       // ✅ Mới
+  minPrice: 50000000,
+  maxPrice: 200000000
+};
 ```

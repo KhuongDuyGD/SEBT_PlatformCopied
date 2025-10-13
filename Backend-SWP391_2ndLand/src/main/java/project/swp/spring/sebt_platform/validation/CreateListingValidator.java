@@ -1,19 +1,19 @@
 package project.swp.spring.sebt_platform.validation;
 
-import project.swp.spring.sebt_platform.dto.object.Battery;
-import project.swp.spring.sebt_platform.dto.object.Ev;
-import project.swp.spring.sebt_platform.dto.object.Location;
-import project.swp.spring.sebt_platform.dto.object.Product;
-import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
-import project.swp.spring.sebt_platform.model.enums.ListingType;
-import project.swp.spring.sebt_platform.model.enums.VehicleCondition;
-import project.swp.spring.sebt_platform.model.enums.BatteryCondition;
-
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+
+import project.swp.spring.sebt_platform.dto.object.Battery;
+import project.swp.spring.sebt_platform.dto.object.Ev;
+import project.swp.spring.sebt_platform.dto.object.Location;
+import project.swp.spring.sebt_platform.dto.object.Product;
+import project.swp.spring.sebt_platform.dto.request.CreateListingFormDTO;
+import project.swp.spring.sebt_platform.model.enums.BatteryCondition;
+import project.swp.spring.sebt_platform.model.enums.ListingType;
+import project.swp.spring.sebt_platform.model.enums.VehicleCondition;
 
 /** Performs manual rule-based validation & normalization for CreateListingFormDTO. */
 public class CreateListingValidator {
@@ -95,7 +95,6 @@ public class CreateListingValidator {
         // EV validation when present
         if (ev != null) {
             ev.setBrand(trimToNull(ev.getBrand()));
-            ev.setModel(trimToNull(ev.getModel()));
             ev.setName(trimToNull(ev.getName()));
             // brand & name required
             if (ev.getName() == null) errors.add(new FieldErrorDetail("product.ev.name", "EV name is required", null));
@@ -125,10 +124,8 @@ public class CreateListingValidator {
         // Battery validation when present
         if (battery != null) {
             battery.setBrand(trimToNull(battery.getBrand()));
-            battery.setModel(trimToNull(battery.getModel()));
             battery.setCompatibleVehicles(trim(battery.getCompatibleVehicles()));
             if (battery.getBrand() == null) errors.add(new FieldErrorDetail("product.battery.brand", "Battery brand is required", null));
-            if (battery.getModel() == null) errors.add(new FieldErrorDetail("product.battery.model", "Battery model is required", null));
             if (battery.getCapacity() <= 0 || battery.getCapacity() > EV_BATTERY_CAPACITY_MAX) {
                 errors.add(new FieldErrorDetail("product.battery.capacity", "Capacity must be >0 and <= " + EV_BATTERY_CAPACITY_MAX, battery.getCapacity()));
             }
