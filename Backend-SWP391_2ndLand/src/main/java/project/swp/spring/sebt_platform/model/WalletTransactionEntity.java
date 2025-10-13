@@ -22,9 +22,6 @@ public class WalletTransactionEntity {
     @Column(name = "order_id", length = 50, nullable = false, unique = true, columnDefinition = "NVARCHAR(50)")
     private String OrderId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_id", nullable = false)
-    private WalletEntity wallet;
 
     @Column(name = "balance", nullable = false, precision = 18, scale = 2,columnDefinition = "DECIMAL(18,2)")
     private BigDecimal amount;
@@ -46,12 +43,11 @@ public class WalletTransactionEntity {
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME2")
     private LocalDateTime createdAt;
 
-    public WalletTransactionEntity(WalletEntity wallet,
+    public WalletTransactionEntity(
                                    BigDecimal amount,
                                    BigDecimal balanceBefore,
                                    BigDecimal balanceAfter,
                                    String description) {
-        this.wallet = wallet;
         this.amount = amount;
         this.balanceBefore = balanceBefore;
         this.balanceAfter = balanceAfter;
@@ -80,14 +76,7 @@ public class WalletTransactionEntity {
     public void setStatus(TransactionStatus status) {
         this.status = status;
     }
-
-    public WalletEntity getWallet() {
-        return wallet;
-    }
-
-    public void setWallet(WalletEntity wallet) {
-        this.wallet = wallet;
-    }
+    
 
     public BigDecimal getAmount() {
         return amount;

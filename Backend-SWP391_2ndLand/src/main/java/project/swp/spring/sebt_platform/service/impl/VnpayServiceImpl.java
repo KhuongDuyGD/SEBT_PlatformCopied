@@ -83,7 +83,6 @@ public class VnpayServiceImpl implements VnpayService {
 
         // Lưu giao dịch vào database với trạng thái "Chưa thanh toán"
         WalletTransactionEntity transaction = new WalletTransactionEntity();
-        transaction.setWallet(wallet);
         transaction.setOrderId(vnp_TxnRef);
         transaction.setAmount(BigDecimal.valueOf(amount));
         transaction.setBalanceBefore(wallet.getBalance());
@@ -159,10 +158,10 @@ public class VnpayServiceImpl implements VnpayService {
     @Override
     public void updateTransactionStatus(String orderId, boolean isSuccess) {
         WalletTransactionEntity transaction = walletTransactionRepository.findByOrderId(orderId);
+        WalletEntity wallet = walletRepository.findByOrderId(orderId);
         if (transaction != null && transaction.getStatus() == TransactionStatus.PENDING) {
             if (isSuccess) {
                 transaction.setStatus(TransactionStatus.COMPLETED);
-                WalletEntity wallet = transaction.getWallet();
                 BigDecimal newBalance = wallet.getBalance().add(transaction.getAmount());
                 transaction.setBalanceAfter(newBalance);
                 wallet.setBalance(newBalance);
@@ -232,7 +231,6 @@ public class VnpayServiceImpl implements VnpayService {
 
             // Lưu giao dịch vào database với trạng thái "Chưa thanh toán"
             WalletTransactionEntity transaction = new WalletTransactionEntity();
-            transaction.setWallet(wallet);
             transaction.setOrderId(vnp_TxnRef);
             transaction.setAmount(BigDecimal.valueOf(-amount));
             transaction.setBalanceBefore(wallet.getBalance());

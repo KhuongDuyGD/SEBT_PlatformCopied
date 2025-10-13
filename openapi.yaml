@@ -7,7 +7,7 @@ info:
     and filter query parameters (no GET bodies). Legacy /favorite endpoints are
     deprecated and subject to removal.
 servers:
-  - url: http://localhost:8080/api
+  - url: http://localhost:8080
     description: Local dev
 components:
   securitySchemes:
