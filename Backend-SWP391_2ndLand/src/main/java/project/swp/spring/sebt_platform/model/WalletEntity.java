@@ -1,6 +1,8 @@
 package project.swp.spring.sebt_platform.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import project.swp.spring.sebt_platform.model.enums.WalletStatus;
 
 import java.math.BigDecimal;
@@ -14,27 +16,38 @@ public class WalletEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST})
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private UserEntity user;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    // Bidirectional mapping; WalletTransactionEntity owns the FK wallet_id
+    @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
     private List<WalletTransactionEntity> transactions;
 
-    @Column(name = "balance", nullable = false, precision = 18, scale = 2,columnDefinition = "DECIMAL(18,2)")
+    @Column(name = "balance", nullable = false, precision = 18, scale = 2, columnDefinition = "DECIMAL(18,2)")
     private BigDecimal balance;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 30, nullable = false)
     private WalletStatus status = WalletStatus.ACTIVE;
 
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME2")
-    private LocalDateTime updated_at;
+    @Version
+    @Column(name = "version")
+    private Integer version;
 
-    public WalletEntity(UserEntity user, BigDecimal balance, WalletStatus status, LocalDateTime updated_at) {
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME2")
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", columnDefinition = "DATETIME2")
+    private LocalDateTime updatedAt;
+
+    public WalletEntity(UserEntity user, BigDecimal balance, WalletStatus status, LocalDateTime updatedAt) {
         this.user = user;
         this.balance = balance;
         this.status = status;
-        this.updated_at = updated_at;
+        this.updatedAt = updatedAt;
     }
 
     public WalletEntity() {
@@ -69,13 +82,12 @@ public class WalletEntity {
         this.status = status;
     }
 
-    public LocalDateTime getUpdated_at() {
-        return updated_at;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public void setUpdated_at(LocalDateTime updated_at) {
-        this.updated_at = updated_at;
-    }
+    public Integer getVersion() { return version; }
+    public void setVersion(Integer version) { this.version = version; }
 
     public List<WalletTransactionEntity> getTransactions() {
         return transactions;

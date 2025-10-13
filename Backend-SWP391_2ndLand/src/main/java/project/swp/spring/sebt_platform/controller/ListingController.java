@@ -40,6 +40,11 @@ import project.swp.spring.sebt_platform.model.enums.VehicleCondition;
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
 import project.swp.spring.sebt_platform.service.CloudinaryService;
 import project.swp.spring.sebt_platform.service.ListingService;
+import project.swp.spring.sebt_platform.service.ListingFeePolicy;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
 
 /**
  * REST Controller for Listings - Base URL: /api/listings
@@ -55,6 +60,9 @@ public class ListingController {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private ListingFeePolicy listingFeePolicy;
 
     /**
      * POST /api/listings/create - Create new listing with images
@@ -120,9 +128,16 @@ public class ListingController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Tạo bài đăng thất bại. Vui lòng kiểm tra lại thông tin");
             }
-            return ResponseEntity.ok("Tạo bài đăng thành công");
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(Map.of(
+                            "message", "Tạo bài đăng thành công",
+                            "status", "SUCCESS"
+                    ));
         } catch (project.swp.spring.sebt_platform.exception.ValidationException ve) {
             throw ve; // will be handled by advice
+        } catch (project.swp.spring.sebt_platform.exception.InsufficientFundsException ie) {
+            // Let global handler map 409 but keep log context
+            throw ie;
         } catch (Exception e) {
             logger.error("Error creating listing: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -130,10 +145,29 @@ public class ListingController {
         }
     }
 
+    @GetMapping("/fee/preview")
+    public ResponseEntity<?> previewFee(@RequestParam(name = "category", required = false) String category,
+                                        @RequestParam(name = "price", required = false) Long price) {
+        boolean hasEv = false;
+        boolean hasBattery = false;
+        if (category != null) {
+            String c = category.toUpperCase(Locale.ROOT);
+            if (c.contains("EV")) hasEv = true; // simple heuristic
+            if (c.contains("BAT")) hasBattery = true; // battery keyword
+        }
+        java.math.BigDecimal p = price != null ? java.math.BigDecimal.valueOf(price) : java.math.BigDecimal.ZERO;
+        var fee = listingFeePolicy.computeFee(new project.swp.spring.sebt_platform.service.ListingFeePolicy.ListingContext(hasEv, hasBattery, p));
+        return ResponseEntity.ok(Map.of(
+                "fee", fee.toPlainString(),
+                "currency", "VND"
+        ));
+    }
+
     /**
      * Ghi lại thông tin multipart parts để hỗ trợ debug khi danh sách ảnh bị null.
      * Sẽ không ảnh hưởng performance nhiều vì chỉ gọi khi lỗi thiếu ảnh.
      */
+    @SuppressWarnings("unused")
     private void logMultipartDiagnostics(HttpServletRequest request) {
         try {
             String ct = request.getContentType();

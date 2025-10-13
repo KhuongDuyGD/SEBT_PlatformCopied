@@ -50,6 +50,9 @@ import project.swp.spring.sebt_platform.repository.PostRequestRepository;
 import project.swp.spring.sebt_platform.repository.ProductRepository;
 import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.ListingService;
+import project.swp.spring.sebt_platform.service.ListingFeePolicy;
+import project.swp.spring.sebt_platform.service.WalletLedgerService;
+import project.swp.spring.sebt_platform.exception.InsufficientFundsException;
 
 @Service
 public class ListingServiceImpl implements ListingService {
@@ -65,6 +68,8 @@ public class ListingServiceImpl implements ListingService {
     private final ListingImageRepository listingImageRepository;
     private final LocationRepository locationRepository;
     private final FavoriteRepository favoriteRepository;
+    private final ListingFeePolicy listingFeePolicy;
+    private final WalletLedgerService walletLedgerService;
 
     @Autowired
     public ListingServiceImpl(PostRequestRepository postRequestRepository,
@@ -75,7 +80,9 @@ public class ListingServiceImpl implements ListingService {
                               ListingRepository listingRepository,
                               ListingImageRepository listingImageRepository,
                               LocationRepository locationRepository,
-                              FavoriteRepository favoriteRepository) {
+                              FavoriteRepository favoriteRepository,
+                              ListingFeePolicy listingFeePolicy,
+                              WalletLedgerService walletLedgerService) {
         this.postRequestRepository = postRequestRepository;
         this.userRepository = userRepository;
         this.listingRepository = listingRepository;
@@ -83,8 +90,10 @@ public class ListingServiceImpl implements ListingService {
         this.locationRepository = locationRepository;
         this.evVehicleRepository = evVehicleRepository;
         this.batteryRepository = batteryRepository;
-        this.productRepository = productRepository;
-        this.favoriteRepository = favoriteRepository;
+    this.productRepository = productRepository;
+    this.favoriteRepository = favoriteRepository;
+    this.listingFeePolicy = listingFeePolicy;
+    this.walletLedgerService = walletLedgerService;
     }
 
     @Override
@@ -239,9 +248,22 @@ public class ListingServiceImpl implements ListingService {
             return false;
         }
 
-        // Save listing first to get ID
+        // Save listing first to get ID (fee will be charged after building related entities)
         listingEntity = listingRepository.save(listingEntity);
         logger.debug("[CREATE_LISTING] Saved listing id={}", listingEntity.getId());
+
+        // --- Listing fee charging logic ---
+        boolean hasEv = productEntity.getEvVehicle() != null;
+        boolean hasBattery = productEntity.getBattery() != null;
+        BigDecimal fee = listingFeePolicy.computeFee(new ListingFeePolicy.ListingContext(hasEv, hasBattery, listingEntity.getPrice()));
+        try {
+            walletLedgerService.debitListingFee(user.getId(), listingEntity.getId(), fee);
+            logger.info("[LISTING_FEE] Charged sellerId={} listingId={} fee={}", user.getId(), listingEntity.getId(), fee);
+        } catch (InsufficientFundsException e) {
+            logger.warn("[CREATE_LISTING] Insufficient funds sellerId={} required={} current={}", user.getId(), e.getRequired(), e.getCurrent());
+            // propagate by returning false OR rethrow; rethrow for handler clarity
+            throw e;
+        }
 
         // Save listing images với URL và publicId từ Cloudinary
         if (listingImages != null && !listingImages.isEmpty()) {

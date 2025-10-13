@@ -5,6 +5,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Input, Dropdown, Button, Avatar, Modal, Typography, Space, Badge, message } from 'antd';
 import { LogoutOutlined, SearchOutlined, CarOutlined, UserOutlined, AppstoreOutlined, BellOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import api from '../api/axios';
+import { createTopUpIntent } from '../api/wallet';
+import useWalletBalance from '../hooks/useWalletBalance';
 import '../css/header.css';
 
 function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
@@ -140,7 +142,11 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
     }
   ];
 
+  const { balance, refresh: refreshBalance } = useWalletBalance(isLoggedIn);
+
   const accountMenuItems = [
+    { key: 'balance', disabled: true, label: <span>Số dư: <strong>{balance == null ? '...' : Number(balance).toLocaleString()} VND</strong></span> },
+    { type: 'divider' },
     { key: 'profile', label: <Link to="/account">Hồ Sơ Cá Nhân</Link> },
     { key: 'orders', label: <Link to="/orders">Đơn Hàng Của Tôi</Link> },
     { key: 'favorites', label: <Link to="/favorites">Yêu Thích</Link> },
@@ -148,6 +154,28 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
     { type: 'divider' },
     { key: 'logout', icon: <LogoutOutlined style={{ color: '#ff4d4f' }} />, label: <span style={{ color: '#ff4d4f' }}>Đăng Xuất</span>, onClick: handleLogoutClick }
   ];
+
+  async function handleTopUp() {
+    // Simple prompt UX; can be replaced with proper modal later
+    const raw = window.prompt('Nhập số tiền muốn nạp (VND):');
+    if (!raw) return;
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      message.error('Số tiền không hợp lệ');
+      return;
+    }
+    try {
+      const intent = await createTopUpIntent(amount);
+      // Mở tab mới để user thanh toán VNPay
+      window.open(intent.paymentUrl, '_blank');
+      message.info('Đang mở VNPay... Sau khi thanh toán quay lại trang này.');
+      // Poll nhẹ sau 8s để thử refresh balance (tùy ý cải tiến bằng callback page)
+      setTimeout(() => refreshBalance(), 8000);
+    } catch (e) {
+      console.error('createTopUpIntent failed', e);
+      message.error('Tạo yêu cầu nạp thất bại');
+    }
+  }
 
   return (
     <div className="app-header-gradient" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
@@ -178,6 +206,11 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
           <Badge count={3} size="small" offset={[0,3]}>
             <Button type="text" style={{ color: '#fff' }} onClick={() => navigate('/notifications')} icon={<BellOutlined style={{ fontSize: 18 }} />} />
           </Badge>
+          {isLoggedIn && (
+            <Button type="primary" onClick={handleTopUp} style={{ fontWeight: 600 }}>
+              Nạp tiền
+            </Button>
+          )}
           {isLoggedIn ? (
             <Dropdown
               menu={{ items: accountMenuItems }}

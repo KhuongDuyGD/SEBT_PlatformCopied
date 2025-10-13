@@ -5,24 +5,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import project.swp.spring.sebt_platform.config.VnpayConfig;
-import project.swp.spring.sebt_platform.model.WalletEntity;
-import project.swp.spring.sebt_platform.model.WalletTransactionEntity;
-import project.swp.spring.sebt_platform.model.enums.TransactionStatus;
 import project.swp.spring.sebt_platform.repository.WalletRepository;
 import project.swp.spring.sebt_platform.repository.WalletTransactionRepository;
+import project.swp.spring.sebt_platform.service.WalletLedgerService;
 import project.swp.spring.sebt_platform.service.VnpayService;
 import project.swp.spring.sebt_platform.util.Utils;
 
 import java.io.*;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -31,14 +26,13 @@ public class VnpayServiceImpl implements VnpayService {
     @Autowired
     private VnpayConfig config;
 
-    private final WalletTransactionRepository walletTransactionRepository;
-    private final WalletRepository walletRepository;
+    private final WalletLedgerService walletLedgerService;
 
     @Autowired
     public VnpayServiceImpl(WalletTransactionRepository walletTransactionRepository,
-                            WalletRepository walletRepository) {
-        this.walletTransactionRepository = walletTransactionRepository;
-        this.walletRepository = walletRepository;
+                            WalletRepository walletRepository,
+                            WalletLedgerService walletLedgerService) {
+        this.walletLedgerService = walletLedgerService;
     }
 
     @Override
@@ -79,27 +73,16 @@ public class VnpayServiceImpl implements VnpayService {
         String vnp_ExpireDate = formatter.format(cld.getTime());
         vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
 
-        WalletEntity wallet = walletRepository.findByUserId(userId);
+    walletLedgerService.createPendingTopUp(userId, vnp_TxnRef, BigDecimal.valueOf(amount));
 
-        // Lưu giao dịch vào database với trạng thái "Chưa thanh toán"
-        WalletTransactionEntity transaction = new WalletTransactionEntity();
-        transaction.setOrderId(vnp_TxnRef);
-        transaction.setAmount(BigDecimal.valueOf(amount));
-        transaction.setBalanceBefore(wallet.getBalance());
-        transaction.setBalanceAfter(BigDecimal.ZERO);
-        transaction.setStatus(TransactionStatus.PENDING);
-
-        wallet.getTransactions().add(transaction);
-        walletRepository.save(wallet);
-
-        List fieldNames = new ArrayList(vnp_Params.keySet());
+        List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
         Collections.sort(fieldNames);
         StringBuilder hashData = new StringBuilder();
         StringBuilder query = new StringBuilder();
-        Iterator itr = fieldNames.iterator();
+        Iterator<String> itr = fieldNames.iterator();
         while (itr.hasNext()) {
-            String fieldName = (String) itr.next();
-            String fieldValue = (String) vnp_Params.get(fieldName);
+            String fieldName = itr.next();
+            String fieldValue = vnp_Params.get(fieldName);
             if ((fieldValue != null) && (!fieldValue.isEmpty())) {
                 //Build hash data
                 hashData.append(fieldName);
@@ -123,17 +106,33 @@ public class VnpayServiceImpl implements VnpayService {
     }
 
     @Override
+    public TopUpIntent createTopUpIntent(Double amount, Long userId, HttpServletRequest request) throws UnsupportedEncodingException {
+        String paymentUrl = createPaymentUrl(amount, userId, request);
+        // Expiry: 15 minutes from now (VNPay expire date logic above)
+        java.time.OffsetDateTime expiresAt = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(15);
+        // Extract orderId from paymentUrl param vnp_TxnRef for returning to client
+        String orderId = null;
+        int idx = paymentUrl.indexOf("vnp_TxnRef=");
+        if (idx >= 0) {
+            String fragment = paymentUrl.substring(idx + 11);
+            int amp = fragment.indexOf('&');
+            orderId = amp > 0 ? fragment.substring(0, amp) : fragment;
+        }
+        return new TopUpIntent(orderId, paymentUrl, amount, expiresAt);
+    }
+
+    @Override
     public boolean validateReturn(Map<String, String> params) throws UnsupportedEncodingException {
         String secureHash = params.remove("vnp_SecureHash");
 
-        List fieldNames = new ArrayList(params.keySet());
+        List<String> fieldNames = new ArrayList<>(params.keySet());
         Collections.sort(fieldNames);
         StringBuilder hashData = new StringBuilder();
         StringBuilder query = new StringBuilder();
-        Iterator itr = fieldNames.iterator();
+        Iterator<String> itr = fieldNames.iterator();
         while (itr.hasNext()) {
-            String fieldName = (String) itr.next();
-            String fieldValue = (String) params.get(fieldName);
+            String fieldName = itr.next();
+            String fieldValue = params.get(fieldName);
             if ((fieldValue != null) && (!fieldValue.isEmpty())) {
                 //Build hash data
                 hashData.append(fieldName);
@@ -150,29 +149,13 @@ public class VnpayServiceImpl implements VnpayService {
             }
         }
 
-        String queryUrl = query.toString();
         String checkHash = Utils.hmacSHA512(config.getHashSecret(), String.valueOf(hashData));
-        return secureHash.equalsIgnoreCase(checkHash);
+        return secureHash != null && secureHash.equalsIgnoreCase(checkHash);
     }
 
     @Override
     public void updateTransactionStatus(String orderId, boolean isSuccess) {
-        WalletTransactionEntity transaction = walletTransactionRepository.findByOrderId(orderId);
-        WalletEntity wallet = walletRepository.findByOrderId(orderId);
-        if (transaction != null && transaction.getStatus() == TransactionStatus.PENDING) {
-            if (isSuccess) {
-                transaction.setStatus(TransactionStatus.COMPLETED);
-                BigDecimal newBalance = wallet.getBalance().add(transaction.getAmount());
-                transaction.setBalanceAfter(newBalance);
-                wallet.setBalance(newBalance);
-                wallet.setUpdated_at(LocalDateTime.now());
-                walletRepository.save(wallet);
-            } else {
-                transaction.setStatus(TransactionStatus.FAILED);
-                transaction.setBalanceAfter(transaction.getBalanceBefore());
-            }
-            walletTransactionRepository.save(transaction);
-        }
+        walletLedgerService.completeTopUp(orderId, isSuccess, null);
     }
 
     @Override
@@ -226,19 +209,7 @@ public class VnpayServiceImpl implements VnpayService {
         vnp_Params.addProperty("vnp_SecureHash", vnp_SecureHash);
 
         if(!isRollback){
-            WalletEntity wallet = walletRepository.findByUserId(userId);
-            if(wallet.getBalance().doubleValue() < amount) return;
-
-            // Lưu giao dịch vào database với trạng thái "Chưa thanh toán"
-            WalletTransactionEntity transaction = new WalletTransactionEntity();
-            transaction.setOrderId(vnp_TxnRef);
-            transaction.setAmount(BigDecimal.valueOf(-amount));
-            transaction.setBalanceBefore(wallet.getBalance());
-            transaction.setBalanceAfter(BigDecimal.ZERO);
-            transaction.setStatus(TransactionStatus.PENDING);
-
-            wallet.getTransactions().add(transaction);
-            walletRepository.save(wallet);
+            // Refund initiation flow TBD; for now we skip creating a negative pending transaction
         }
 
         URL url = new URL (config.getApiUrl());

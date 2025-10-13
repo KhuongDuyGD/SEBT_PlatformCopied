@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import project.swp.spring.sebt_platform.model.BatteryEntity;
 import project.swp.spring.sebt_platform.model.EvVehicleEntity;
@@ -40,6 +41,7 @@ import project.swp.spring.sebt_platform.service.AdminService;
 import project.swp.spring.sebt_platform.service.AuthService;
 
 @Configuration
+@Profile("devautoseed") // Only active when profile 'devautoseed' is enabled
 public class Initializer {
 
     private static final Logger logger = LoggerFactory.getLogger(Initializer.class);
@@ -249,31 +251,30 @@ public class Initializer {
     @Bean
     public CommandLineRunner initDatabase() {
         return args -> {
-            logger.info("=== STARTING DATABASE SEEDING FOR SEBT PLATFORM ===");
-            logger.info("Mode: create-drop - Database will be recreated on each startup");
-
-            try {
-                // Step 1: Initialize system config
-                logger.info("Step 1: Initializing system config...");
-                initializeSystemConfig();
-                
-                // Step 2: Create users
-                logger.info("Step 2: Creating {} users...", USER_EMAILS.length);
-                List<UserEntity> users = createUsers();
-                logger.info("Successfully created {} users", users.size());
-
-                // Step 3: Create listings (50 EVs + 50 batteries)
-                logger.info("Step 3: Creating 100 listings (50 EVs + 50 batteries)...");
-                createListings(users);
-                logger.info("Successfully created all listings");
-
-                logger.info("=== DATABASE SEEDING COMPLETED SUCCESSFULLY ===");
-
-            } catch (Exception e) {
-                logger.error("ERROR DURING DATABASE SEEDING: {}", e.getMessage(), e);
-                throw e;
+            // Idempotent guard: if there is already any listing, skip entirely
+            if (listingRepository.count() > 0) {
+                logger.info("[Seeder] Existing listings detected -> skip seeding (profile devautoseed)");
+                return;
             }
-        };
+
+            logger.info("[Seeder] Starting minimal demo seeding (profile=devautoseed)");
+            logger.info("[Seeder] Mode: create-drop expected on dev -> data will not persist across restarts");
+            try {
+                initializeSystemConfig();
+                List<UserEntity> users = createUsers();
+                // Filter members once
+                List<UserEntity> members = new ArrayList<>();
+                for (UserEntity u : users) if (u.getRole() == UserRole.MEMBER) members.add(u);
+                if (members.isEmpty()) {
+                    logger.warn("[Seeder] No members created -> abort listing seeding");
+                    return;
+                }
+                seedMinimalListings(members);
+                logger.info("[Seeder] Created 10 demo listings.");
+            } catch (Exception e) {
+                logger.error("[Seeder] Error: {}", e.getMessage(), e);
+            }
+        }; 
     }
 
     /**
@@ -325,132 +326,77 @@ public class Initializer {
      * Create 100 listings (50 EVs + 50 batteries) and randomly distribute to members
      * Note: Admins cannot create listings, only MEMBERs can create
      */
-    private void createListings(List<UserEntity> users) {
+    private void seedMinimalListings(List<UserEntity> members) {
         Random random = new Random();
-        
-        // Reset province index to ensure all provinces get listings
         provinceIndex = 0;
-        
-        // Filter only members (exclude all admins)
-        List<UserEntity> members = new ArrayList<>();
-        for (UserEntity user : users) {
-            if (user.getRole() == UserRole.MEMBER) {
-                members.add(user);
-            }
-        }
-        
-        logger.info("Total members eligible to create listings: {}", members.size());
 
-        if (members.isEmpty()) {
-            logger.warn("No members available to create listings");
-            return;
-        }
+        // Simple fixed status cycle to showcase different states
+        ListingStatus[] cycle = {ListingStatus.PENDING, ListingStatus.ACTIVE, ListingStatus.SOLD, ListingStatus.SUSPENDED};
 
-        // Create status distribution with exact ratios: 40% PENDING, 35% ACTIVE, 15% SOLD, 10% SUSPENDED
-        List<ListingStatus> statusDistribution = createStatusDistribution();
-
-        // Create 100 EV listings
-        logger.info("Starting to create 100 EV listings...");
-        for (int i = 0; i < 100; i++) {
+        int total = 0;
+        // 5 EV
+        for (int i = 0; i < 5; i++) {
             try {
-                // Randomly select a member as seller
                 UserEntity seller = members.get(random.nextInt(members.size()));
-                
-                // Step 1: Create and save electric vehicle
                 EvVehicleEntity ev = createRandomEvVehicle(random, i);
-                EvVehicleEntity savedEv = evVehicleRepository.saveAndFlush(ev);
-                logger.debug("Saved EvVehicle with ID: {}", savedEv.getId());
-                
-                // Step 2: Create Product linked to EV (no cascade)
+                EvVehicleEntity savedEv = evVehicleRepository.save(ev);
                 ProductEntity product = new ProductEntity();
                 product.setEvVehicle(savedEv);
-                product.setBattery(null); // Ensure battery is null
-                ProductEntity savedProduct = productRepository.saveAndFlush(product);
-                logger.debug("Saved Product with ID: {}", savedProduct.getId());
-                
-                // Step 3: Create Listing linked to Product and Seller - use status from distribution
-                ListingStatus listingStatus = statusDistribution.get(i);
-                ListingEntity listing = createListingForProduct(seller, savedProduct, "EV", random, listingStatus);
-                ListingEntity savedListing = listingRepository.saveAndFlush(listing);
-                logger.debug("Saved Listing with ID: {} with status: {}", savedListing.getId(), listingStatus);
-                
-                // Step 4: Create Location linked to Listing
+                product.setBattery(null);
+                ProductEntity savedProduct = productRepository.save(product);
+                ListingStatus status = cycle[i % cycle.length];
+                ListingEntity listing = createListingForProduct(seller, savedProduct, "EV", random, status);
+                ListingEntity savedListing = listingRepository.save(listing);
                 LocationEntity location = createRandomLocation(savedListing, random);
-                locationRepository.saveAndFlush(location);
-                logger.debug("Saved Location with ID: {}", location.getId());
-                
-                // Step 5: Create PostRequest with APPROVED status for immediate listing display
-                PostRequestEntity postRequest = new PostRequestEntity();
-                postRequest.setListing(savedListing);
-                postRequest.setStatus(ApprovalStatus.APPROVED);
-                postRequest.setRequestedDate(LocalDate.now().minusDays(random.nextInt(30))); // Requested 0-30 days ago
-                postRequest.setReviewedAt(LocalDateTime.now().minusDays(random.nextInt(7))); // Reviewed 0-7 days ago
-                postRequestRepository.saveAndFlush(postRequest);
-                logger.debug("Saved PostRequest with ID: {} for Listing: {}", postRequest.getId(), savedListing.getId());
-                
-                // Log progress every 20 listings
-                if ((i + 1) % 20 == 0) {
-                    logger.info("Created {}/100 EV listings", i + 1);
+                locationRepository.save(location);
+                // Only create PostRequest if not already created elsewhere
+                try {
+                    PostRequestEntity pr = new PostRequestEntity();
+                    pr.setListing(savedListing);
+                    pr.setStatus(ApprovalStatus.APPROVED);
+                    pr.setRequestedDate(LocalDate.now());
+                    pr.setReviewedAt(LocalDateTime.now());
+                    postRequestRepository.save(pr);
+                } catch (Exception ex) {
+                    logger.debug("[Seeder] Skip duplicate PostRequest for listing {}: {}", savedListing.getId(), ex.getMessage());
                 }
-                
+                total++;
             } catch (Exception e) {
-                logger.error("Error creating EV listing #{}: {}", i + 1, e.getMessage());
+                logger.warn("[Seeder] EV listing error #{}: {}", i + 1, e.getMessage());
             }
         }
-        logger.info("Completed creating 100 EV listings");
 
-        // Create 100 battery listings
-        logger.info("Starting to create 100 battery listings...");
-        for (int i = 0; i < 100; i++) {
+        // 5 Battery
+        for (int i = 0; i < 5; i++) {
             try {
-                // Randomly select a member as seller
                 UserEntity seller = members.get(random.nextInt(members.size()));
-                
-                // Step 1: Create and save battery
                 BatteryEntity battery = createRandomBattery(random, i);
-                BatteryEntity savedBattery = batteryRepository.saveAndFlush(battery);
-                logger.debug("Saved Battery with ID: {}", savedBattery.getId());
-                
-                // Step 2: Create Product linked to battery (no cascade)
+                BatteryEntity savedBattery = batteryRepository.save(battery);
                 ProductEntity product = new ProductEntity();
                 product.setBattery(savedBattery);
-                product.setEvVehicle(null); // Ensure evVehicle is null
-                ProductEntity savedProduct = productRepository.saveAndFlush(product);
-                logger.debug("Saved Product with ID: {}", savedProduct.getId());
-                
-                // Step 3: Create Listing linked to Product and Seller - use status from distribution
-                ListingStatus listingStatus = statusDistribution.get(100 + i); // Offset 100 to get remaining distribution
-                ListingEntity listing = createListingForProduct(seller, savedProduct, "BATTERY", random, listingStatus);
-                ListingEntity savedListing = listingRepository.saveAndFlush(listing);
-                logger.debug("Saved Listing with ID: {} with status: {}", savedListing.getId(), listingStatus);
-                
-                // Step 4: Create Location linked to Listing
+                product.setEvVehicle(null);
+                ProductEntity savedProduct = productRepository.save(product);
+                ListingStatus status = cycle[(i + 5) % cycle.length];
+                ListingEntity listing = createListingForProduct(seller, savedProduct, "BATTERY", random, status);
+                ListingEntity savedListing = listingRepository.save(listing);
                 LocationEntity location = createRandomLocation(savedListing, random);
-                locationRepository.saveAndFlush(location);
-                logger.debug("Saved Location with ID: {}", location.getId());
-                
-                // Step 5: Create PostRequest with APPROVED status for immediate listing display
-                PostRequestEntity postRequest = new PostRequestEntity();
-                postRequest.setListing(savedListing);
-                postRequest.setStatus(ApprovalStatus.APPROVED);
-                postRequest.setRequestedDate(LocalDate.now().minusDays(random.nextInt(30))); // Requested 0-30 days ago
-                postRequest.setReviewedAt(LocalDateTime.now().minusDays(random.nextInt(7))); // Reviewed 0-7 days ago
-                postRequestRepository.saveAndFlush(postRequest);
-                logger.debug("Saved PostRequest with ID: {} for Listing: {}", postRequest.getId(), savedListing.getId());
-                
-                // Log progress every 20 listings
-                if ((i + 1) % 20 == 0) {
-                    logger.info("Created {}/100 battery listings", i + 1);
+                locationRepository.save(location);
+                try {
+                    PostRequestEntity pr = new PostRequestEntity();
+                    pr.setListing(savedListing);
+                    pr.setStatus(ApprovalStatus.APPROVED);
+                    pr.setRequestedDate(LocalDate.now());
+                    pr.setReviewedAt(LocalDateTime.now());
+                    postRequestRepository.save(pr);
+                } catch (Exception ex) {
+                    logger.debug("[Seeder] Skip duplicate PostRequest for listing {}: {}", savedListing.getId(), ex.getMessage());
                 }
-                
+                total++;
             } catch (Exception e) {
-                logger.error("Error creating battery listing #{}: {}", i + 1, e.getMessage());
+                logger.warn("[Seeder] Battery listing error #{}: {}", i + 1, e.getMessage());
             }
         }
-        logger.info("Completed creating 100 battery listings");
-        
-        // Log final status distribution results
-        logStatusDistributionResult();
+        logger.info("[Seeder] Minimal listings created: {}", total);
     }
 
     /**
@@ -624,80 +570,5 @@ public class Initializer {
         return String.join(", ", vehicles);
     }
 
-    /**
-     * Create listing status list with accurate ratios
-     * 40% PENDING (80 items), 35% ACTIVE (70 items), 15% SOLD (30 items), 10% SUSPENDED (20 items)
-     * Total 200 items to distribute among 200 listings
-     */
-    private List<ListingStatus> createStatusDistribution() {
-        List<ListingStatus> statusList = new ArrayList<>();
-        
-        // Add 80 PENDING (40%)
-        for (int i = 0; i < 80; i++) {
-            statusList.add(ListingStatus.PENDING);
-        }
-        
-        // Add 70 ACTIVE (35%)
-        for (int i = 0; i < 70; i++) {
-            statusList.add(ListingStatus.ACTIVE);
-        }
-        
-        // Add 30 SOLD (15%)
-        for (int i = 0; i < 30; i++) {
-            statusList.add(ListingStatus.SOLD);
-        }
-        
-        // Add 20 SUSPENDED (10%)
-        for (int i = 0; i < 20; i++) {
-            statusList.add(ListingStatus.SUSPENDED);
-        }
-        
-        // Shuffle list to create randomness
-        java.util.Collections.shuffle(statusList);
-        
-        logger.info("Created status distribution: {} PENDING, {} ACTIVE, {} SOLD, {} SUSPENDED", 
-                   80, 70, 30, 20);
-        
-        return statusList;
-    }
-
-    /**
-     * Log kết quả phân phối trạng thái listing từ database
-     * Để xác minh tỷ lệ đã đúng theo yêu cầu: 40% PENDING, 35% ACTIVE, 15% SOLD, 10% SUSPENDED
-     */
-    private void logStatusDistributionResult() {
-        try {
-            long totalListings = listingRepository.count();
-            long pendingCount = listingRepository.countListingEntitiesByStatus(ListingStatus.PENDING);
-            long activeCount = listingRepository.countListingEntitiesByStatus(ListingStatus.ACTIVE);
-            long soldCount = listingRepository.countListingEntitiesByStatus(ListingStatus.SOLD);
-            long suspendedCount = listingRepository.countListingEntitiesByStatus(ListingStatus.SUSPENDED);
-            
-            // Calculate percentages
-            double pendingPercent = totalListings > 0 ? (pendingCount * 100.0 / totalListings) : 0;
-            double activePercent = totalListings > 0 ? (activeCount * 100.0 / totalListings) : 0;
-            double soldPercent = totalListings > 0 ? (soldCount * 100.0 / totalListings) : 0;
-            double suspendedPercent = totalListings > 0 ? (suspendedCount * 100.0 / totalListings) : 0;
-            
-            logger.info("=== LISTING STATUS DISTRIBUTION RESULTS ===");
-            logger.info("Total listings: {}", totalListings);
-            logger.info("PENDING: {} listings ({:.1f}%)", pendingCount, pendingPercent);
-            logger.info("ACTIVE: {} listings ({:.1f}%)", activeCount, activePercent);
-            logger.info("SOLD: {} listings ({:.1f}%)", soldCount, soldPercent);
-            logger.info("SUSPENDED: {} listings ({:.1f}%)", suspendedCount, suspendedPercent);
-            
-            // Check if the distribution meets expected ratios
-            if (Math.abs(pendingPercent - 40.0) < 2.0 && 
-                Math.abs(activePercent - 35.0) < 2.0 && 
-                Math.abs(soldPercent - 15.0) < 2.0 && 
-                Math.abs(suspendedPercent - 10.0) < 2.0) {
-                logger.info("Status distribution is ACCURATE!");
-            } else {
-                logger.warn("Status distribution is INACCURATE. Expected: 40% PENDING, 35% ACTIVE, 15% SOLD, 10% SUSPENDED");
-            }
-            
-        } catch (Exception e) {
-            logger.error("Error logging status distribution results: {}", e.getMessage());
-        }
-    }
+    // Removed legacy distribution + logging methods (overkill for minimal demo seed)
 }
