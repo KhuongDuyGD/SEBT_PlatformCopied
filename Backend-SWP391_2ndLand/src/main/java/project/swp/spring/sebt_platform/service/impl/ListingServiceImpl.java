@@ -144,8 +144,8 @@ public class ListingServiceImpl implements ListingService {
 
         if (createListingForm.getProduct().getEv() != null) {
             Ev evDto = createListingForm.getProduct().getEv();
-            logger.debug("[CREATE_LISTING] EV DTO -> type={} name='{}' brand='{}' model='{}' year={} mileage={} batteryCapacity={} condition={}",
-                    evDto.getType(), evDto.getName(), evDto.getBrand(), evDto.getModel(), evDto.getYear(), evDto.getMileage(), evDto.getBatteryCapacity(), evDto.getConditionStatus());
+            logger.debug("[CREATE_LISTING] EV DTO -> type={} name='{}' brand='{}' year={} mileage={} batteryCapacity={} condition={}",
+                    evDto.getType(), evDto.getName(), evDto.getBrand(), evDto.getYear(), evDto.getMileage(), evDto.getBatteryCapacity(), evDto.getConditionStatus());
 
             // Defensive validation for required EV fields
             if (evDto.getName() == null || evDto.getName().isBlank()) {
@@ -168,7 +168,7 @@ public class ListingServiceImpl implements ListingService {
             EvVehicleEntity evVehicleEntity = new EvVehicleEntity();
             evVehicleEntity.setName(evDto.getName());
             evVehicleEntity.setBrand(evDto.getBrand());
-            evVehicleEntity.setModel(evDto.getModel());
+
             evVehicleEntity.setYear(evDto.getYear());
             if (evDto.getBatteryCapacity() > 0) {
                 evVehicleEntity.setBatteryCapacity(BigDecimal.valueOf(evDto.getBatteryCapacity()));
@@ -182,11 +182,11 @@ public class ListingServiceImpl implements ListingService {
 
         if (createListingForm.getProduct().getBattery() != null) {
             Battery b = createListingForm.getProduct().getBattery();
-            logger.debug("[CREATE_LISTING] Battery DTO -> brand={} model={} capacity={} health%={} condition={}",
-                    b.getBrand(), b.getModel(), b.getCapacity(), b.getHealthPercentage(), b.getConditionStatus());
+            logger.debug("[CREATE_LISTING] Battery DTO -> brand={} capacity={} health%={} condition={}",
+                    b.getBrand(), b.getCapacity(), b.getHealthPercentage(), b.getConditionStatus());
             BatteryEntity batteryEntity = new BatteryEntity();
             batteryEntity.setBrand(b.getBrand());
-            batteryEntity.setModel(b.getModel());
+
             batteryEntity.setHealthPercentage(b.getHealthPercentage());
             batteryEntity.setCapacity(BigDecimal.valueOf(b.getCapacity()));
             batteryEntity.setCompatibleVehicles(b.getCompatibleVehicles());
@@ -306,7 +306,7 @@ public class ListingServiceImpl implements ListingService {
         if (product.getEvVehicle() != null) {
             productResp = new Product(new Ev(evVehicleEntity.getType(),
                     evVehicleEntity.getName(),
-                    evVehicleEntity.getModel(),
+
                     evVehicleEntity.getBrand(),
                     evVehicleEntity.getYear(),
                     evVehicleEntity.getMileage(),
@@ -315,7 +315,6 @@ public class ListingServiceImpl implements ListingService {
         } else {
             productResp = new Product(null,
                     new Battery(batteryEntity.getBrand(),
-                            batteryEntity.getModel(),
                             batteryEntity.getCapacity().doubleValue(),
                             batteryEntity.getHealthPercentage(),
                             batteryEntity.getCompatibleVehicles(),
