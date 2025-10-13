@@ -39,10 +39,10 @@ import project.swp.spring.sebt_platform.model.enums.VehicleType;
 import project.swp.spring.sebt_platform.service.CloudinaryService;
 import project.swp.spring.sebt_platform.service.ListingService;
 import project.swp.spring.sebt_platform.service.ListingFeePolicy;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.media.Content;
+// (Removed duplicate swagger imports below – already imported above)
+// Added missing imports for Map & Locale
+import java.util.Map;
+import java.util.Locale;
 
 /**
  * REST Controller for Listings - Base URL: /api/listings

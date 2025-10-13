@@ -42,7 +42,7 @@ public class WalletLedgerServiceImpl implements WalletLedgerService {
 
     @Override
     @Transactional
-    public WalletTransactionEntity completeTopUp(String orderId, boolean success, String metadataJson) {
+    public WalletTransactionEntity completeTopUp(String orderId, boolean success, String metadataJson, BigDecimal callbackAmount) {
         WalletTransactionEntity tx = walletTransactionRepository.findByOrderId(orderId);
         if (tx == null) {
             return null;
@@ -53,6 +53,13 @@ public class WalletLedgerServiceImpl implements WalletLedgerService {
         if (success) {
             WalletEntity wallet = tx.getWallet();
             // TODO: Validate external callback amount matches tx.getAmount() to prevent tampering.
+            if (callbackAmount != null && tx.getAmount().compareTo(callbackAmount) != 0) {
+                // Amount mismatch -> mark failed and do not credit
+                tx.setStatus(TransactionStatus.FAILED);
+                tx.setDescription("VNPay top-up failed: amount mismatch (expected=" + tx.getAmount() + ", got=" + callbackAmount + ")");
+                walletTransactionRepository.save(tx);
+                return tx;
+            }
             tx.setBalanceBefore(wallet.getBalance());
             wallet.setBalance(wallet.getBalance().add(tx.getAmount()));
             tx.setBalanceAfter(wallet.getBalance());

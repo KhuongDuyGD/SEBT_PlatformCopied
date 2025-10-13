@@ -103,4 +103,23 @@ public class WalletController {
 
     public record TopUpRequest(Double amount) {}
     public record TopUpIntentResponse(String orderId, String paymentUrl, Double amount, java.time.OffsetDateTime expiresAt) {}
+
+    @GetMapping("/topups/{orderId}")
+    public ResponseEntity<?> getTopUpStatus(@PathVariable String orderId, HttpServletRequest request) {
+        Long userId = getUserIdFromSession(request);
+        if (userId == null) return ResponseEntity.status(401).body("login required");
+        WalletTransactionEntity tx = walletTransactionRepository.findByOrderId(orderId);
+        if (tx == null || !userId.equals(tx.getUserId())) return ResponseEntity.status(404).body("not found");
+        return ResponseEntity.ok(new WalletTransactionDTO(
+                tx.getOrderId(),
+                tx.getAmount(),
+                tx.getBalanceBefore(),
+                tx.getBalanceAfter(),
+                tx.getStatus().name(),
+                tx.getPurpose() != null ? tx.getPurpose().name() : null,
+                tx.getEntryType() != null ? tx.getEntryType().name() : null,
+                tx.getCreatedAt(),
+                tx.getDescription()
+        ));
+    }
 }
