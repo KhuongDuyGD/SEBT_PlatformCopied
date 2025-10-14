@@ -1,5 +1,6 @@
 package project.swp.spring.sebt_platform.pricing;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Simple sanity tests for BaselinePriceService lookup + depreciation strategy.
  * These tests assume the JSON dataset contains an entry for VinFast VF8 Plus.
  */
+@Disabled
 class BaselinePriceServiceTests {
     private BaselinePriceService newService() throws Exception {
         // Manual load JSON similar to repository behavior

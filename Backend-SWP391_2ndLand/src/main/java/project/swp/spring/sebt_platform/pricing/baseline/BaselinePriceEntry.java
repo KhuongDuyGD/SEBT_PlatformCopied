@@ -2,14 +2,21 @@ package project.swp.spring.sebt_platform.pricing.baseline;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * Đại diện cho một mục giá cơ sở (baseline) duy nhất được tải từ file cấu hình JSON.
+ * Được sử dụng làm giá xe/pin mới hoặc giá tham chiếu ban đầu.
+ */
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BaselinePriceEntry {
     private String brand;
     private String model;
     private String variant;
     private String category;
-    private long baselinePrice;
-    private String notes; // depreciation hints
+    private long baselinePrice; // Giá cơ sở (giá mới hoặc giá tham chiếu ban đầu)
+    private String notes;       // Ghi chú chi tiết, thường chứa các gợi ý về khấu hao (depreciation hints)
+
+    // --- Getters and Setters ---
 
     public String getBrand() { return brand; }
     public void setBrand(String brand) { this.brand = brand; }

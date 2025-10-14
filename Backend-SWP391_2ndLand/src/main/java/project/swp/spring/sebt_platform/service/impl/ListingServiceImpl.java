@@ -252,19 +252,6 @@ public class ListingServiceImpl implements ListingService {
         listingEntity = listingRepository.save(listingEntity);
         logger.debug("[CREATE_LISTING] Saved listing id={}", listingEntity.getId());
 
-        // --- Listing fee charging logic ---
-        boolean hasEv = productEntity.getEvVehicle() != null;
-        boolean hasBattery = productEntity.getBattery() != null;
-        BigDecimal fee = listingFeePolicy.computeFee(new ListingFeePolicy.ListingContext(hasEv, hasBattery, listingEntity.getPrice()));
-        try {
-            walletLedgerService.debitListingFee(user.getId(), listingEntity.getId(), fee);
-            logger.info("[LISTING_FEE] Charged sellerId={} listingId={} fee={}", user.getId(), listingEntity.getId(), fee);
-        } catch (InsufficientFundsException e) {
-            logger.warn("[CREATE_LISTING] Insufficient funds sellerId={} required={} current={}", user.getId(), e.getRequired(), e.getCurrent());
-            // propagate by returning false OR rethrow; rethrow for handler clarity
-            throw e;
-        }
-
         // Save listing images với URL và publicId từ Cloudinary
         if (listingImages != null && !listingImages.isEmpty()) {
             List<ListingImageEntity> listingImageEntities = new ArrayList<>();

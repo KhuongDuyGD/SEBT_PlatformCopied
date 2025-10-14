@@ -10,7 +10,7 @@ public interface CloudinaryService {
 
     Image uploadImage(MultipartFile file, String folder);
 
-    CompletableFuture<List<Image>> uploadMultipleImages(List<MultipartFile> files, String folder);
+    List<Image> uploadMultipleImages(List<MultipartFile> files, String folder);
 
     boolean deleteImage(String publicId);
 

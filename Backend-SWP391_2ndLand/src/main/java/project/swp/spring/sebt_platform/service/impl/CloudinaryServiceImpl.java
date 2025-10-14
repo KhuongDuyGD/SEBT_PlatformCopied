@@ -31,6 +31,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         this.cloudinary = cloudinary;
     }
 
+    @Async("imageUploadExecutor")
     @Override
     public Image uploadImage(MultipartFile file, String folder) {
         try {
@@ -70,9 +71,9 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         }
     }
 
-    @Async("imageUploadExecutor")
+
     @Override
-    public CompletableFuture<List<Image>> uploadMultipleImages(List<MultipartFile> files, String folder) {
+    public List<Image> uploadMultipleImages(List<MultipartFile> files, String folder) {
         List<Image> uploadedImages = new ArrayList<>();
 
         for (MultipartFile file : files) {
@@ -85,7 +86,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             }
         }
 
-        return CompletableFuture.completedFuture(uploadedImages);
+        return uploadedImages;
     }
 
 
