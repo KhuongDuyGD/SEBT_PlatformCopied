@@ -22,15 +22,12 @@ export const getPendingListings = async (params = {}) => {
 
     try {
         // Use admin endpoint that returns post requests for admin review
-        console.log('Trying admin API: /admin/post-request');
         const response = await axios.get('/admin/post-request', {
             params: {
                 page,
                 size
             }
         });
-
-        console.log('Admin post-request response:', response.data);
 
         // Normalize response to a { content: [], totalElements, totalPages, size, number }
         const data = response.data || {};
@@ -65,7 +62,6 @@ export const getPendingListings = async (params = {}) => {
 
         // Fallback: lấy tất cả listings từ cả evCart và batteryCart
         try {
-            console.log('Trying fallback APIs: /evCart and /batteryCart');
 
             // Get both EV and battery listings
             const [evResponse, batteryResponse] = await Promise.all([
@@ -77,15 +73,10 @@ export const getPendingListings = async (params = {}) => {
                 })
             ]);
 
-            console.log('EV listings response:', evResponse.data);
-            console.log('Battery listings response:', batteryResponse.data);
-
             // Combine both responses
             const evListings = evResponse.data.content || evResponse.data || [];
             const batteryListings = batteryResponse.data.content || batteryResponse.data || [];
             const allListings = [...evListings, ...batteryListings];
-
-            console.log('Combined listings:', allListings);
 
             // Filter logic: giả sử những listing mới tạo cần được duyệt
             // Hoặc những listing có status khác "APPROVED"
@@ -100,8 +91,6 @@ export const getPendingListings = async (params = {}) => {
                 // Tạm thời hiển thị tất cả để debug
                 return true; // Sẽ sửa logic này sau khi biết cấu trúc data
             });
-
-            console.log('Filtered listings for approval:', filteredListings);
 
             // Map any combined listing objects to UI listing shape (best-effort)
             const mapped = filteredListings.map(item => ({
@@ -166,14 +155,15 @@ export const rejectListing = async (listingId, rejectionReason) => {
 };
 
 /**
- * Lấy chi tiết listing để xem trước khi approve/reject
+ * Lấy chi tiết listing để xem trước khi approve/reject (ADMIN)
+ * Endpoint này cho phép admin xem listing ở bất kỳ trạng thái nào (kể cả PENDING)
  * @param {number|string} listingId - ID của listing
- * @returns {Promise} Chi tiết listing
+ * @returns {Promise} Chi tiết listing đầy đủ
  */
 export const getListingDetail = async (listingId) => {
     try {
-        // Backend provides listing detail at /api/listings/detail/{id}
-        const response = await axios.get(`/detail/${listingId}`);
+        // Use admin endpoint that can view listings regardless of status
+        const response = await axios.get(`/admin/listing-detail/${listingId}`);
         return response.data;
     } catch (error) {
         console.error('Error fetching listing detail:', error);
@@ -212,10 +202,6 @@ export const getAllListingsForDebug = async () => {
         const batteryListings = batteryResponse.data.content || batteryResponse.data || [];
         const allListings = [...evListings, ...batteryListings];
 
-        console.log('Debug: EV listings:', evListings);
-        console.log('Debug: Battery listings:', batteryListings);
-        console.log('Debug: Combined listings:', allListings);
-
         return {
             content: allListings,
             totalElements: allListings.length,
@@ -235,12 +221,10 @@ export const getAllListingsForDebug = async () => {
 
         for (const endpoint of endpoints) {
             try {
-                console.log(`Trying alternative endpoint: ${endpoint}`);
                 const response = await axios.get(endpoint);
-                console.log(`Success with ${endpoint}:`, response.data);
                 return response.data;
             } catch (err) {
-                console.log(`Failed ${endpoint}:`, err.response?.status || err.message);
+                // Continue to next endpoint
             }
         }
 

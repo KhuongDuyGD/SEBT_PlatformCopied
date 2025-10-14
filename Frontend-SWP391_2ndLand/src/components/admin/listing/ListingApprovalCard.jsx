@@ -38,13 +38,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
         }).format(price);
     };
 
-    const getVehicleInfo = () => {
-        const ev = listing.product?.ev;
-        if (ev) {
-            return `${ev.brand || ''} ${ev.name || ''} ${ev.model || ''}`.trim() || 'Xe điện';
-        }
-        return 'Pin điện';
-    };
+   
 
     const getConditionBadge = () => {
         const condition = listing.product?.ev?.conditionStatus || listing.product?.battery?.conditionStatus;
@@ -264,12 +258,13 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                     isOpen={showDetailModal}
                     onClose={() => setShowDetailModal(false)}
                     data={{
-                        requestId: listing.id ?? listing.requestId,
-                        ListingId: listing.listingId ?? listing.ListingId,
-                        thumbnailUrl: listing.thumbnailUrl || listing.thumbnail || listing.mainImage || listing.image,
-                        price: listing.price,
-                        title: listing.title,
-                        status: listing.status
+                        requestId: listing.id ?? listing.requestId ?? listing.raw?.requestId,
+                        listingId: listing.listingId ?? listing.raw?.listingId,
+                        thumbnailUrl: listing.thumbnailUrl || listing.thumbnail || listing.mainImage || listing.image || listing.raw?.thumbnailUrl,
+                        price: listing.price ?? listing.raw?.price,
+                        title: listing.title ?? listing.raw?.title,
+                        status: listing.status ?? listing.raw?.status,
+                        raw: listing.raw
                     }}
                 />
             )}

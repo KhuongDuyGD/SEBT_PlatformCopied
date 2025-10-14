@@ -12,9 +12,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.PostListingCartResponseDTO;
 import project.swp.spring.sebt_platform.model.enums.UserRole;
 import project.swp.spring.sebt_platform.service.AdminService;
+import project.swp.spring.sebt_platform.service.ListingService;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -22,6 +24,9 @@ public class AdminController {
 
     @Autowired
     private AdminService adminService;
+    
+    @Autowired
+    private ListingService listingService;
 
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved post requests",
@@ -112,6 +117,47 @@ public class AdminController {
                 }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }
+    }
+
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved listing detail",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ListingDetailResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid listing ID",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized: Admin access required",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "404", description = "Listing not found",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
+    @GetMapping("/listing-detail/{listingId}")
+    public ResponseEntity<?> getListingDetailForAdmin(HttpServletRequest request, @PathVariable Long listingId) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("role") == null || !session.getAttribute("role").equals(UserRole.ADMIN)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Admin access required.");
+            }
+
+            if (listingId == null || listingId <= 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid listing ID");
+            }
+
+            ListingDetailResponseDTO detail = listingService.getListingDetailByIdForAdmin(listingId);
+
+            if (detail == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Listing not found");
+            }
+
+            return ResponseEntity.ok(detail);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error: " + e.getMessage());
         }
     }
 }

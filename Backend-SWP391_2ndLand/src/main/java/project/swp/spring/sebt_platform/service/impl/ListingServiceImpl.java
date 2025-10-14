@@ -394,6 +394,95 @@ public class ListingServiceImpl implements ListingService {
     }
 
     @Override
+    public ListingDetailResponseDTO getListingDetailByIdForAdmin(Long listingId) {
+        ListingEntity listing = listingRepository.findById(listingId).orElse(null);
+        List<ListingImageEntity> listingImageEntities = listingImageRepository.findByListingId(listingId);
+
+        if (listing == null) {
+            logger.warn("Listing not found with ID: " + listingId);
+            return null;
+        }
+
+        // DO NOT check status - admin can see all listings
+        // DO NOT increment views count - admin viewing
+
+        // Convert to DTO
+        ListingDetailResponseDTO detailDTO = new ListingDetailResponseDTO();
+
+        detailDTO.setTitle(listing.getTitle());
+        detailDTO.setDescription(listing.getDescription());
+        detailDTO.setListingType(listing.getListingType());
+        detailDTO.setId(listing.getId());
+        detailDTO.setCreatedAt(listing.getCreatedAt().toString());
+        detailDTO.setUpdatedAt(listing.getUpdatedAt().toString());
+        detailDTO.setStatus(listing.getStatus().toString());
+        detailDTO.setListingType(listing.getListingType());
+        detailDTO.setPrice(listing.getPrice().doubleValue());
+        detailDTO.setThumbnail(listing.getThumbnailImage());
+
+        List<String> images = new ArrayList<>();
+        for (ListingImageEntity listingImageEntity : listingImageEntities) {
+            images.add(listingImageEntity.getImageUrl());
+        }
+
+        detailDTO.setImages(images);
+
+        ProductEntity product = listing.getProduct();
+        EvVehicleEntity evVehicleEntity = listing.getProduct().getEvVehicle();
+        BatteryEntity batteryEntity = listing.getProduct().getBattery();
+
+        Product productResp;
+        if (product.getEvVehicle() != null) {
+            productResp = new Product(new Ev(evVehicleEntity.getType(),
+                    evVehicleEntity.getName(),
+                    evVehicleEntity.getBrand(),
+                    evVehicleEntity.getYear(),
+                    evVehicleEntity.getMileage(),
+                    evVehicleEntity.getBatteryCapacity().doubleValue(),
+                    evVehicleEntity.getConditionStatus()), null);
+        } else {
+            productResp = new Product(null,
+                    new Battery(batteryEntity.getBrand(),
+                            batteryEntity.getCapacity().doubleValue(),
+                            batteryEntity.getHealthPercentage(),
+                            batteryEntity.getCompatibleVehicles(),
+                            batteryEntity.getConditionStatus()
+                    ));
+        }
+
+        // Set location
+        LocationEntity location = locationRepository.findByListingId(listingId);
+        if (location != null) {
+            detailDTO.setLocation(new Location(
+                    location.getProvince(),
+                    location.getDistrict(),
+                    location.getDetails()
+            ));
+        } else {
+            detailDTO.setLocation(null);
+        }
+
+        // Set seller info
+        UserEntity seller = listing.getSeller();
+        if (seller != null) {
+            detailDTO.setSeller(new Seller(
+                    seller.getId(),
+                    seller.getUsername(),
+                    seller.getEmail(),
+                    seller.getPhoneNumber(),
+                    seller.getAvatar()
+            ));
+        } else {
+            detailDTO.setSeller(null);
+
+        }
+
+        detailDTO.setProduct(productResp);
+
+        return detailDTO;
+    }
+
+    @Override
     public Page<ListingCartResponseDTO> getEvListingCarts(Long userId, Pageable pageable) {
         try {
             // Sử dụng repository method trả về Page

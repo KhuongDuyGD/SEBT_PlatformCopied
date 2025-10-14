@@ -32,6 +32,9 @@ public interface ListingService {
             List<Image> listingImages);
 
     ListingDetailResponseDTO getListingDetailById(Long listingId, Long userId);
+    
+    // New method for admin to get listing detail regardless of status
+    ListingDetailResponseDTO getListingDetailByIdForAdmin(Long listingId);
 
     Page<ListingCartResponseDTO> getEvListingCarts(Long userId, Pageable pageable);
 
