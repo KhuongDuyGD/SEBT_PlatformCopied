@@ -1,6 +1,10 @@
 package project.swp.spring.sebt_platform.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import project.swp.spring.sebt_platform.model.WalletEntity;
 import project.swp.spring.sebt_platform.model.WalletTransactionEntity;
+import project.swp.spring.sebt_platform.model.enums.WalletPurpose;
 
 import java.math.BigDecimal;
 
@@ -23,4 +27,10 @@ public interface WalletLedgerService {
      * @return created transaction entity
      */
     WalletTransactionEntity debitListingFee(Long userId, Long listingId, java.math.BigDecimal fee);
+
+    WalletEntity getWalletByUserId(Long userId);
+
+    Page<WalletTransactionEntity> getTransactions(Long userId, WalletPurpose purpose, Pageable pageable);
+
+    WalletTransactionEntity getTransactionByOrderId(String orderId);
 }

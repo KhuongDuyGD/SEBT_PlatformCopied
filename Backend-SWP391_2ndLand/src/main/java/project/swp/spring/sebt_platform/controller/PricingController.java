@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import project.swp.spring.sebt_platform.config.AiConfig;
 import project.swp.spring.sebt_platform.dto.request.PricingSuggestRequestDTO;
 import jakarta.validation.Valid;
 import project.swp.spring.sebt_platform.service.PricingService;
@@ -29,7 +30,7 @@ public class PricingController {
     private PricingService pricingService;
 
     @Autowired
-    private Environment environment;
+    private AiConfig environment;
 
     /**
      * POST /api/pricing/suggest - Get price suggestion (Gemini or heuristic fallback)
@@ -65,10 +66,10 @@ public class PricingController {
     @GetMapping("/health")
     public ResponseEntity<?> health(@RequestParam(value = "verbose", required = false, defaultValue = "false") boolean verbose) {
         try {
-            String propKey = environment.getProperty("app.ai.gemini.apiKey");
+            String propKey = environment.getGeminiApiKey();
             boolean hasEnv = System.getenv("GEMINI_API_KEY") != null;
             boolean hasProp = propKey != null && !propKey.isBlank();
-            String model = environment.getProperty("app.ai.gemini.model", "(unset)");
+            String model = environment.getGeminiModel();
             if (!verbose) {
                 return ResponseEntity.ok(java.util.Map.of(
                         "hasApiKey", hasEnv || hasProp,

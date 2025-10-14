@@ -12,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 import project.swp.spring.sebt_platform.config.AiConfig;
 import project.swp.spring.sebt_platform.dto.request.PricingSuggestRequestDTO;
 import project.swp.spring.sebt_platform.dto.response.PricingSuggestResponseDTO;
+import project.swp.spring.sebt_platform.pricing.ai.GeminiResponseParser;
 import project.swp.spring.sebt_platform.service.PricingService;
 import project.swp.spring.sebt_platform.pricing.baseline.BaselinePriceService;
 import project.swp.spring.sebt_platform.pricing.baseline.BaselinePriceService.LookupResult;
@@ -25,7 +26,7 @@ public class PricingServiceImpl implements PricingService {
     private static final Logger logger = LoggerFactory.getLogger(PricingServiceImpl.class);
 
     @Autowired
-    private AiConfig  aiConfig;
+    private AiConfig aiConfig;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
@@ -49,28 +50,25 @@ public class PricingServiceImpl implements PricingService {
             cached.setCacheHit(true);
             return cached;
         }
-
         HeuristicResult heur = heuristicSuggestImproved(request);
         Long heuristic = heur.heuristicRounded;
-        double dynamicClamp = heur.dynamicClampPercent; // already computed (0.xx)
-        double pct = dynamicClamp;
-        Long min = heuristic == null ? null : Math.round(heuristic * (1 - pct) / 1000.0) * 1000L;
-        Long max = heuristic == null ? null : Math.round(heuristic * (1 + pct) / 1000.0) * 1000L;
-    final String promptVersion = "v3"; // upgraded prompt
+        double pct = heur.dynamicClampPercent;
+        Long min = Math.round(heuristic * (1 - pct) / 1000.0) * 1000L;
+        Long max = Math.round(heuristic * (1 + pct) / 1000.0) * 1000L;
+        final String promptVersion = "v3"; // upgraded prompt
 
         if (aiConfig.getGeminiApiKey() == null || aiConfig.getGeminiApiKey().isBlank()) {
             logger.warn("Gemini API key not configured (app.ai.gemini.apiKey / GEMINI_API_KEY). Using heuristic fallback only.");
-        PricingSuggestResponseDTO resp = baseResponseFromHeuristic(heuristic, min, max, promptVersion,
-            "Heuristic (không dùng AI)");
-        enrichBreakdown(resp, heur, pct);
+            PricingSuggestResponseDTO resp = baseResponseFromHeuristic(heuristic, min, max, promptVersion,
+                    "Heuristic (không dùng AI)");
+            enrichBreakdown(resp, heur, pct);
             resp.setPrompt(null);
             resp.setCacheHit(false);
             CACHE.put(cacheKey, resp);
             return resp;
         }
-        String primaryModel = (aiConfig.getGeminiModel() == null || aiConfig.getGeminiModel().isBlank()) ? "gemini-2.5-flash" : aiConfig.getGeminiModel().trim();
-        String modelInUse = primaryModel;
-    String prompt = buildPromptV3(request, heuristic, min, max, promptVersion, heur, pct);
+        String modelInUse = (aiConfig.getGeminiModel() == null || aiConfig.getGeminiModel().isBlank()) ? "gemini-2.5-flash" : aiConfig.getGeminiModel().trim();
+        String prompt = buildPromptV3(request, heuristic, min, max, promptVersion, heur, pct);
 
         int attempts = 0;
         while (true) {
@@ -103,9 +101,9 @@ public class PricingServiceImpl implements PricingService {
                         }
                         continue;
                     }
-            result = baseResponseFromHeuristic(heuristic, min, max, promptVersion,
-                "Fallback heuristic HTTP=" + response.getStatusCode().value());
-            enrichBreakdown(result, heur, pct);
+                    result = baseResponseFromHeuristic(heuristic, min, max, promptVersion,
+                            "Fallback heuristic HTTP=" + response.getStatusCode().value());
+                    enrichBreakdown(result, heur, pct);
                 }
                 result.setPrompt(truncate(prompt, 4000));
                 result.setCacheHit(false);
@@ -118,7 +116,7 @@ public class PricingServiceImpl implements PricingService {
                 if (shouldRetry(code, attempts)) {
                     sleepBackoff(attempts);
                     if ((code == 503 || code == 500) && aiConfig.getFallbackModel() != null && !aiConfig.getFallbackModel().isBlank()) {
-                        modelInUse = aiConfig.getFallbackModel() ;
+                        modelInUse = aiConfig.getFallbackModel();
                     }
                     continue;
                 }
@@ -126,9 +124,9 @@ public class PricingServiceImpl implements PricingService {
                 if (code == 503) userReason = "Dịch vụ AI tạm thời quá tải (503) → dùng heuristic";
                 else if (code == 429) userReason = "AI quota / rate limit (429) → dùng heuristic";
                 else userReason = "Fallback heuristic after HTTP error: " + code;
-        PricingSuggestResponseDTO resp = baseResponseFromHeuristic(heuristic, min, max, promptVersion,
-            userReason);
-        enrichBreakdown(resp, heur, pct);
+                PricingSuggestResponseDTO resp = baseResponseFromHeuristic(heuristic, min, max, promptVersion,
+                        userReason);
+                enrichBreakdown(resp, heur, pct);
                 resp.setPrompt(truncate(prompt, 4000));
                 resp.setCacheHit(false);
                 putCache(cacheKey, resp);
@@ -140,9 +138,9 @@ public class PricingServiceImpl implements PricingService {
                     sleepBackoff(attempts);
                     continue;
                 }
-        PricingSuggestResponseDTO resp = baseResponseFromHeuristic(heuristic, min, max, promptVersion,
-            "Fallback exception=" + e.getClass().getSimpleName());
-        enrichBreakdown(resp, heur, pct);
+                PricingSuggestResponseDTO resp = baseResponseFromHeuristic(heuristic, min, max, promptVersion,
+                        "Fallback exception=" + e.getClass().getSimpleName());
+                enrichBreakdown(resp, heur, pct);
                 resp.setPrompt(truncate(prompt, 4000));
                 resp.setCacheHit(false);
                 putCache(cacheKey, resp);
@@ -152,15 +150,17 @@ public class PricingServiceImpl implements PricingService {
         }
     }
 
-    private String truncate(String s, int max) { return s == null ? null : (s.length() <= max ? s : s.substring(0, max) + "..."); }
+    private String truncate(String s, int max) {
+        return s == null ? null : (s.length() <= max ? s : s.substring(0, max) + "...");
+    }
 
     private PricingSuggestResponseDTO postProcessGeminiResponse(String body, String model, Long heuristic, Long min, Long max, String promptVersion, String prompt,
                                                                 HeuristicResult heur, double pct) {
         boolean attemptedSemanticRetry = false;
         String workingBody = body;
-    for (int semanticAttempt = 0; semanticAttempt < 2; semanticAttempt++) {
+        for (int semanticAttempt = 0; semanticAttempt < 2; semanticAttempt++) {
             try {
-                project.swp.spring.sebt_platform.pricing.ai.GeminiResponseParser parser = new project.swp.spring.sebt_platform.pricing.ai.GeminiResponseParser();
+                GeminiResponseParser parser = new GeminiResponseParser();
                 var result = parser.parse(workingBody);
                 if (result.price() != null && result.price() > 0) {
                     PricingSuggestResponseDTO dto = enrichedFinalFromAi(result.price(), Optional.ofNullable(result.reasoning()).orElse("AI JSON parsed"), model, heuristic, min, max, promptVersion, prompt, heur, pct);
@@ -169,7 +169,8 @@ public class PricingServiceImpl implements PricingService {
                     // Range validation for clamp evidence
                     if (dto.getSuggestedPrice() != null && min != null && max != null) {
                         long sp = dto.getSuggestedPrice();
-                        if ((sp < min || sp > max) && !dto.getEvidence().contains("clamp")) dto.getEvidence().add("clamp");
+                        if ((sp < min || sp > max) && !dto.getEvidence().contains("clamp"))
+                            dto.getEvidence().add("clamp");
                     }
                     enrichBreakdown(dto, heur, pct);
                     return dto;
@@ -228,18 +229,20 @@ public class PricingServiceImpl implements PricingService {
                 sb.append("BASELINE_NEW=").append(heur.baseline).append('\n');
                 if (heur.strategyType != null) {
                     sb.append("DEPRECIATION_STRATEGY=").append(heur.strategyType)
-                      .append("(rate=").append(heur.strategyRate).append(",maxDep=").append(heur.strategyMaxDep).append(")\n");
+                            .append("(rate=").append(heur.strategyRate).append(",maxDep=").append(heur.strategyMaxDep).append(")\n");
                 }
                 sb.append("FACTORS: ").append(heur.factorSummary).append(" clampPercent=")
-                  .append(String.format(java.util.Locale.US, "%.2f", clampPct*100)).append('%').append('\n');
+                        .append(String.format(java.util.Locale.US, "%.2f", clampPct * 100)).append('%').append('\n');
             }
             sb.append("If the result exceeds the allowed range, keep it within the range and give a short explanation.\n");
             sb.append("Answering by VietNamese.\n");
         }
         sb.append("DỮ LIỆU:\n");
         sb.append("category=").append(req.getCategory()).append('\n');
-        if (req.getProduct() != null) req.getProduct().forEach((k,v) -> sb.append("product.").append(k).append('=').append(v).append('\n'));
-        if (req.getLocation() != null) req.getLocation().forEach((k,v) -> sb.append("location.").append(k).append('=').append(v).append('\n'));
+        if (req.getProduct() != null)
+            req.getProduct().forEach((k, v) -> sb.append("product.").append(k).append('=').append(v).append('\n'));
+        if (req.getLocation() != null)
+            req.getLocation().forEach((k, v) -> sb.append("location.").append(k).append('=').append(v).append('\n'));
         sb.append("title=").append(req.getTitle()).append('\n');
         sb.append("description=").append(req.getDescription()).append('\n');
         return sb.toString();
@@ -249,7 +252,7 @@ public class PricingServiceImpl implements PricingService {
     private HeuristicResult heuristicSuggestImproved(PricingSuggestRequestDTO req) {
         HeuristicResult r = new HeuristicResult();
         try {
-            Map<String,Object> p = req.getProduct();
+            Map<String, Object> p = req.getProduct();
             if (p == null) return r; // empty result (null values)
             String brand = optString(p.get("brand"));
             String model = optString(p.get("model"));
@@ -291,7 +294,7 @@ public class PricingServiceImpl implements PricingService {
                 if (brand != null && brand.equalsIgnoreCase("VinFast")) base = 350_000_000;
                 if (model != null) {
                     String m = model.toLowerCase();
-                    String composite = ((brand==null?"":brand.toLowerCase()+" ") + m);
+                    String composite = ((brand == null ? "" : brand.toLowerCase() + " ") + m);
                     boolean vf8Plus = composite.contains("vf8 plus") || (composite.contains("vf8") && m.contains("plus"));
                     if (!vf8Plus && brand != null && brand.equalsIgnoreCase("VinFast") && m.contains("plus") && batteryCapacity != null && batteryCapacity >= 70) {
                         vf8Plus = true;
@@ -323,11 +326,21 @@ public class PricingServiceImpl implements PricingService {
             double conditionFactor = 1.0;
             if (condition != null) {
                 switch (condition.toUpperCase()) {
-                    case "EXCELLENT": conditionFactor = 1.00; break;
-                    case "GOOD": conditionFactor = 0.99; break; // giảm phạt xe trạng thái tốt để tránh tụt giá bất hợp lý khi gần như mới
-                    case "FAIR": conditionFactor = 0.90; break;
-                    case "POOR": conditionFactor = 0.80; break;
-                    case "NEEDS_MAINTENANCE": conditionFactor = 0.70; break;
+                    case "EXCELLENT":
+                        conditionFactor = 1.00;
+                        break;
+                    case "GOOD":
+                        conditionFactor = 0.99;
+                        break; // giảm phạt xe trạng thái tốt để tránh tụt giá bất hợp lý khi gần như mới
+                    case "FAIR":
+                        conditionFactor = 0.90;
+                        break;
+                    case "POOR":
+                        conditionFactor = 0.80;
+                        break;
+                    case "NEEDS_MAINTENANCE":
+                        conditionFactor = 0.70;
+                        break;
                 }
             }
 
@@ -380,11 +393,33 @@ public class PricingServiceImpl implements PricingService {
         }
     }
 
-    private String optString(Object o) { return o == null ? null : String.valueOf(o); }
-    private Integer optInt(Object o) { try { if (o == null) return null; return Integer.parseInt(String.valueOf(o).replaceAll("[^0-9]","")); } catch (Exception e){ return null; } }
-    private Double optDouble(Object o) { try { if (o == null) return null; return Double.parseDouble(String.valueOf(o).replaceAll("[^0-9.]","")); } catch (Exception e){ return null; } }
+    private String optString(Object o) {
+        return o == null ? null : String.valueOf(o);
+    }
 
-    private Long roundToThousand(Double d) { if (d == null) return null; long v = Math.round(d); return Math.round(v / 1000.0) * 1000L; }
+    private Integer optInt(Object o) {
+        try {
+            if (o == null) return null;
+            return Integer.parseInt(String.valueOf(o).replaceAll("[^0-9]", ""));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Double optDouble(Object o) {
+        try {
+            if (o == null) return null;
+            return Double.parseDouble(String.valueOf(o).replaceAll("[^0-9.]", ""));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Long roundToThousand(Double d) {
+        if (d == null) return null;
+        long v = Math.round(d);
+        return Math.round(v / 1000.0) * 1000L;
+    }
 
     // ===== Added helpers for enriched response =====
     private static final Map<String, PricingSuggestResponseDTO> CACHE = new ConcurrentHashMap<>();
@@ -398,7 +433,8 @@ public class PricingServiceImpl implements PricingService {
         try {
             long delay = (long) (aiConfig.getInitialDelayMillis() * Math.pow(2, Math.max(0, attempts - 1))); // exp backoff
             Thread.sleep(Math.min(delay, 4000));
-        } catch (InterruptedException ignored) {}
+        } catch (InterruptedException ignored) {
+        }
     }
 
     private void putCache(String key, PricingSuggestResponseDTO value) {
@@ -418,20 +454,20 @@ public class PricingServiceImpl implements PricingService {
     private String buildCacheKey(PricingSuggestRequestDTO req) {
         StringBuilder sb = new StringBuilder();
         sb.append(Objects.toString(req.getCategory(), "")).append('|');
-        Map<String,Object> p = req.getProduct();
+        Map<String, Object> p = req.getProduct();
         if (p != null) {
-            sb.append(Objects.toString(p.get("brand"), "")) .append('|')
-              .append(Objects.toString(p.get("model"), "")) .append('|')
-              .append(Objects.toString(p.get("year"), ""))  .append('|')
-              .append(Objects.toString(p.get("batteryCapacity"), "")) .append('|')
-              .append(Objects.toString(p.get("condition"), "")) .append('|')
-              .append(Objects.toString(p.get("healthPercentage"), "")) .append('|')
-              .append(Objects.toString(p.get("mileage"), "")) .append('|');
+            sb.append(Objects.toString(p.get("brand"), "")).append('|')
+                    .append(Objects.toString(p.get("model"), "")).append('|')
+                    .append(Objects.toString(p.get("year"), "")).append('|')
+                    .append(Objects.toString(p.get("batteryCapacity"), "")).append('|')
+                    .append(Objects.toString(p.get("condition"), "")).append('|')
+                    .append(Objects.toString(p.get("healthPercentage"), "")).append('|')
+                    .append(Objects.toString(p.get("mileage"), "")).append('|');
         }
-        Map<String,Object> loc = req.getLocation();
+        Map<String, Object> loc = req.getLocation();
         if (loc != null) {
-            sb.append(Objects.toString(loc.get("province"), "")) .append('|')
-              .append(Objects.toString(loc.get("district"), ""));
+            sb.append(Objects.toString(loc.get("province"), "")).append('|')
+                    .append(Objects.toString(loc.get("district"), ""));
         }
         return sb.toString().toLowerCase();
     }
@@ -459,8 +495,13 @@ public class PricingServiceImpl implements PricingService {
             preClampDeviationRatio = Math.abs(aiRounded - heuristic) / (double) heuristic; // e.g. 0.12 = 12%
         }
         if (finalPrice != null && min != null && max != null) {
-            if (finalPrice < min) { finalPrice = min; clamped = true; }
-            else if (finalPrice > max) { finalPrice = max; clamped = true; }
+            if (finalPrice < min) {
+                finalPrice = min;
+                clamped = true;
+            } else if (finalPrice > max) {
+                finalPrice = max;
+                clamped = true;
+            }
         }
         // Hard cap: không bao giờ vượt baseline gốc (giá xe mới) nếu baseline có sẵn
         boolean baselineCapApplied = false;
@@ -479,13 +520,13 @@ public class PricingServiceImpl implements PricingService {
             }
         }
         PricingSuggestResponseDTO dto = new PricingSuggestResponseDTO(finalPrice, reason, model, aiRounded == null ? "heuristic" : "gemini",
-        heuristic, min, max, clamped, confidence, deltaPercent, promptVersion);
+                heuristic, min, max, clamped, confidence, deltaPercent, promptVersion);
         // Seed evidence with baseline/heuristic factors; AI evidence will merge later after parse stage enhancement
         java.util.List<String> ev = new java.util.ArrayList<>();
         ev.add("baseline");
         if (heur.strategyType != null) ev.add("depreciation");
         ev.add("heuristic");
-    if (clamped) ev.add("clamp");
+        if (clamped) ev.add("clamp");
         if (baselineCapApplied) ev.add("baseline-cap");
         dto.setEvidence(ev);
         // Tạm reuse 'reason' field cho prompt debug nếu cần – có thể mở rộng sang field mới nếu muốn.
@@ -496,7 +537,7 @@ public class PricingServiceImpl implements PricingService {
     private static class HeuristicResult {
         long baseline;
         long heuristicRounded;
-        String factorSummary=""; // e.g. age=...,cap=...,cond=...,km=...,health=...
+        String factorSummary = ""; // e.g. age=...,cap=...,cond=...,km=...,health=...
         double dynamicClampPercent = 0.15; // default
         String strategyType; // LINEAR / EXPONENTIAL / NONE
         Double strategyRate; // numeric rate
@@ -522,20 +563,31 @@ public class PricingServiceImpl implements PricingService {
                 if (kv.length == 2) {
                     double val = Double.parseDouble(kv[1]);
                     switch (kv[0]) {
-                        case "age": dto.setFactorAge(val); break;
-                        case "cap": dto.setFactorCapacity(val); break;
-                        case "cond": dto.setFactorCondition(val); break;
-                        case "km": dto.setFactorMileage(val); break;
-                        case "health": dto.setFactorHealth(val); break;
+                        case "age":
+                            dto.setFactorAge(val);
+                            break;
+                        case "cap":
+                            dto.setFactorCapacity(val);
+                            break;
+                        case "cond":
+                            dto.setFactorCondition(val);
+                            break;
+                        case "km":
+                            dto.setFactorMileage(val);
+                            break;
+                        case "health":
+                            dto.setFactorHealth(val);
+                            break;
                     }
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     private void logStructured(PricingSuggestResponseDTO dto, String cacheKey, int attempts, String modelUsed) {
         try {
-            Map<String,Object> m = new LinkedHashMap<>();
+            Map<String, Object> m = new LinkedHashMap<>();
             m.put("ts", System.currentTimeMillis());
             m.put("cacheKey", cacheKey);
             m.put("attempts", attempts);

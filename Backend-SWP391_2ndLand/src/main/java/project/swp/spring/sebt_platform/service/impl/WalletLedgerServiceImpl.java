@@ -1,5 +1,7 @@
 package project.swp.spring.sebt_platform.service.impl;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.swp.spring.sebt_platform.model.WalletEntity;
@@ -100,5 +102,23 @@ public class WalletLedgerServiceImpl implements WalletLedgerService {
         walletRepository.save(wallet);
         walletTransactionRepository.save(tx);
         return tx;
+    }
+
+    @Override
+    public WalletEntity getWalletByUserId(Long userId) {
+        return walletRepository.findByUserId(userId);
+    }
+
+    @Override
+    public Page<WalletTransactionEntity> getTransactions(Long userId, WalletPurpose purpose, Pageable pageable) {
+        if (purpose != null) {
+            return walletTransactionRepository.findByUserIdAndPurposeOrderByCreatedAtDesc(userId, purpose, pageable);
+        }
+        return walletTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+    }
+
+    @Override
+    public WalletTransactionEntity getTransactionByOrderId(String orderId) {
+        return walletTransactionRepository.findByOrderId(orderId);
     }
 }

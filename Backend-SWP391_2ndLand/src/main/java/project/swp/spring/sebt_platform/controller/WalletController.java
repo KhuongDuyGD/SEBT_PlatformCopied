@@ -10,7 +10,6 @@ import project.swp.spring.sebt_platform.model.WalletEntity;
 import project.swp.spring.sebt_platform.model.WalletTransactionEntity;
 import project.swp.spring.sebt_platform.model.enums.WalletPurpose;
 import project.swp.spring.sebt_platform.service.VnpayService;
-import project.swp.spring.sebt_platform.service.WalletQueryService;
 import project.swp.spring.sebt_platform.service.WalletLedgerService;
 import project.swp.spring.sebt_platform.exception.AuthRequiredException;
 import project.swp.spring.sebt_platform.exception.NotFoundException;
@@ -22,14 +21,12 @@ import java.math.BigDecimal;
 @Validated
 public class WalletController {
 
-    private final WalletQueryService walletQueryService;
     private final VnpayService vnpayService;
     private final WalletLedgerService walletLedgerService;
 
-    public WalletController(WalletQueryService walletQueryService,
+    public WalletController(
                             VnpayService vnpayService,
                             WalletLedgerService walletLedgerService) {
-        this.walletQueryService = walletQueryService;
         this.vnpayService = vnpayService;
         this.walletLedgerService = walletLedgerService;
     }
@@ -38,7 +35,7 @@ public class WalletController {
     public ResponseEntity<?> getMyWallet(HttpServletRequest request) {
         Long userId = getUserIdFromSession(request);
     if (userId == null) throw new AuthRequiredException();
-    WalletEntity wallet = walletQueryService.getWalletByUserId(userId);
+    WalletEntity wallet = walletLedgerService.getWalletByUserId(userId);
     if (wallet == null) throw new NotFoundException("wallet", userId);
     return ResponseEntity.ok(new WalletBalanceDTO(wallet.getBalance()));
     }
@@ -51,7 +48,7 @@ public class WalletController {
         Long userId = getUserIdFromSession(request);
     if (userId == null) throw new AuthRequiredException();
         var pr = PageRequest.of(page, size);
-        var txPage = walletQueryService.getTransactions(userId, purpose, pr);
+        var txPage = walletLedgerService.getTransactions(userId, purpose, pr);
         return ResponseEntity.ok(txPage.map(WalletTransactionDTO::from));
     }
 
@@ -108,7 +105,7 @@ public class WalletController {
     public ResponseEntity<?> getTopUpStatus(@PathVariable String orderId, HttpServletRequest request) {
         Long userId = getUserIdFromSession(request);
     if (userId == null) throw new AuthRequiredException();
-        WalletTransactionEntity tx = walletQueryService.getTransactionByOrderId(orderId);
+        WalletTransactionEntity tx = walletLedgerService.getTransactionByOrderId(orderId);
         if (tx == null || !userId.equals(tx.getUserId())) throw new NotFoundException("transaction", orderId);
         return ResponseEntity.ok(new WalletTransactionDTO(
                 tx.getOrderId(),
@@ -129,14 +126,14 @@ public class WalletController {
                                            HttpServletRequest request) {
         Long userId = getUserIdFromSession(request);
     if (userId == null) throw new AuthRequiredException();
-        WalletTransactionEntity tx = walletQueryService.getTransactionByOrderId(orderId);
+        WalletTransactionEntity tx = walletLedgerService.getTransactionByOrderId(orderId);
         if (tx == null || !userId.equals(tx.getUserId())) throw new NotFoundException("transaction", orderId);
         if (!tx.getStatus().name().equals("PENDING")) {
             return ResponseEntity.ok(WalletTransactionDTO.from(tx));
         }
         // Mark completed (simulate manual success path; amount already on tx)
         walletLedgerService.completeTopUp(orderId, success, "{\"manual\":true}", tx.getAmount());
-        WalletTransactionEntity updated = walletQueryService.getTransactionByOrderId(orderId);
+        WalletTransactionEntity updated = walletLedgerService.getTransactionByOrderId(orderId);
         return ResponseEntity.ok(WalletTransactionDTO.from(updated));
     }
 }
