@@ -1,10 +1,20 @@
-import React, { useState, useContext, useRef, useEffect } from "react";
-import { ArrowLeft, Car, Battery, MapPin, FileText, CheckCircle, AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import React, {useContext, useEffect, useRef, useState} from "react";
+import {
+    AlertCircle,
+    ArrowLeft,
+    Battery,
+    Car,
+    CheckCircle,
+    ChevronLeft,
+    ChevronRight,
+    FileText,
+    MapPin
+} from "lucide-react";
+import {useNavigate} from "react-router-dom";
 import listingsApi from "../../api/listings";
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { baseListingSchema } from '../../utils/validation/listingSchema';
+import {useForm} from 'react-hook-form';
+import {yupResolver} from '@hookform/resolvers/yup';
+import {baseListingSchema} from '../../utils/validation/listingSchema';
 import "../../css/CloudinaryImageUploadGallery.css";
 import StepProgress from "../../components/listings/StepProgress";
 import BasicInfoStep from "../../components/listings/steps/BasicInfoStep";
@@ -12,10 +22,10 @@ import ProductDetailsStep from "../../components/listings/steps/ProductDetailsSt
 import LocationReviewStep from "../../components/listings/steps/LocationReviewStep";
 import PricingReviewStep from "../../components/listings/steps/PricingReviewStep";
 import "../../css/CreateListing.css";
-import { AuthContext } from "../../contexts/AuthContext";
-import { useListingDraft } from '../../hooks/useListingDraft';
-import { sanitizeListingDraft } from '../../utils/validation/normalizers';
-import { fetchServerPriceSuggestion } from '../../api/pricing';
+import {AuthContext} from "../../contexts/AuthContext";
+import {useListingDraft} from '../../hooks/useListingDraft';
+import {sanitizeListingDraft} from '../../utils/validation/normalizers';
+import {fetchServerPriceSuggestion} from '../../api/pricing';
 
 const DEFAULT_VALUES = {
     title: '', description: '', price: '', images: [], mainImageIndex: 0,
@@ -99,7 +109,8 @@ function CreateListing() {
             }
             return raw;
         };
-        const listingData = {
+
+        return {
             title: v.title,
             description: v.description,
             price: v.price || null,
@@ -123,7 +134,6 @@ function CreateListing() {
                 district: v.location.district
             }
         };
-        return listingData;
     };
 
     const handleSuggestPrice = async () => {

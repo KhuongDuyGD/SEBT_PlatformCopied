@@ -135,7 +135,6 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
             "ORDER BY l.createdAt DESC")
          List<ListingEntity> findAllListingsByStatus(@Param("status") ListingStatus status);
 
-
         @Query("SELECT l FROM ListingEntity l " +
                         "WHERE l.status = :status AND l.product.evVehicle.type = :type ORDER BY l.createdAt DESC")
         Page<ListingEntity> findByStatusAndVehicleType(@Param("status") ListingStatus status,

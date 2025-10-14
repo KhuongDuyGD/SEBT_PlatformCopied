@@ -115,7 +115,7 @@ public class ListingController {
                 dto.getImages()!=null?dto.getImages().size():0);
 
         try {
-            List<Image> images = cloudinaryService.uploadMultipleImages(dto.getImages(), "listings").get();
+            List<Image> images = cloudinaryService.uploadMultipleImages(dto.getImages(), "listings");
             if (images.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Tải lên ảnh thất bại. Vui lòng thử lại");
