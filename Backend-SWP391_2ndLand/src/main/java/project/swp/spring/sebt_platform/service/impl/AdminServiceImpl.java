@@ -48,7 +48,7 @@ public class AdminServiceImpl implements AdminService {
 
             return res.map(postRequest -> {
                 PostListingCartResponseDTO dto = new PostListingCartResponseDTO();
-                dto.setRequestId(postRequest.getListing().getRequestId());
+                dto.setRequestId(postRequest.getId());
                 dto.setListingId(postRequest.getListing().getId());
                 dto.setThumbnailUrl(postRequest.getListing().getThumbnailImage());
                 dto.setPrice(postRequest.getListing().getPrice().doubleValue());
