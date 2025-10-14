@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import project.swp.spring.sebt_platform.service.VnpayService;
+import project.swp.spring.sebt_platform.exception.AuthRequiredException;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -43,25 +44,17 @@ public class VnpayController {
     @GetMapping("/create-payment")
     public ResponseEntity<?> createPayment(@RequestParam double amount,
                                            HttpServletRequest request) {
-        try{
-            HttpSession session = request.getSession(false);
-            if (session == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login required");
-            }
-            Long userId = (Long) session.getAttribute("userId");
-            if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login required");
-            }
+        HttpSession session = request.getSession(false);
+        if (session == null) throw new AuthRequiredException();
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) throw new AuthRequiredException();
 
-            if (amount <= 0) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("amount must be positive");
-            }
+        if (amount <= 0) throw new IllegalArgumentException("amount must be positive");
 
+        try {
             // NOTE: Prefer using POST /api/wallet/topups (WalletController) for new integrations.
-            String paymentUrl = vnpayService.createPaymentUrl(amount,userId,request);
+            String paymentUrl = vnpayService.createPaymentUrl(amount, userId, request);
             return ResponseEntity.ok(Map.of("paymentUrl", paymentUrl));
-        } catch (NumberFormatException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("invalid amount");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }

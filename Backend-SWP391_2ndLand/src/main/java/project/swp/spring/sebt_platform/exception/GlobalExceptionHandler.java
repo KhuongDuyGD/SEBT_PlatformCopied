@@ -75,8 +75,32 @@ public class GlobalExceptionHandler {
         ErrorResponse resp = baseError(HttpStatus.CONFLICT, request, "WALLET_INSUFFICIENT_FUNDS", "Insufficient balance for listing fee");
         resp.setRequiredFee(ex.getRequired().toPlainString());
         resp.setCurrentBalance(ex.getCurrent().toPlainString());
-        resp.setMessage("Need more funds to pay listing fee");
+    resp.setMessage("Số dư ví không đủ để trừ phí đăng bài");
         return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+        String cid = correlationId(request);
+        log.warn("[CID={}] IllegalArgument: {}", cid, ex.getMessage());
+        ErrorResponse resp = baseError(HttpStatus.BAD_REQUEST, request, "BAD_REQUEST", ex.getMessage() != null ? ex.getMessage() : "Bad request");
+        return ResponseEntity.badRequest().body(resp);
+    }
+
+    @ExceptionHandler(AuthRequiredException.class)
+    public ResponseEntity<ErrorResponse> handleAuthRequired(AuthRequiredException ex, HttpServletRequest request) {
+        String cid = correlationId(request);
+        log.warn("[CID={}] Auth required: {}", cid, ex.getMessage());
+        ErrorResponse resp = baseError(HttpStatus.UNAUTHORIZED, request, "AUTH_REQUIRED", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(resp);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex, HttpServletRequest request) {
+        String cid = correlationId(request);
+        log.warn("[CID={}] Not found: {}", cid, ex.getMessage());
+        ErrorResponse resp = baseError(HttpStatus.NOT_FOUND, request, "NOT_FOUND", ex.getMessage() != null ? ex.getMessage() : "Resource not found");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(resp);
     }
 
     private Object safeRejectedValue(FieldError fe) {

@@ -58,6 +58,25 @@ export async function completeTopUp(orderId) {
 }
 
 /**
+ * Lấy trạng thái top-up theo orderId
+ * @param {string} orderId
+ */
+export async function getTopUpStatus(orderId) {
+  const { data } = await api.get(`/wallet/topups/${orderId}`)
+  return data // WalletTransaction DTO
+}
+
+/**
+ * Hoàn tất top-up với tham số success (mặc định true)
+ * @param {string} orderId
+ * @param {boolean} success
+ */
+export async function finalizeTopUp(orderId, success = true) {
+  const { data } = await api.post(`/wallet/topups/${orderId}/complete?success=${success}`)
+  return data
+}
+
+/**
  * Preview phí đăng listing để hiển thị trước (frontend gọi trước khi submit form) 
  * @param {{category:string, price:number}} params
  */
@@ -74,5 +93,7 @@ export default {
   getWalletTransactions,
   createTopUpIntent,
   completeTopUp,
+  getTopUpStatus,
+  finalizeTopUp,
   previewListingFee,
 }

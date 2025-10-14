@@ -7,7 +7,7 @@ public class InsufficientFundsException extends RuntimeException {
     private final BigDecimal current;
 
     public InsufficientFundsException(BigDecimal required, BigDecimal current) {
-        super("Insufficient funds: required=" + required + " current=" + current);
+        super("Insufficient funds. Required=" + required + ", current=" + current);
         this.required = required;
         this.current = current;
     }

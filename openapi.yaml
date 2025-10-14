@@ -1,14 +1,15 @@
 openapi: 3.0.3
 info:
   title: SEBT_platform API
-  version: 1.3.1
+  version: 1.3.3
   description: >-
-    Scope simplified: removed escrow & withdrawal (out-of-scope). Added listing
-    publish endpoint with listing fee debit. Wallet supports top-up and listing
-    fee only. Favorites legacy endpoints remain deprecated.
+    Scope simplified: removed escrow & withdrawal (out-of-scope). Added listing publish endpoint with listing fee debit.
+    Wallet supports top-up and listing fee only. Favorites legacy endpoints remain deprecated.
+    Version 1.3.2: Fixed wallet & listing paths, added top-up status endpoint, standardized /api base path.
+    Version 1.3.3: Standardized wallet error responses (400/404) to ErrorResponse and added legacy VNPay endpoint spec.
 servers:
-  - url: http://localhost:8080/
-    description: Local dev
+  - url: http://localhost:8080/api
+    description: Local dev (server base path includes /api)
 components:
   securitySchemes:
     sessionCookie:
@@ -108,6 +109,13 @@ components:
         feeCharged: { type: number, format: double }
         balanceAfter: { type: number, format: double }
       required: [listingId, status, feeCharged]
+    VnpayPaymentUrlResponse:
+      type: object
+      properties:
+        paymentUrl: { type: string, description: VNPay redirect URL }
+        orderId: { type: string, description: Internal generated order reference }
+        amount: { type: number, format: double }
+      required: [paymentUrl]
 paths:
   /pricing/suggest:
     post:
@@ -250,7 +258,8 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/WalletBalanceResponse' }
-        '401': { description: Unauthorized }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '404': { description: Not found, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
   /wallet/transactions:
     get:
       summary: Lịch sử giao dịch ví
@@ -275,9 +284,85 @@ paths:
                   totalPages: { type: integer }
                   size: { type: integer }
                   number: { type: integer }
-        '401': { description: Unauthorized }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /vnpay/create-payment:
+    get:
+      summary: (LEGACY) Tạo payment URL VNPay trực tiếp (ưu tiên dùng /wallet/topups)
+      tags: [Wallet]
+      deprecated: true
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - name: amount
+          in: query
+          required: true
+          schema: { type: number, format: double, minimum: 1 }
+      responses:
+        '200':
+          description: Payment URL created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VnpayPaymentUrlResponse' }
+        '400': { description: Invalid amount, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Server Error, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
   /wallet/topups:
-  /api/listings/fee/preview:
+    post:
+      summary: Tạo yêu cầu nạp tiền VNPay (top-up intent)
+      tags: [Wallet]
+      security: [{ sessionCookie: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TopUpRequest' }
+      responses:
+        '201':
+          description: Top-up intent created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TopUpIntentResponse' }
+        '400': { description: Invalid amount, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /wallet/topups/{orderId}:
+    get:
+      summary: Trạng thái top-up theo orderId
+      tags: [Wallet]
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Top-up transaction status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WalletTransaction' }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '404': { description: Not found, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+    post:
+      summary: Hoàn tất (manual) một top-up pending (chỉ dùng cho mô phỏng)
+      tags: [Wallet]
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: success
+          in: query
+          required: false
+          schema: { type: boolean, default: true }
+      responses:
+        '200':
+          description: Updated transaction
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WalletTransaction' }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '404': { description: Not found, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /listings/fee/preview:
     get:
       summary: Preview listing publication fee
       tags: [Listings]
@@ -292,32 +377,17 @@ paths:
               schema:
                 type: object
                 properties:
-                  fee: { type: string }
+                  fee: { type: number, format: double }
                   currency: { type: string }
-  /api/listings/create:
+  /listings/create:
     post:
       summary: Create listing (charges listing fee from wallet)
       tags: [Listings]
+      security: [{ sessionCookie: [] }]
       responses:
         '200': { description: Listing created }
         '409': { description: Insufficient funds, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-    post:
-      summary: Tạo yêu cầu nạp tiền VNPay
-      tags: [Wallet]
-      security: [{ sessionCookie: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/TopUpRequest' }
-      responses:
-        '201':
-          description: Top-up intent created
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/TopUpIntentResponse' }
-        '400': { description: Invalid amount }
-        '401': { description: Unauthorized }
+  /members/favorite:
     delete:
       deprecated: true
       summary: LEGACY unmark favorite (will be removed)
