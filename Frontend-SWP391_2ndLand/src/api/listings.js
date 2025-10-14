@@ -46,6 +46,15 @@ export const fetchListingDetail = (id) => {
     return api.get(`/listings/detail/${id}`).then(r => r.data);
 };
 
+// Fee preview (listing publication fee) based on category (EV|BATTERY) & optional price
+export const feePreview = (category, price) => {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (price !== undefined && price !== null && price !== '') params.append('price', price);
+    return api.get(`/listings/fee/preview?${params.toString()}`)
+        .then(r => r.data);
+};
+
 // Build query helper ignoring null/undefined/empty
 function buildQuery(params) {
     return new URLSearchParams(
@@ -144,6 +153,7 @@ export default {
     fetchBatteryListingCarts,
     fetchMyListings,
     fetchListingDetail,
+    feePreview,
     evFilterListings,
     batteryFilterListings,
     // Filter data APIs

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { DollarSign, Sparkles, ClipboardList, Info, ChevronDown, ChevronRight } from 'lucide-react';
 import { formatNumberWithDots, createFormattedInputHandler, formatVnd, formatDeltaPercent, formatConfidence } from '../../../utils/numberFormatting';
+import listingsApi from '../../../api/listings';
 
 /**
  * Step 4: Pricing & Review
@@ -43,6 +44,32 @@ export default function PricingReviewStep({
     'Tỉnh/TP': formData.location.province || '—',
     'Quận/Huyện': formData.location.district || '—'
   };
+
+  // ===== Fee Preview State =====
+  const [feePreview, setFeePreview] = useState({ loading: false, fee: null, error: null });
+  const lastRequestRef = useRef(0);
+
+  useEffect(() => {
+    const category = formData.productType === 'VEHICLE' ? 'EV' : 'BATTERY';
+    const priceVal = formData.price;
+    if (priceVal == null || priceVal === '' || isNaN(priceVal)) {
+      setFeePreview(fp => ({ ...fp, fee: null }));
+      return;
+    }
+    const currentReq = Date.now();
+    lastRequestRef.current = currentReq;
+    setFeePreview({ loading: true, fee: null, error: null });
+    listingsApi.feePreview(category, priceVal)
+      .then(data => {
+        if (lastRequestRef.current !== currentReq) return; // stale
+        const feeNumber = data?.fee ? Number(data.fee) : null;
+        setFeePreview({ loading: false, fee: feeNumber, error: null });
+      })
+      .catch(err => {
+        if (lastRequestRef.current !== currentReq) return;
+        setFeePreview({ loading: false, fee: null, error: err.response?.data?.message || 'Không lấy được phí' });
+      });
+  }, [formData.productType, formData.price]);
 
   return (
     <div>
@@ -89,6 +116,24 @@ export default function PricingReviewStep({
             <p className="text-[11px] text-gray-500 mt-1">Bạn có thể chỉnh sửa sau khi áp dụng gợi ý.</p>
           </div>
 
+          {/* Fee Preview Panel */}
+          <div className="mt-4 p-3 rounded border bg-gray-50 text-sm">
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-medium text-gray-700">Phí đăng bài dự kiến</span>
+              {feePreview.loading && <span className="text-xs text-gray-500 animate-pulse">Đang tính...</span>}
+            </div>
+            {feePreview.error && (
+              <p className="text-xs text-red-600">{feePreview.error}</p>
+            )}
+            {!feePreview.error && !feePreview.loading && feePreview.fee != null && (
+              <p className="text-emerald-700 font-semibold">{formatVnd(feePreview.fee)} ₫</p>
+            )}
+            {!feePreview.error && !feePreview.loading && feePreview.fee == null && (
+              <p className="text-xs text-gray-500">Nhập giá để xem phí đăng bài.</p>
+            )}
+            <p className="mt-1 text-[11px] text-gray-500">Phí có thể thay đổi nếu thay đổi loại sản phẩm hoặc giá.</p>
+          </div>
+
           {/* Suggestion Panel */}
           {priceSuggestion && (
             <div className="mt-4 p-4 border rounded bg-gray-50 space-y-3">
@@ -124,7 +169,7 @@ export default function PricingReviewStep({
                       <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-700">cache</span>
                     )}
                     {priceSuggestion.clamped && (
-                      <span className="ml-2 text-[10px] px-2 py-0.5 rounded bg-amber-100 text-amber-700 align-middle flex items-center gap-1 inline-flex"><Info className="w-3 h-3"/>clamped</span>
+                      <span className="ml-2 text-[10px] px-2 py-0.5 rounded bg-amber-100 text-amber-700 align-middle inline-flex items-center gap-1"><Info className="w-3 h-3"/>clamped</span>
                     )}
                   </>
                 ) : <span className="text-red-600">{priceSuggestion.reason}</span>}
@@ -229,7 +274,7 @@ export default function PricingReviewStep({
 
   // --- Breakdown sub-component ---
   function BreakdownPanel({ suggestion }) {
-    const [open, setOpen] = React.useState(false);
+    const [open, setOpen] = useState(false);
     const fmt = (v) => v == null ? '—' : (v % 1 === 0 ? v.toFixed(0) : v.toFixed(3));
     const toPct = (f) => f == null ? '—' : ((f - 1) * 100).toFixed(1) + '%';
     const clampPct = suggestion.clampPercent != null ? (suggestion.clampPercent * 100).toFixed(1) + '%' : '—';
