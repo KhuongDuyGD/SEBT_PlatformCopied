@@ -58,8 +58,14 @@ export const useListingApproval = () => {
     // Approve listing
     const handleApproveListing = useCallback(async (listingId, note = '') => {
         try {
+            console.log('🎯 handleApproveListing in hook - listingId:', listingId);
+
             setActionLoading(prev => ({ ...prev, [listingId]: true }));
             setError(null);
+
+            if (!listingId) {
+                throw new Error('listingId/requestId is required for approval');
+            }
 
             await approveListing(listingId, note);
 
@@ -72,10 +78,11 @@ export const useListingApproval = () => {
                 totalElements: Math.max(0, prev.totalElements - 1)
             }));
 
+            console.log('✅ Approval successful');
             return { success: true, message: 'Đã phê duyệt listing thành công' };
         } catch (err) {
-            console.error('Error approving listing:', err);
-            const errorMessage = err.response?.data?.message || 'Không thể phê duyệt listing';
+            console.error('❌ Error approving listing:', err);
+            const errorMessage = err.response?.data?.message || err.message || 'Không thể phê duyệt listing';
             setError(errorMessage);
             return { success: false, message: errorMessage };
         } finally {

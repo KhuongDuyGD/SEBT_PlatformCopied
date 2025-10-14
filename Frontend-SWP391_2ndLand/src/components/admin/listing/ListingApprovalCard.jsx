@@ -10,21 +10,21 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
     const [showApprovalNote, setShowApprovalNote] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
 
-    // Production: avoid console debug logs
+    const requestId = listing.id || listing.requestId || listing.listingId;
 
     const handleApprove = () => {
         if (showApprovalNote) {
-            onApprove(listing.listingId, approvalNote);
+            onApprove(requestId, approvalNote);
             setApprovalNote('');
             setShowApprovalNote(false);
         } else {
-            onApprove(listing.listingId);
+            onApprove(requestId);
         }
     };
 
     const handleReject = () => {
         if (rejectionReason.trim()) {
-            onReject(listing.listingId, rejectionReason);
+            onReject(requestId, rejectionReason);
             setRejectionReason('');
             setShowRejectModal(false);
         }
@@ -37,8 +37,6 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
             currency: 'VND'
         }).format(price);
     };
-
-   
 
     const getConditionBadge = () => {
         const condition = listing.product?.ev?.conditionStatus || listing.product?.battery?.conditionStatus;
@@ -79,7 +77,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                 </div>
 
                 <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>ID: #{listing.listingId || 'N/A'}</span>
+                    <span>ID: #{listing.listingId}</span>
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
@@ -89,7 +87,6 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                         >
                             Xem chi tiết
                         </button>
-                        <span>{listing.createdDate ? new Date(listing.createdDate).toLocaleDateString('vi-VN') : 'N/A'}</span>
                     </div>
                 </div>
             </div>
@@ -101,68 +98,13 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                     {/* Ảnh thumbnail */}
                     <div className="flex-shrink-0">
                         <img
-                            src={normalizeImage(listing.thumbnailUrl || listing.thumbnail || listing.mainImage || listing.image)}
+                            src={normalizeImage(listing.thumbnail)}
                             alt={listing.title || 'Listing image'}
                             className="w-24 h-24 object-cover rounded-lg"
                             onError={(e) => {
                                 e.target.src = 'https://placehold.co/96x96?text=No+Image';
                             }}
                         />
-                    </div>
-
-                    {/* Thông tin chi tiết */}
-                    <div className="flex-1 space-y-2">
-
-
-                        {/* Thông tin sản phẩm chi tiết */}
-                        {listing.product?.ev && (
-                            <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                                <h4 className="font-medium text-blue-900 mb-2">Thông tin xe điện</h4>
-                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                    {listing.product.ev.year && (
-                                        <span><strong>Năm:</strong> {listing.product.ev.year}</span>
-                                    )}
-                                    {listing.product.ev.mileage && (
-                                        <span><strong>Km đã đi:</strong> {listing.product.ev.mileage.toLocaleString()} km</span>
-                                    )}
-                                    {listing.product.ev.batteryCapacity && (
-                                        <span><strong>Dung lượng pin:</strong> {listing.product.ev.batteryCapacity} kWh</span>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {listing.product?.battery && (
-                            <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                                <h4 className="font-medium text-green-900 mb-2">Thông tin pin</h4>
-                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                    {listing.product.battery.capacity && (
-                                        <span><strong>Dung lượng:</strong> {listing.product.battery.capacity} kWh</span>
-                                    )}
-                                    {listing.product.battery.healthPercentage && (
-                                        <span><strong>Sức khỏe pin:</strong> {listing.product.battery.healthPercentage}%</span>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Địa chỉ */}
-                        {listing.location && (
-                            <div className="mt-3">
-                                <span className="font-medium text-gray-700">Địa chỉ:</span>
-                                <p className="text-gray-600 text-sm">
-                                    {listing.location.details}, {listing.location.district}, {listing.location.province}
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Mô tả */}
-                        {listing.description && (
-                            <div className="mt-3">
-                                <span className="font-medium text-gray-700">Mô tả:</span>
-                                <p className="text-gray-600 text-sm line-clamp-3">{listing.description}</p>
-                            </div>
-                        )}
                     </div>
                 </div>
 

@@ -41,8 +41,8 @@ export const getPendingListings = async (params = {}) => {
         // Map PostListingCartResponseDTO -> listing-like object the UI expects
         const mapped = (Array.isArray(content) ? content : []).map(item => {
             // item may use camelCase or PascalCase (ListingId)
-            const id = item.requestId ?? item.requestID;
-            const listingId = item.ListingId;
+            const id = item.requestId;
+            const listingId = item.listingId;
             const title = item.title ?? '—';
             const price = typeof item.price === 'number' ? item.price : (item.price ? Number(item.price) : null);
             const thumbnail = item.thumbnailUrl || null;
@@ -59,8 +59,6 @@ export const getPendingListings = async (params = {}) => {
         };
     } catch (error) {
         console.error('Admin API failed:', error);
-
-        // Fallback: lấy tất cả listings từ cả evCart và batteryCart
         try {
 
             // Get both EV and battery listings
