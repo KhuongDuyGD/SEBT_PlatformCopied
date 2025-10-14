@@ -2,7 +2,7 @@ package project.swp.spring.sebt_platform.dto.response;
 
 public class PostListingCartResponseDTO {
     private Long requestId;
-    private Long ListingId;
+    private Long listingId;
     private String thumbnailUrl;
     private double price;
     private String title;
@@ -11,9 +11,9 @@ public class PostListingCartResponseDTO {
     public PostListingCartResponseDTO() {
     }
 
-    public PostListingCartResponseDTO(Long requestId, Long ListingId , String thumbnailUrl, double price, String title, String status) {
+    public PostListingCartResponseDTO(Long requestId, Long listingId, String thumbnailUrl, double price, String title, String status) {
         this.requestId = requestId;
-        this.ListingId = ListingId;
+        this.listingId = listingId;
         this.thumbnailUrl = thumbnailUrl;
         this.price = price;
         this.title = title;
@@ -23,12 +23,13 @@ public class PostListingCartResponseDTO {
     public Long getRequestId() {
         return requestId;
     }
+    
     public Long getListingId() {
-        return ListingId;
+        return listingId;
     }
 
     public void setListingId(Long listingId) {
-        ListingId = listingId;
+        this.listingId = listingId;
     }
 
     public void setRequestId(Long requestId) {

@@ -25,6 +25,7 @@ export const useListingApproval = () => {
 
             // Accept response from admin.post-request normalized mapping
             const content = response.content || response.data || [];
+
             const mapped = (Array.isArray(content) ? content : []).map(item => {
                 const approval = item.approvalStatus || item.status || item.approval || ApprovalStatus.PENDING;
                 return {
