@@ -10,6 +10,7 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,7 +40,9 @@ import project.swp.spring.sebt_platform.repository.ProductRepository;
 import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.AdminService;
 import project.swp.spring.sebt_platform.service.AuthService;
-
+//cmd run with profile and args can modify ev-count and battery-count
+//if not provided, default to 5 each
+//mvn spring-boot:run -Dspring-boot.run.profiles=devautoseed -Dspring-boot.run.arguments="--seeder.listings.ev-count=[amount],--seeder.listings.battery-count=[amount]"
 @Configuration
 @Profile("devautoseed") // Only active when profile 'devautoseed' is enabled
 public class Initializer {
@@ -72,6 +75,12 @@ public class Initializer {
 
     @Autowired
     private PostRequestRepository postRequestRepository;
+
+    @Value("${seeder.listings.ev-count:5}")
+    private int evListingCount;
+
+    @Value("${seeder.listings.battery-count:5}")
+    private int batteryListingCount;
 
     // Danh sách email của người dùng (11 thành viên + 2 admin)
     private static final String[] USER_EMAILS = {
@@ -335,7 +344,7 @@ public class Initializer {
 
         int total = 0;
         // 5 EV
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < evListingCount; i++) {
             try {
                 UserEntity seller = members.get(random.nextInt(members.size()));
                 EvVehicleEntity ev = createRandomEvVehicle(random, i);
@@ -367,7 +376,7 @@ public class Initializer {
         }
 
         // 5 Battery
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < batteryListingCount; i++) {
             try {
                 UserEntity seller = members.get(random.nextInt(members.size()));
                 BatteryEntity battery = createRandomBattery(random, i);
