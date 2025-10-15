@@ -17,6 +17,7 @@ import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.SessionInfoResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
 import project.swp.spring.sebt_platform.service.MemberService;
+import project.swp.spring.sebt_platform.util.Utils;
 
 @RestController
 @RequestMapping("/api/members")
@@ -43,59 +44,13 @@ public class MemberController {
     @PutMapping("/favorites/{listingId}")
     public ResponseEntity<?> markFavoriteNew(HttpServletRequest request, @PathVariable Long listingId) {
         try {
-            HttpSession session = request.getSession(false);
-            if (session == null || session.getAttribute("userId") == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No active session");
-            }
-            Long userId = (Long) session.getAttribute("userId");
+            Long userId = Utils.getUserIdFromSession(request);
             boolean result = memberService.markFavorite(userId, listingId);
             if (result) {
                 return ResponseEntity.ok(Map.of(
                         "listingId", listingId,
                         "favorited", true
                 ));
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to mark listing as favorite.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
-        }
-    }
-
-    /**
-     * @deprecated Legacy endpoint kept temporarily for backward compatibility. Use PUT /api/members/favorites/{listingId}
-     */
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Profile updated successfully",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class))),
-            @ApiResponse(responseCode = "401", description = "No active session or invalid session",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class))),
-            @ApiResponse(responseCode = "500", description = "Server error",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class)))
-    })
-    @PutMapping("/favorite")
-    public ResponseEntity<?> markFavorite(@RequestParam Long userId, @RequestParam Long listingId) {
-        return markFavoriteCompat(userId, listingId);
-    }
-
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Profile updated successfully",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class))),
-            @ApiResponse(responseCode = "401", description = "No active session or invalid session",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class))),
-            @ApiResponse(responseCode = "500", description = "Server error",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class)))
-    })
-    private ResponseEntity<?> markFavoriteCompat(Long userId, Long listingId) {
-        try {
-            boolean result = memberService.markFavorite(userId, listingId);
-            if (result) {
-                return ResponseEntity.ok("Listing marked as favorite. (legacy)");
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to mark listing as favorite.");
         } catch (Exception e) {
@@ -117,48 +72,13 @@ public class MemberController {
     @DeleteMapping("/favorites/{listingId}")
     public ResponseEntity<?> unmarkFavoriteNew(HttpServletRequest request, @PathVariable Long listingId) {
         try {
-            HttpSession session = request.getSession(false);
-            if (session == null || session.getAttribute("userId") == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No active session");
-            }
-            Long userId = (Long) session.getAttribute("userId");
+            Long userId = Utils.getUserIdFromSession(request);
             boolean result = memberService.unmarkFavorite(userId, listingId);
             if (result) {
                 return ResponseEntity.ok(Map.of(
                         "listingId", listingId,
                         "favorited", false
                 ));
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to unmark listing as favorite.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to unmark favorite");
-        }
-    }
-
-    /**
-     * @deprecated Legacy endpoint kept temporarily for backward compatibility. Use DELETE /api/members/favorites/{listingId}
-     */
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Profile updated successfully",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class))),
-            @ApiResponse(responseCode = "401", description = "No active session or invalid session",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class))),
-            @ApiResponse(responseCode = "500", description = "Server error",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class)))
-    })
-    @DeleteMapping("/favorite")
-    public ResponseEntity<?> unmarkFavorite(@RequestParam Long userId, @RequestParam Long listingId) {
-        return unmarkFavoriteCompat(userId, listingId);
-    }
-
-    private ResponseEntity<?> unmarkFavoriteCompat(Long userId, Long listingId) {
-        try {
-            boolean result = memberService.unmarkFavorite(userId, listingId);
-            if (result) {
-                return ResponseEntity.ok("Listing unmarked as favorite. (legacy)");
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to unmark listing as favorite.");
         } catch (Exception e) {
@@ -181,15 +101,7 @@ public class MemberController {
     public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileFormDTO updateProfileDTO, HttpServletRequest request) {
         try {
             // Get current session - do not create new one if not exists
-            HttpSession session = request.getSession(false);
-
-            if (session == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("No active session. Please login first.");
-            }
-
-            // Get userId from session
-            Long userId = (Long) session.getAttribute("userId");
+            Long userId = Utils.getUserIdFromSession(request);
 
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -226,13 +138,7 @@ public class MemberController {
     @GetMapping(path = "/post-responses")
     public ResponseEntity<?> getPostResponse(HttpServletRequest request, @RequestParam int page, @RequestParam int size) {
         try {
-            HttpSession session = request.getSession(false);
-            if (session == null || session.getAttribute("role") == null || !session.getAttribute("role").equals("ADMIN")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Unauthorized: Admin access required.");
-            }
-
-            Long userId = (Long) session.getAttribute("userId");
+            Long userId = Utils.getUserIdFromSession(request);
             // Call your service method to get the paginated data
             Pageable pageable = Pageable.ofSize(size).withPage(page);
 
@@ -261,16 +167,9 @@ public class MemberController {
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(HttpServletRequest request) {
         try {
-            // Get current session - do not create new one if not exists
-            HttpSession session = request.getSession(false);
-
-            if (session == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("No active session. Please login first.");
-            }
 
             // Get userId from session
-            Long userId = (Long) session.getAttribute("userId");
+            Long userId = Utils.getUserIdFromSession(request);
 
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -347,7 +246,7 @@ public class MemberController {
                             schema = @Schema(implementation = String.class)))
     })
     @GetMapping("/pay-balance")
-    public ResponseEntity<?> payByBalance(Long listingId,HttpServletRequest request) {
+    public ResponseEntity<?> payListingByBalance(Long listingId,HttpServletRequest request) {
         try {
             HttpSession session = request.getSession(false);
             Long userId = (Long) session.getAttribute("userId");

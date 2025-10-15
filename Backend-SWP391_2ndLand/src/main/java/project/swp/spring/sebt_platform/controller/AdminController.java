@@ -14,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import project.swp.spring.sebt_platform.dto.response.ListingDetailResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.PostListingCartResponseDTO;
+import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
 import project.swp.spring.sebt_platform.model.enums.UserRole;
+import project.swp.spring.sebt_platform.model.enums.UserStatus;
 import project.swp.spring.sebt_platform.service.AdminService;
 import project.swp.spring.sebt_platform.service.ListingService;
 
@@ -158,6 +160,84 @@ public class AdminController {
             return ResponseEntity.ok(detail);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error: " + e.getMessage());
+        }
+    }
+
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved members",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserProfileResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized: Admin access required",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
+    @GetMapping("/members")
+    public ResponseEntity<?> getAllUsers(HttpServletRequest request, @RequestParam int page, @RequestParam int size) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("role") == null || !session.getAttribute("role").equals(UserRole.ADMIN)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Admin access required.");
+            }
+            // Call your service method to get the paginated data
+             Page<UserProfileResponseDTO> users = adminService.getAllMembers(PageRequest.of(page, size));
+             return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }
+    }
+
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved members by status",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserProfileResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized: Admin access required",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
+    @GetMapping("/members/status")
+    public ResponseEntity<?> getUsersByStatus(HttpServletRequest request, @RequestParam UserStatus status, @RequestParam int page, @RequestParam int size) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("role") == null || !session.getAttribute("role").equals(UserRole.ADMIN)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Admin access required.");
+            }
+            // Call your service method to get the paginated data
+            Page<UserProfileResponseDTO> users = adminService.getAllMembersByStatus(status, PageRequest.of(page, size));
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }
+    }
+
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved members by keyword",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserProfileResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized: Admin access required",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
+    @GetMapping("/members/search")
+    public ResponseEntity<?> searchUsersByKeyword(HttpServletRequest request, @RequestParam String keyword, @RequestParam int page, @RequestParam int size) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("role") == null || !session.getAttribute("role").equals(UserRole.ADMIN)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Admin access required.");
+            }
+            // Call your service method to get the paginated data
+            Page<UserProfileResponseDTO> users = adminService.searchMembersByKeyword(keyword, PageRequest.of(page, size));
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }
     }
 }

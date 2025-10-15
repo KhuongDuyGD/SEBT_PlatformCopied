@@ -50,19 +50,27 @@ public class PricingController {
     public ResponseEntity<?> suggest(@Valid @RequestBody PricingSuggestRequestDTO dto) {
         try {
             if (dto.getProduct() == null || dto.getProduct().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Thiếu thông tin sản phẩm để gợi ý giá");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("lack of information's product");
             }
             PricingSuggestResponseDTO result = pricingService.suggestPrice(dto);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             logger.error("Error suggesting price: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi gợi ý giá");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }
     }
 
     /**
      * GET /api/pricing/health - quick check for AI availability
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Health check successful",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Map.class))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Map.class)))
+    })
     @GetMapping("/health")
     public ResponseEntity<?> health(@RequestParam(value = "verbose", required = false, defaultValue = "false") boolean verbose) {
         try {

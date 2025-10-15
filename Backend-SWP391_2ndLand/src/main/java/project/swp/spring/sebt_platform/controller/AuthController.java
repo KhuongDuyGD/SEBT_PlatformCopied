@@ -303,13 +303,12 @@ public class AuthController {
                     .body("No active session");
             }
 
-            session.setAttribute("balacne", memberService.getBalance(userId).doubleValue());
-
             String username = (String) session.getAttribute("username");
             String email = (String) session.getAttribute("email");
-            double balance = (double) session.getAttribute("balance");
             UserRole role = (UserRole) session.getAttribute("role");
             UserStatus status = (UserStatus) session.getAttribute("status");
+
+            double balance = memberService.getBalance(userId).doubleValue();
 
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -331,7 +330,7 @@ public class AuthController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = SessionCheckResponse.class))),
+                            schema = @Schema(implementation = String.class))),
             @ApiResponse(responseCode = "404",content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = ResponseEntity.class))),
             @ApiResponse(responseCode = "500",content = @Content(mediaType = "application/json",
@@ -342,31 +341,17 @@ public class AuthController {
         try {
             HttpSession session = request.getSession(false);
             if (session == null) {
-                return ResponseEntity.ok(new SessionCheckResponse(false, "No session"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No active session");
             }
             
             Long userId = (Long) session.getAttribute("userId");
             boolean isValid = userId != null;
             
-            return ResponseEntity.ok(new SessionCheckResponse(isValid, 
-                isValid ? "Valid session" : "Invalid session"));
+            return ResponseEntity.status(HttpStatus.OK).body(isValid ? "Session valid" : "Session invalid");
         } catch (Exception e) {
             System.err.println("Check session error: " + e.getMessage());
-            return ResponseEntity.ok(new SessionCheckResponse(false, "Session check failed"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to check session");
         }
-    }
-
-    public static class SessionCheckResponse {
-        private boolean valid;
-        private String message;
-
-        public SessionCheckResponse(boolean valid, String message) {
-            this.valid = valid;
-            this.message = message;
-        }
-
-        public boolean isValid() { return valid; }
-        public String getMessage() { return message; }
     }
 
     @ApiResponses(value = {

@@ -104,6 +104,7 @@ export default function TopUpModal({ open, onClose, onCompleted, refreshBalance 
         setPolling(false);
         setError('Thanh toán thất bại hoặc bị hủy');
       }
+        // eslint-disable-next-line no-unused-vars
     } catch (err) {
       // tạm thời bỏ qua lỗi network lẻ
     } finally {
@@ -143,9 +144,8 @@ export default function TopUpModal({ open, onClose, onCompleted, refreshBalance 
     clearPoll();
     onClose?.();
   }
-
-  const disabledWhileWaiting = status === 'WAITING' && !['COMPLETED','FAILED'].includes(status);
-  const canFinish = status === 'COMPLETED';
+    status === 'WAITING' && !['COMPLETED','FAILED'].includes(status);
+    const canFinish = status === 'COMPLETED';
 
   return (
     <Modal
@@ -153,7 +153,7 @@ export default function TopUpModal({ open, onClose, onCompleted, refreshBalance 
       onCancel={closeHandler}
       footer={null}
       title="Nạp tiền vào ví"
-      destroyOnClose
+      destroyOnHidden
       centered
     >
       {status === 'IDLE' && (

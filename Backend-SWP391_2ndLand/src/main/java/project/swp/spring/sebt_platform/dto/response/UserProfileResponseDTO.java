@@ -3,6 +3,7 @@ package project.swp.spring.sebt_platform.dto.response;
 import java.time.LocalDateTime;
 
 public class UserProfileResponseDTO {
+    private String id;
     private String username;
     private String email;
     private String phoneNumber;
@@ -19,6 +20,16 @@ public class UserProfileResponseDTO {
         this.avatarUrl = avatarUrl;
         this.createdAt = createdAt;
     }
+
+    public UserProfileResponseDTO(Long id,String username, String email, String phoneNumber, String avatarUrl, LocalDateTime createdAt) {
+        this.id =
+        this.username = username;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.avatarUrl = avatarUrl;
+        this.createdAt = createdAt;
+    }
+
 
     // Getters and setters
     public String getUsername() {
@@ -59,5 +70,13 @@ public class UserProfileResponseDTO {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }
