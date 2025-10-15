@@ -96,13 +96,14 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
 
                 <div className="flex gap-4">
                     {/* Ảnh thumbnail */}
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 ">
                         <img
                             src={normalizeImage(listing.thumbnail)}
                             alt={listing.title || 'Listing image'}
-                            className="w-24 h-24 object-cover rounded-lg"
+                            className="object-cover rounded-lg"
+                            style={{ width: '200px', height: '200px' }}
                             onError={(e) => {
-                                e.target.src = 'https://placehold.co/96x96?text=No+Image';
+                                e.target.src = 'https://placehold.co/200x200?text=No+Image';
                             }}
                         />
                     </div>
