@@ -6,7 +6,7 @@ import api from './axios'
  */
 export async function getMyWalletBalance() {
   const { data } = await api.get('/wallet/me')
-  // Backend trả { balance: BigDecimal } -> stringify để chuẩn hóa hiển thị
+  // Backend trả { balance: double } -> stringify để chuẩn hóa hiển thị
   return { balance: data }
 }
 
