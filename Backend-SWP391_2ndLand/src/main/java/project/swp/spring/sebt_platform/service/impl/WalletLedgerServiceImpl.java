@@ -9,7 +9,6 @@ import project.swp.spring.sebt_platform.model.WalletTransactionEntity;
 import project.swp.spring.sebt_platform.model.enums.TransactionStatus;
 import project.swp.spring.sebt_platform.model.enums.WalletPurpose;
 import project.swp.spring.sebt_platform.model.enums.WalletEntryType;
-import project.swp.spring.sebt_platform.exception.InsufficientFundsException;
 import project.swp.spring.sebt_platform.repository.WalletRepository;
 import project.swp.spring.sebt_platform.repository.WalletTransactionRepository;
 import project.swp.spring.sebt_platform.service.WalletLedgerService;
@@ -84,7 +83,7 @@ public class WalletLedgerServiceImpl implements WalletLedgerService {
         WalletEntity wallet = walletRepository.findByUserId(userId);
         if (wallet == null) return null;
         if (wallet.getBalance().compareTo(fee) < 0) {
-            throw new InsufficientFundsException(fee, wallet.getBalance());
+            return null; // or throw new InsufficientFundsException("Insufficient balance for listing fee");
         }
         WalletTransactionEntity tx = new WalletTransactionEntity();
         tx.setOrderId("LISTING_FEE-" + listingId + "-" + System.currentTimeMillis());

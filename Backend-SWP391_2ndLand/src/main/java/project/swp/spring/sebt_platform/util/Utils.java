@@ -44,17 +44,8 @@ public class Utils {
         }
     }
 
-    public static String buildDataForHash(Map<String, String> params) {
-        List<String> fieldNames = new ArrayList<>(params.keySet());
-        Collections.sort(fieldNames);
-        StringBuilder sb = new StringBuilder();
-        for (String name : fieldNames) {
-            String value = params.get(name);
-            if (value != null && !value.isEmpty()) {
-                sb.append(name).append('=').append(value).append('&');
-            }
-        }
-        return sb.substring(0, sb.length() - 1);
+    public static Long getUserIdFromSession(HttpServletRequest request) {
+        return (Long) (request.getSession(false) != null ? request.getSession(false).getAttribute("userId") : null);
     }
 
     public static String hmacSHA512(String key, String data) {

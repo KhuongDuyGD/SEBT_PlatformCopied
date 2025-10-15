@@ -4,7 +4,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import project.swp.spring.sebt_platform.dto.response.FiguresAdminDashboardResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.PostListingCartResponseDTO;
+import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
+import project.swp.spring.sebt_platform.dto.response.UserSessionResponseDTO;
 import project.swp.spring.sebt_platform.model.enums.ConfigDataType;
+import project.swp.spring.sebt_platform.model.enums.UserStatus;
 
 public interface AdminService {
 
@@ -24,6 +27,13 @@ public interface AdminService {
 
     public Object getConfigValue(String key);
 
+    public Page<UserProfileResponseDTO> getAllMembers( Pageable pageable);
+
+    public Page<UserProfileResponseDTO> getAllMembersByStatus( UserStatus status, Pageable pageable);
+
+    public Page<UserProfileResponseDTO> searchMembersByKeyword( String keyword, Pageable pageable);
+
     public FiguresAdminDashboardResponseDTO getFiguresForDashBoard();
+
 
 }

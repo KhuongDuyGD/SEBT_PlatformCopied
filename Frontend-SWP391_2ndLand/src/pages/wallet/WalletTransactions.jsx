@@ -18,29 +18,30 @@ export default function WalletTransactions() {
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
   const [purpose, setPurpose] = useState();
   const [balance, setBalance] = useState(null);
   const [error, setError] = useState(null);
+  const [totalElements, setTotalElements] = useState(0);
 
-  const load = useCallback(async (opts={}) => {
-    setLoading(true); setError(null);
-    try {
-      const { items, page: p, size: s, totalPages: tp } = await getWalletTransactions({ page: opts.page ?? page, size: opts.size ?? size, purpose: opts.purpose ?? purpose });
-      setItems(items);
-      setPage(p);
-      setSize(s);
-      setTotalPages(tp ?? 0);
-      if (balance == null) {
-        try { const b = await getMyWalletBalance(); setBalance(b.balance); } catch {/* ignore */}
-      }
-    } catch (e) {
-      setError(e.message || 'Không tải được giao dịch');
-    } finally {
-      setLoading(false);
-    }
-  }, [page, size, purpose, balance]);
+    const load = useCallback(async (opts={}) => {
+        setLoading(true); setError(null);
+        try {
+            // Nhận thêm totalElements từ API
+            const { items, page: p, size: s, totalPages: tp, totalElements: te } = await getWalletTransactions({ page: opts.page ?? page, size: opts.size ?? size, purpose: opts.purpose ?? purpose });
+            setItems(items);
+            setPage(p);
+            setSize(s);
+            setTotalElements(te ?? 0); // <-- Cập nhật state
+            if (balance == null) {
+                try { const b = await getMyWalletBalance(); setBalance(b.balance); } catch {/* ignore */}
+            }
+        } catch (e) {
+            setError(e.message || 'Không tải được giao dịch');
+        } finally {
+            setLoading(false);
+        }
+    }, [page, size, purpose, balance]);
 
   useEffect(() => { load({ page:0 }); }, [purpose, size]);
   useEffect(() => { load(); }, []); // initial
@@ -103,15 +104,15 @@ export default function WalletTransactions() {
         pagination={false}
         bordered
       />
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-        <Pagination
-          current={page + 1}
-          pageSize={size}
-          onChange={onPageChange}
-          total={totalPages ? totalPages * size : (page+1)*size + (items.length===size? size:0)}
-          showSizeChanger={false}
-        />
-      </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+            <Pagination
+                current={page + 1}
+                pageSize={size}
+                onChange={onPageChange}
+                total={totalElements}
+                showSizeChanger={false}
+            />
+        </div>
     </div>
   );
 }

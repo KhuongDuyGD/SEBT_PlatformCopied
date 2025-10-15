@@ -25,7 +25,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
 import project.swp.spring.sebt_platform.dto.object.Image;
 import project.swp.spring.sebt_platform.dto.request.BatteryFilterFormDTO;
@@ -39,6 +38,8 @@ import project.swp.spring.sebt_platform.model.enums.VehicleType;
 import project.swp.spring.sebt_platform.service.CloudinaryService;
 import project.swp.spring.sebt_platform.service.ListingService;
 import project.swp.spring.sebt_platform.service.ListingFeePolicy;
+import project.swp.spring.sebt_platform.util.Utils;
+import project.swp.spring.sebt_platform.validation.CreateListingValidator;
 // (Removed duplicate swagger imports below – already imported above)
 // Added missing imports for Map & Locale
 import java.util.Map;
@@ -84,10 +85,10 @@ public class ListingController {
             @RequestPart("data") CreateListingFormDTO dto,
             @RequestPart(value = "images", required = false) List<MultipartFile> imagesParam,
             HttpServletRequest request) {
-        Long userId = getUserId(request);
+        Long userId = Utils.getUserIdFromSession(request);
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body("Vui lòng đăng nhập để tạo bài đăng");
+                .body("login required");
         }
         // Gán images từ part nếu có
         if (imagesParam != null && !imagesParam.isEmpty()) {
@@ -95,14 +96,14 @@ public class ListingController {
         }
         if (dto.getImages() == null || dto.getImages().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Vui lòng tải lên ít nhất một ảnh cho bài đăng (thiếu field 'images')");
+                    .body("Vui lòng tải lên ít nhất một ảnh sản phẩm");
         }
 
         // Manual validation & normalization
-        project.swp.spring.sebt_platform.validation.CreateListingValidator validator = new project.swp.spring.sebt_platform.validation.CreateListingValidator();
+        CreateListingValidator validator = new CreateListingValidator();
         var result = validator.validateAndNormalize(dto);
         if (result.hasErrors()) {
-            throw new project.swp.spring.sebt_platform.exception.ValidationException("Validation failed", result.getErrors());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Vui lòng kiểm tra lại thông tin bài đăng");
         }
 
         logger.info("[CREATE_LISTING_REQUEST] userId={} title='{}' category={} listingType={} evPresent={} batteryPresent={} images={}",
@@ -131,11 +132,6 @@ public class ListingController {
                             "message", "Tạo bài đăng thành công",
                             "status", "SUCCESS"
                     ));
-        } catch (project.swp.spring.sebt_platform.exception.ValidationException ve) {
-            throw ve; // will be handled by advice
-        } catch (project.swp.spring.sebt_platform.exception.InsufficientFundsException ie) {
-            // Let global handler map 409 but keep log context
-            throw ie;
         } catch (Exception e) {
             logger.error("Error creating listing: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -209,7 +205,7 @@ public class ListingController {
         try {
             Pageable pageable = PageRequest.of(Math.max(0, page), validateSize(size));
             Page<ListingCartResponseDTO> results = listingService.getEvListingCarts(
-                getUserId(request), pageable);
+                Utils.getUserIdFromSession(request), pageable);
 
             return ResponseEntity.ok(results);
         } catch (Exception e) {
@@ -239,7 +235,7 @@ public class ListingController {
         try {
             Pageable pageable = PageRequest.of(Math.max(0, page), validateSize(size));
             Page<ListingCartResponseDTO> results = listingService.getBatteryListingCarts(
-                getUserId(request), pageable);
+                Utils.getUserIdFromSession(request), pageable);
 
             return ResponseEntity.ok(results);
         } catch (Exception e) {
@@ -277,7 +273,7 @@ public class ListingController {
             }
 
             ListingDetailResponseDTO detail = listingService.getListingDetailById(
-                listingId, getUserId(request));
+                listingId, Utils.getUserIdFromSession(request));
 
             if (detail == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -320,7 +316,7 @@ public class ListingController {
 
             Pageable pageable = PageRequest.of(Math.max(0, page), validateSize(size));
             Page<ListingCartResponseDTO> results = listingService.getListingsByKeyWord(
-                keyword.trim(), getUserId(request), pageable);
+                keyword.trim(), Utils.getUserIdFromSession(request), pageable);
 
             return ResponseEntity.ok(results);
         } catch (Exception e) {
@@ -383,11 +379,11 @@ public class ListingController {
             );
             
             logger.info("[EV_FILTER] userId={} filters: vehicleType={}, year={}, minYear={}, maxYear={}, brand={}, province={}, district={}, condition={}, mileage=[{}-{}], batteryCapacity=[{}-{}], price=[{}-{}]",
-                    getUserId(request), vehicleType, year, minYear, maxYear, brand, province, district, conditionStatus,
+                    Utils.getUserIdFromSession(request), vehicleType, year, minYear, maxYear, brand, province, district, conditionStatus,
                     minMileage, maxMileage, minBatteryCapacity, maxBatteryCapacity, minPrice, maxPrice);
             
             Page<ListingCartResponseDTO> results = listingService.filterEvListings(
-                    dto, getUserId(request), pageable);
+                    dto, Utils.getUserIdFromSession(request), pageable);
 
             return ResponseEntity.ok(results);
         } catch (Exception e) {
@@ -451,11 +447,11 @@ public class ListingController {
             );
             
             logger.info("[BATTERY_FILTER] userId={} filters: brand={}, name={}, year={}, minYear={}, maxYear={}, province={}, district={}, condition={}, compatibility={}, capacity=[{}-{}], health=[{}-{}], price=[{}-{}]",
-                    getUserId(request), brand, name, year, minYear, maxYear, province, district, conditionStatus, 
+                    Utils.getUserIdFromSession(request), brand, name, year, minYear, maxYear, province, district, conditionStatus,
                     compatibility, minBatteryCapacity, maxBatteryCapacity, minHealthPercentage, maxHealthPercentage, minPrice, maxPrice);
             
             Page<ListingCartResponseDTO> results = listingService.filterBatteryListings(
-                    dto, getUserId(request), pageable);
+                    dto, Utils.getUserIdFromSession(request), pageable);
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             logger.error("Error filtering battery listings: {}", e.getMessage(), e);
@@ -485,7 +481,7 @@ public class ListingController {
             @RequestParam(defaultValue = "12") int size) {
 
         try {
-            Long userId = getUserId(request);
+            Long userId = Utils.getUserIdFromSession(request);
             if (userId == null) {
                 return ResponseEntity.badRequest()
                     .body("Vui lòng đăng nhập để xem bài đăng của bạn");
@@ -592,8 +588,6 @@ public class ListingController {
         }
     }
 
-
-
     /**
      * GET /api/listings/filter-data/ev-years - Get all EV production years for dropdown
      */
@@ -625,23 +619,6 @@ public class ListingController {
     }
 
     // ========== HELPER METHODS ==========
-    private Long getUserId(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            Long userId = (Long) session.getAttribute("userId");
-            if (userId != null) return userId;
-        }
-
-        String header = request.getHeader("X-User-ID");
-        if (header != null) {
-            try {
-                return Long.parseLong(header);
-            } catch (NumberFormatException e) {
-                logger.warn("Invalid X-User-ID header: {}", header);
-            }
-        }
-        return null;
-    }
 
     private int validateSize(int size) {
         return (size <= 0 || size > 100) ? 12 : size;

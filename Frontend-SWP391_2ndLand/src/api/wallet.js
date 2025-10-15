@@ -7,7 +7,7 @@ import api from './axios'
 export async function getMyWalletBalance() {
   const { data } = await api.get('/wallet/me')
   // Backend trả { balance: BigDecimal } -> stringify để chuẩn hóa hiển thị
-  return { balance: data.balance }
+  return { balance: data }
 }
 
 /**
@@ -22,15 +22,15 @@ export async function getWalletTransactions(params = {}) {
   ).toString()
   const { data } = await api.get(`/wallet/transactions?${query}`)
   // Hiện backend trả Page<DTO> (Spring Data) mapping sang JSON có content,... hay map()? -> ta phòng cả hai trường hợp
-  if (data && Array.isArray(data.content)) {
-    return {
-      items: data.content,
-      page: data.number ?? page,
-      size: data.size ?? size,
-      totalPages: data.totalPages,
-      totalElements: data.totalElements,
+    if (data && Array.isArray(data.content)) {
+        return {
+            items: data.content,
+            page: data.number ?? page,
+            size: data.size ?? size,
+            totalPages: data.totalPages,
+            totalElements: data.totalElements, // <-- Đảm bảo thuộc tính này có ở đây
+        }
     }
-  }
   // Nếu backend map() trả trực tiếp page content array (ít metadata)
   if (Array.isArray(data)) {
     return { items: data, page, size }
@@ -44,13 +44,20 @@ export async function getWalletTransactions(params = {}) {
  * @returns {Promise<{orderId:string,paymentUrl:string,amount:number,expiresAt:string}>}
  */
 export async function createTopUpIntent(amount) {
-  const { data } = await api.post('/wallet/topups', { amount })
-  return data
+    // Trước đây: const { data } = await api.post('/wallet/topups', { amount })
+    // Sửa thành: Gửi thẳng giá trị 'amount' làm body
+    const { data } = await api.post('/wallet/topups', amount, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    return data;
 }
 
 /**
  * (Future) Hoàn tất top-up nếu cần manual trigger /poll.
  * Placeholder: backend hiện có endpoint complete riêng nếu thiết kế.
+ * @deprecated Use finalizeTopUp instead as it supports the 'success' parameter.
  */
 export async function completeTopUp(orderId) {
   const { data } = await api.post(`/wallet/topups/${orderId}/complete`)
@@ -88,12 +95,13 @@ export async function previewListingFee({ category, price }) {
   return data // { fee: number }
 }
 
+// Và trong phần export default
 export default {
-  getMyWalletBalance,
-  getWalletTransactions,
-  createTopUpIntent,
-  completeTopUp,
-  getTopUpStatus,
-  finalizeTopUp,
-  previewListingFee,
+    getMyWalletBalance,
+    getWalletTransactions,
+    createTopUpIntent,
+    // completeTopUp, // Xóa hoặc comment dòng này
+    getTopUpStatus,
+    finalizeTopUp,
+    previewListingFee,
 }

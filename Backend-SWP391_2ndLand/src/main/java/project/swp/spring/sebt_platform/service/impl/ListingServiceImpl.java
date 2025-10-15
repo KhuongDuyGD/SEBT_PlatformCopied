@@ -52,7 +52,6 @@ import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.ListingService;
 import project.swp.spring.sebt_platform.service.ListingFeePolicy;
 import project.swp.spring.sebt_platform.service.WalletLedgerService;
-import project.swp.spring.sebt_platform.exception.InsufficientFundsException;
 
 @Service
 public class ListingServiceImpl implements ListingService {
