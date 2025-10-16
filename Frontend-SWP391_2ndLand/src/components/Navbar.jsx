@@ -1,10 +1,11 @@
 // src/components/Navbar.jsx
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Input, Dropdown, Button, Avatar, Modal, Typography, Space, Badge, message } from 'antd';
+import { Layout, Input, Dropdown, Button, Avatar, Modal, Typography, Space, Badge, message, Tooltip } from 'antd';
 import { LogoutOutlined, SearchOutlined, CarOutlined, UserOutlined, AppstoreOutlined, BellOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import api from '../api/axios';
+import { countPendingPaymentListings } from '../api/listings';
 // import { createTopUpIntent } from '../api/wallet'; // replaced by modal controlled flow
 import TopUpModal from './TopUpModal';
 import useWalletBalance from '../hooks/useWalletBalance';
@@ -144,6 +145,37 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
   ];
 
   const { balance, refresh: refreshBalance } = useWalletBalance(isLoggedIn);
+  const [pendingPaymentCount, setPendingPaymentCount] = useState(0);
+  const [loadingBadge, setLoadingBadge] = useState(false);
+
+  const loadPendingPayment = useCallback(async () => {
+    if (!isLoggedIn) { setPendingPaymentCount(0); return; }
+    try {
+      setLoadingBadge(true);
+      const data = await countPendingPaymentListings();
+      if (data && typeof data.count === 'number') {
+        setPendingPaymentCount(data.count);
+      }
+    } catch (e) {
+      // silent fail
+    } finally {
+      setLoadingBadge(false);
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    loadPendingPayment();
+    const interval = setInterval(loadPendingPayment, 30000); // refresh mỗi 30s
+    return () => clearInterval(interval);
+  }, [loadPendingPayment]);
+  // Lắng nghe event toàn cục cập nhật số dư ví (do các trang khác phát ra sau nạp / thanh toán)
+  useEffect(() => {
+    function handleWalletRefresh() {
+      refreshBalance();
+    }
+    window.addEventListener('wallet:refresh', handleWalletRefresh);
+    return () => window.removeEventListener('wallet:refresh', handleWalletRefresh);
+  }, [refreshBalance]);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
 
   const accountMenuItems = [
@@ -188,9 +220,23 @@ function AppNavbar({ isLoggedIn, setIsLoggedIn, setUserInfo }) {
             <Button type="text" icon={<AppstoreOutlined style={{ fontSize: 18 }} />} style={{ color: '#fff' }}>Danh mục</Button>
           </Dropdown>
           <Button type="text" style={{ color: '#fff' }} onClick={() => navigate('/support')}>Hỗ Trợ</Button>
-          <Badge count={3} size="small" offset={[0,3]}>
-            <Button type="text" style={{ color: '#fff' }} onClick={() => navigate('/notifications')} icon={<BellOutlined style={{ fontSize: 18 }} />} />
-          </Badge>
+          {isLoggedIn && (
+            <Button
+              type="text"
+              style={{ color: isActiveLink('/my-listings') ? '#40a9ff' : '#fff', fontWeight: isActiveLink('/my-listings') ? 600 : 400 }}
+              onClick={() => navigate('/my-listings')}
+            >Quản lý bài đăng</Button>
+          )}
+          <Tooltip title={pendingPaymentCount > 0 ? `${pendingPaymentCount} bài đăng cần thanh toán phí` : 'Không có bài đăng chờ phí'}>
+            <Badge count={pendingPaymentCount} size="small" offset={[0,3]} color={pendingPaymentCount>0?'gold':undefined}>
+              <Button
+                type="text"
+                style={{ color: '#fff' }}
+                onClick={() => navigate('/my-listings')}
+                icon={<BellOutlined style={{ fontSize: 18, opacity: pendingPaymentCount>0?1:0.55 }} />}
+              />
+            </Badge>
+          </Tooltip>
           {isLoggedIn && (
             <Button type="primary" onClick={handleTopUp} style={{ fontWeight: 600 }}>
               Nạp tiền

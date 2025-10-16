@@ -55,6 +55,9 @@ function CreateListing() {
     const [priceSuggesting, setPriceSuggesting] = useState(false);
     const [showPromptPreview, setShowPromptPreview] = useState(false);
     const redirectTimeoutRef = useRef(null);
+    // Early completeness check states
+    const [profileChecked, setProfileChecked] = useState(false);
+    const [phoneMissing, setPhoneMissing] = useState(false);
 
     const { register, handleSubmit, setValue, getValues, watch, reset, trigger, formState: { errors } } = useForm({
         defaultValues: DEFAULT_VALUES,
@@ -81,6 +84,50 @@ function CreateListing() {
         { id: 3, title: "Vị trí", icon: MapPin, description: "Tỉnh / Quận đăng bán" },
         { id: 4, title: "Giá & Xác nhận", icon: CheckCircle, description: "Gợi ý giá & duyệt lại thông tin" }
     ];
+
+    // ================= Early Phone Requirement Check =================
+    useEffect(() => {
+        let mounted = true;
+        const checkCompleteness = async () => {
+            try {
+                const completeness = await listingsApi.getProfileCompleteness();
+                if (mounted) {
+                    setPhoneMissing(!completeness?.phonePresent);
+                    setProfileChecked(true);
+                }
+            } catch (e) {
+                if (mounted) setProfileChecked(true); // vẫn cho hiển thị form nếu lỗi network
+            }
+        };
+        checkCompleteness();
+        return () => { mounted = false; };
+    }, []);
+
+    const goToUpdateProfile = () => navigate('/account');
+
+    const renderPhoneMissing = () => (
+        <div className="create-listing-container">
+            <div className="create-listing-wrapper">
+                <div className="alert-error" style={{ marginTop: '2rem' }}>
+                    <div className="alert-error-header">
+                        <AlertCircle className="w-5 h-5 mr-3" />Thiếu số điện thoại trong hồ sơ
+                    </div>
+                    <p className="alert-error-text" style={{ lineHeight: 1.6 }}>
+                        Trước khi đăng bài, bạn cần cập nhật <strong>số điện thoại</strong> để người mua có thể liên hệ.<br />
+                        Vào trang Hồ Sơ để thêm số điện thoại rồi quay lại đây.
+                    </p>
+                    <div className="flex gap-3 mt-3">
+                        <button onClick={goToUpdateProfile} className="nav-button nav-button-next">
+                            Cập nhật hồ sơ ngay →
+                        </button>
+                        <button onClick={() => navigate('/')} className="nav-button nav-button-back">
+                            Về trang chủ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 
     // Handle input change
     const handleInputChange = (e) => {
@@ -374,6 +421,19 @@ function CreateListing() {
                 typeof v === 'object' ? flattenErrors(v, path) : [];
         });
     };
+
+    // Hiển thị trạng thái kiểm tra completeness
+    if (!profileChecked) {
+        return (
+            <div className="create-listing-container">
+                <div className="create-listing-wrapper">
+                    <p className="text-sm text-gray-600 mt-10">Đang kiểm tra hồ sơ...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (phoneMissing) return renderPhoneMissing();
 
     return (
         <div className="create-listing-container">

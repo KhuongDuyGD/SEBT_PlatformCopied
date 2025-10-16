@@ -11,7 +11,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import org.springframework.web.bind.annotation.RequestParam;
 import project.swp.spring.sebt_platform.model.ListingEntity;
 import project.swp.spring.sebt_platform.model.enums.BatteryCondition;
 import project.swp.spring.sebt_platform.model.enums.ListingStatus;
@@ -145,6 +144,8 @@ public interface ListingRepository extends JpaRepository<ListingEntity, Long>, J
         List<ListingEntity> findAllByVehicleTypeNoStatus(@Param("type") VehicleType type);
 
         long countListingEntitiesByStatus(ListingStatus status);
+
+        long countListingEntitiesBySellerIdAndStatus(Long sellerId, ListingStatus status);
 
         @Query(
                 "SELECT Count(l) FROM ListingEntity l " +

@@ -40,6 +40,7 @@ import project.swp.spring.sebt_platform.service.ListingService;
 import project.swp.spring.sebt_platform.service.ListingFeePolicy;
 import project.swp.spring.sebt_platform.util.Utils;
 import project.swp.spring.sebt_platform.validation.CreateListingValidator;
+import project.swp.spring.sebt_platform.repository.UserRepository;
 // (Removed duplicate swagger imports below – already imported above)
 // Added missing imports for Map & Locale
 import java.util.Map;
@@ -62,6 +63,9 @@ public class ListingController {
 
     @Autowired
     private ListingFeePolicy listingFeePolicy;
+
+    @Autowired
+    private UserRepository userRepository;
 
     /**
      * POST /api/listings/create - Create new listing with images
@@ -89,6 +93,19 @@ public class ListingController {
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body("login required");
+        }
+        // Enforce profile completeness: yêu cầu có phoneNumber trước khi tạo
+        // (Option A) – Nếu user chưa cập nhật số điện thoại thì từ chối tạo để đảm bảo buyer có thể liên lạc.
+        var userEntity = userRepository.findById(userId).orElse(null);
+        if (userEntity == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User session invalid");
+        }
+        if (userEntity.getPhoneNumber() == null || userEntity.getPhoneNumber().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "error", "PROFILE_INCOMPLETE",
+                            "message", "Vui lòng cập nhật số điện thoại trong hồ sơ trước khi đăng bài"
+                    ));
         }
         // Gán images từ part nếu có
         if (imagesParam != null && !imagesParam.isEmpty()) {

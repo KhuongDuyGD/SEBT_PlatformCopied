@@ -4,6 +4,7 @@
 // Listing lifecycle status (backend ListingStatus enum)
 export const ListingStatus = Object.freeze({
   ACTIVE: 'ACTIVE',
+  PAY_WAITING: 'PAY_WAITING',
   SOLD: 'SOLD',
   EXPIRED: 'EXPIRED',
   REMOVED: 'REMOVED',

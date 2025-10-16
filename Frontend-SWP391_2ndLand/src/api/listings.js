@@ -82,6 +82,26 @@ export const fetchMyListings = (page = 0, size = 12) => {
     return api.get(`/listings/my-listings?page=${page}&size=${size}`).then(r => r.data);
 };
 
+// Đếm số bài đăng chờ thanh toán của user (badge navbar)
+export const countPendingPaymentListings = () => {
+    return api.get('/members/listings/pending-payment-count').then(r => r.data);
+};
+
+// Thanh toán phí đăng tin cho listing cụ thể
+export const payListingFee = (listingId) => {
+    return api.post(`/members/listings/${listingId}/pay-fee`).then(r => r.data);
+};
+
+// Lấy phí phải thanh toán cho listing ở trạng thái PAY_WAITING
+export const getListingFee = (listingId) => {
+    return api.get(`/members/listings/${listingId}/fee`).then(r => r.data); // { fee }
+};
+
+// Kiểm tra mức độ hoàn thiện hồ sơ (hiện chỉ phoneNumber)
+export const getProfileCompleteness = () => {
+    return api.get('/members/profile-completeness').then(r => r.data); // { phonePresent }
+};
+
 // ==========================
 // LẤY CHI TIẾT MỘT TIN
 // ==========================
@@ -205,6 +225,10 @@ export default {
     fetchEvListingCarts,
     fetchBatteryListingCarts,
     fetchMyListings,
+    countPendingPaymentListings,
+    payListingFee,
+    getListingFee,
+    getProfileCompleteness,
     fetchListingDetail,
     feePreview,
     evFilterListings,

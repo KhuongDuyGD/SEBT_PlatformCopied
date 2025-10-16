@@ -112,15 +112,17 @@ public class ListingServiceImpl implements ListingService {
                 boolean isFavorited = userId != null &&
                         favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
 
-                return new ListingCartResponseDTO(
-                        listing.getId(),
-                        listing.getTitle(),
-                        listing.getThumbnailImage(),
-                        listing.getPrice().doubleValue(),
-                        listing.getViewsCount(),
-                        listing.getSeller().getPhoneNumber(),
-                        isFavorited
-                );
+        ListingCartResponseDTO dto = new ListingCartResponseDTO(
+            listing.getId(),
+            listing.getTitle(),
+            listing.getThumbnailImage(),
+            listing.getPrice().doubleValue(),
+            listing.getViewsCount(),
+            listing.getSeller().getPhoneNumber(),
+            isFavorited
+        );
+        if (listing.getStatus() != null) dto.setStatus(listing.getStatus().name());
+        return dto;
             });
         } catch (Exception e) {
             logger.error("Error searching listings by keyword: " + keyWord, e);
@@ -292,8 +294,15 @@ public class ListingServiceImpl implements ListingService {
         List<ListingImageEntity> listingImageEntities = listingImageRepository.findByListingId(listingId);
         UserEntity user = userRepository.findById(userId).orElse(null);
 
-        if (listing == null || listing.getStatus() != ListingStatus.ACTIVE) {
-            logger.warn("Listing not found or inactive with ID: " + listingId);
+        if (listing == null) {
+            logger.warn("Listing not found with ID: " + listingId);
+            return null;
+        }
+
+        boolean isOwner = listing.getSeller() != null && Objects.equals(listing.getSeller().getId(), userId);
+        // Chỉ chặn nếu không phải chủ sở hữu và listing chưa ACTIVE
+        if (!isOwner && listing.getStatus() != ListingStatus.ACTIVE) {
+            logger.warn("Listing not accessible (inactive and user not owner) with ID: " + listingId);
             return null;
         }
 
@@ -479,15 +488,17 @@ public class ListingServiceImpl implements ListingService {
                 boolean isFavorited = userId != null &&
                         favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
 
-                return new ListingCartResponseDTO(
-                        listing.getId(),
-                        listing.getTitle(),
-                        listing.getThumbnailImage(),
-                        listing.getPrice().doubleValue(),
-                        listing.getViewsCount(),
-                        listing.getSeller().getPhoneNumber(),
-                        isFavorited
-                );
+        ListingCartResponseDTO dto = new ListingCartResponseDTO(
+            listing.getId(),
+            listing.getTitle(),
+            listing.getThumbnailImage(),
+            listing.getPrice().doubleValue(),
+            listing.getViewsCount(),
+            listing.getSeller().getPhoneNumber(),
+            isFavorited
+        );
+        if (listing.getStatus() != null) dto.setStatus(listing.getStatus().name());
+        return dto;
             });
         } catch (Exception e) {
             logger.error("Error getting EV listing carts", e);
@@ -506,15 +517,17 @@ public class ListingServiceImpl implements ListingService {
                 boolean isFavorited = userId != null &&
                         favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
 
-                return new ListingCartResponseDTO(
-                        listing.getId(),
-                        listing.getTitle(),
-                        listing.getThumbnailImage(),
-                        listing.getPrice().doubleValue(),
-                        listing.getViewsCount(),
-                        listing.getSeller().getPhoneNumber(),
-                        isFavorited
-                );
+        ListingCartResponseDTO dto = new ListingCartResponseDTO(
+            listing.getId(),
+            listing.getTitle(),
+            listing.getThumbnailImage(),
+            listing.getPrice().doubleValue(),
+            listing.getViewsCount(),
+            listing.getSeller().getPhoneNumber(),
+            isFavorited
+        );
+        if (listing.getStatus() != null) dto.setStatus(listing.getStatus().name());
+        return dto;
             });
         } catch (Exception e) {
             logger.error("Error getting battery listing carts", e);
@@ -529,17 +542,19 @@ public class ListingServiceImpl implements ListingService {
             Page<ListingEntity> listingsPage = listingRepository.findBySellerIdOrderByCreatedAtDesc(sellerId, pageable);
 
             // Convert Page<ListingEntity> thành Page<ListingCartResponseDTO>
-            return listingsPage.map(listing -> {
-                // For seller's own listings, they don't need favorite status (always false)
-                return new ListingCartResponseDTO(
-                        listing.getId(),
-                        listing.getTitle(),
-                        listing.getThumbnailImage(),
-                        listing.getPrice().doubleValue(),
-                        listing.getViewsCount(),
-                        listing.getSeller().getPhoneNumber(),
-                        false // Seller doesn't favorite their own listings
-                );
+                return listingsPage.map(listing -> {
+                    boolean isFavorited = false; // Seller doesn't favorite their own listings
+                    ListingCartResponseDTO dto = new ListingCartResponseDTO(
+                            listing.getId(),
+                            listing.getTitle(),
+                            listing.getThumbnailImage(),
+                            listing.getPrice().doubleValue(),
+                            listing.getViewsCount(),
+                            listing.getSeller().getPhoneNumber(),
+                            isFavorited
+                    );
+                    if (listing.getStatus() != null) dto.setStatus(listing.getStatus().name());
+                    return dto;
             });
         } catch (Exception e) {
             logger.error("Error getting listings by seller ID: " + sellerId, e);
@@ -581,16 +596,18 @@ public class ListingServiceImpl implements ListingService {
                         boolean isFavorited = userId != null &&
                                 favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
                         
-                        // Tạo response DTO với thông tin đầy đủ
-                        return new ListingCartResponseDTO(
-                                listing.getId(),
-                                listing.getTitle(),
-                                listing.getThumbnailImage(),
-                                listing.getPrice().doubleValue(),
-                                listing.getViewsCount(),
-                                listing.getSeller().getPhoneNumber(),
-                                isFavorited
-                        );
+            // Tạo response DTO với thông tin đầy đủ kèm status
+            ListingCartResponseDTO dto = new ListingCartResponseDTO(
+                listing.getId(),
+                listing.getTitle(),
+                listing.getThumbnailImage(),
+                listing.getPrice().doubleValue(),
+                listing.getViewsCount(),
+                listing.getSeller().getPhoneNumber(),
+                isFavorited
+            );
+            if (listing.getStatus() != null) dto.setStatus(listing.getStatus().name());
+            return dto;
                     }
             );
         } catch (Exception e) {
@@ -628,16 +645,18 @@ public class ListingServiceImpl implements ListingService {
                         boolean isFavorited = userId != null &&
                                 favoriteRepository.findByUserIdAndListingId(userId, listing.getId()) != null;
 
-                        // Tạo response DTO với thông tin đầy đủ
-                        return new ListingCartResponseDTO(
-                                listing.getId(),
-                                listing.getTitle(),
-                                listing.getThumbnailImage(),
-                                listing.getPrice().doubleValue(),
-                                listing.getViewsCount(),
-                                listing.getSeller().getPhoneNumber(),
-                                isFavorited
-                        );
+            // Tạo response DTO với thông tin đầy đủ kèm status
+            ListingCartResponseDTO dto = new ListingCartResponseDTO(
+                listing.getId(),
+                listing.getTitle(),
+                listing.getThumbnailImage(),
+                listing.getPrice().doubleValue(),
+                listing.getViewsCount(),
+                listing.getSeller().getPhoneNumber(),
+                isFavorited
+            );
+            if (listing.getStatus() != null) dto.setStatus(listing.getStatus().name());
+            return dto;
                     }
             );
         } catch (Exception e) {
