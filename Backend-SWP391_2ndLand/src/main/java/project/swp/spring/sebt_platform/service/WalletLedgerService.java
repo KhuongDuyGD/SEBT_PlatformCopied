@@ -33,4 +33,6 @@ public interface WalletLedgerService {
     Page<WalletTransactionEntity> getTransactions(Long userId, WalletPurpose purpose, Pageable pageable);
 
     WalletTransactionEntity getTransactionByOrderId(String orderId);
+
+    WalletTransactionEntity pricingFee(Long userId);
 }

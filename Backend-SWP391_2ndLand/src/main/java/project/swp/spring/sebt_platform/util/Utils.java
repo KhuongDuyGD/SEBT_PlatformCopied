@@ -3,6 +3,7 @@ package project.swp.spring.sebt_platform.util;
 import jakarta.servlet.http.HttpServletRequest;
 import jdk.jshell.execution.Util;
 import org.springframework.stereotype.Component;
+import project.swp.spring.sebt_platform.model.enums.WalletPurpose;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -86,5 +87,16 @@ public class Utils {
             sb.append(chars.charAt(rnd.nextInt(chars.length())));
         }
         return sb.toString();
+    }
+
+    public static String createOrderId(WalletPurpose purpose, Long userId) {
+        String prefix = "ORDER";
+        if (purpose != null) {
+            prefix = purpose.name();
+        }
+        String orderId = prefix +"0"+userId+"0";
+        String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+        String randomDigits = getRandomNumber(6);
+        return orderId+ timestamp + randomDigits;
     }
 }

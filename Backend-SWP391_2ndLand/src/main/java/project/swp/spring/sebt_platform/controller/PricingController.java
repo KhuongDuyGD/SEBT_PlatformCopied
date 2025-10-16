@@ -1,5 +1,6 @@
 package project.swp.spring.sebt_platform.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import project.swp.spring.sebt_platform.service.WalletLedgerService;
+import project.swp.spring.sebt_platform.util.Utils;
 
 import java.time.Instant;
 import java.util.Map;
@@ -28,6 +31,9 @@ public class PricingController {
 
     @Autowired
     private PricingService pricingService;
+
+    @Autowired
+    private WalletLedgerService walletLedgerService;
 
     @Autowired
     private AiConfig environment;
@@ -47,11 +53,18 @@ public class PricingController {
                             schema = @Schema(implementation = String.class)))
     })
     @PostMapping("/suggest")
-    public ResponseEntity<?> suggest(@Valid @RequestBody PricingSuggestRequestDTO dto) {
+    public ResponseEntity<?> suggest(@Valid @RequestBody PricingSuggestRequestDTO dto, HttpServletRequest request) {
         try {
+            Long userId = Utils.getUserIdFromSession(request);
+            if(userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("yêu cầu đăng nhập");
             if (dto.getProduct() == null || dto.getProduct().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("lack of information's product");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("thiếu thông tin sản phẩm");
             }
+
+           /*if(walletLedgerService.pricingFee(userId) == null){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Số dư của bạn không đủ để sử dụng dịch vụ");
+            }*/ // tư bản time
+
             PricingSuggestResponseDTO result = pricingService.suggestPrice(dto);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
