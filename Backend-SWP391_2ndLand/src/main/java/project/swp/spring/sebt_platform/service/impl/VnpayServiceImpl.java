@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import project.swp.spring.sebt_platform.config.VnpayConfig;
+import project.swp.spring.sebt_platform.model.enums.WalletPurpose;
 import project.swp.spring.sebt_platform.repository.WalletRepository;
 import project.swp.spring.sebt_platform.repository.WalletTransactionRepository;
 import project.swp.spring.sebt_platform.service.WalletLedgerService;
@@ -18,6 +19,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 @Service
@@ -38,8 +40,7 @@ public class VnpayServiceImpl implements VnpayService {
     @Override
     public String createPaymentUrl(double amount, Long userId, HttpServletRequest request) throws UnsupportedEncodingException {
 
-    String random = java.util.UUID.randomUUID().toString().replace("-", "").substring(0,8).toUpperCase();
-    String vnp_TxnRef = "TOPUP-" + (System.currentTimeMillis()/1000) + "-U" + userId + "-" + random; // harder to guess
+    String vnp_TxnRef = Utils.createOrderId(WalletPurpose.TOP_UP, userId);
         String vnp_OrderInfo = "To up wallet of platform " + vnp_TxnRef;
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
@@ -110,7 +111,7 @@ public class VnpayServiceImpl implements VnpayService {
     public TopUpIntent createTopUpIntent(Double amount, Long userId, HttpServletRequest request) throws UnsupportedEncodingException {
         String paymentUrl = createPaymentUrl(amount, userId, request);
         // Expiry: 15 minutes from now (VNPay expire date logic above)
-        java.time.OffsetDateTime expiresAt = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(15);
+        OffsetDateTime expiresAt = OffsetDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(15);
         // Extract orderId from paymentUrl param vnp_TxnRef for returning to client
         String orderId = null;
         int idx = paymentUrl.indexOf("vnp_TxnRef=");
@@ -144,7 +145,7 @@ public class VnpayServiceImpl implements VnpayService {
         boolean valid = secureHash != null && secureHash.equalsIgnoreCase(checkHash);
         String orderId = working.get("vnp_TxnRef");
         String amountStr = working.get("vnp_Amount");
-        java.math.BigDecimal amount = null;
+        BigDecimal amount = null;
         if (amountStr != null) {
             try { amount = new java.math.BigDecimal(amountStr).movePointLeft(2); } catch (NumberFormatException ignored) {}
         }
@@ -179,7 +180,7 @@ public class VnpayServiceImpl implements VnpayService {
         String vnp_Command = "refund";
         String vnp_TmnCode = config.getTmnCode();
         String vnp_TransactionType = request.getParameter("trantype");
-        String vnp_TxnRef = "ORDER" + System.currentTimeMillis() + "USER" + String.format("%05d", userId);
+        String vnp_TxnRef = Utils.createOrderId(WalletPurpose.TOP_UP_REFUND, userId);
 
         String vnp_Amount = String.valueOf((long) amount*100);
         String vnp_OrderInfo = "Refund transaction OrderId:" + vnp_TxnRef;

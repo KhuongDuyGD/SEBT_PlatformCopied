@@ -5,9 +5,25 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4fa67949-db7b-446f-b539-ae7cafb7c212" name="Changes" comment="refacto code">
+      <change afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/initializerBaseData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/0edd23fc-4a4d-4357-ab3a-31f9b954094f.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/0edd23fc-4a4d-4357-ab3a-31f9b954094f.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/Initializer.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/config/Initializer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/api/wallet.js" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend-SWP391_2ndLand/src/api/wallet.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/PricingController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/controller/PricingController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/enums/WalletPurpose.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/model/enums/WalletPurpose.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/SystemConfigRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/repository/SystemConfigRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/VnpayService.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/VnpayService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/WalletLedgerService.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/WalletLedgerService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/VnpayServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/VnpayServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/WalletLedgerServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/WalletLedgerServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/util/Utils.java" beforeDir="false" afterPath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/util/Utils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/test/java/project/swp/spring/sebt_platform/pricing/BaselinePriceServiceTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/test/java/project/swp/spring/sebt_platform/pricing/ai/BaselineCapTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/test/java/project/swp/spring/sebt_platform/pricing/ai/ClampEvidenceTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/test/java/project/swp/spring/sebt_platform/pricing/ai/EvidenceFilterTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/test/java/project/swp/spring/sebt_platform/pricing/ai/GeminiResponseParserJsonTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/test/java/project/swp/spring/sebt_platform/pricing/ai/SemanticRetryTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/test/java/project/swp/spring/sebt_platform/pricing/baseline/BaselinePriceStrategyParseTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Backend-SWP391_2ndLand/src/test/java/project/swp/spring/sebt_platform/service/WalletLedgerServiceImplTests.java" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,8 +34,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Interface" />
-        <option value="Class" />
         <option value="Record" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -63,42 +79,42 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "JUnit.project.swp.spring.sebt_platform in SEBT_platform.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Spring Boot.SebtPlatformApplication.executor": "Run",
-    "git-widget-placeholder": "MinhFe-Be/refactor-code-be-and-modify-fe",
-    "ignore.virus.scanning.warn.message": "true",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/DELL/OneDrive/Desktop/IdeaProjects/SEBT_Platform",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "reference.settings.project.maven.runner",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;JUnit.project.swp.spring.sebt_platform in SEBT_platform.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Spring Boot.SebtPlatformApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/DELL/OneDrive/Desktop/IdeaProjects/SEBT_Platform&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settings.project.maven.runner&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "sqlserver"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;sqlserver&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\DELL\OneDrive\Desktop\IdeaProjects\HoangFork\SWP391_2ndLand\Backend-SWP391_2ndLand\src\main\java\project\swp\spring\sebt_platform\model" />
@@ -131,7 +147,6 @@
       </method>
     </configuration>
     <configuration name="SebtPlatformApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
-      <option name="ACTIVE_PROFILES" value="devautoseed" />
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
       <module name="SEBT_platform" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="project.swp.spring.sebt_platform.SebtPlatformApplication" />
@@ -210,6 +225,10 @@
       <workItem from="1760429639066" duration="5904000" />
       <workItem from="1760443534504" duration="4464000" />
       <workItem from="1760507525523" duration="12936000" />
+      <workItem from="1760574659733" duration="3649000" />
+      <workItem from="1760582402330" duration="1036000" />
+      <workItem from="1760583461558" duration="25000" />
+      <workItem from="1760605448299" duration="2819000" />
     </task>
     <task id="LOCAL-00001" summary="add create listing">
       <option name="closed" value="true" />
@@ -435,5 +454,16 @@
     <MESSAGE value="fix listing bug" />
     <MESSAGE value="refacto code" />
     <option name="LAST_COMMIT_MESSAGE" value="refacto code" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/Backend-SWP391_2ndLand/src/main/java/project/swp/spring/sebt_platform/service/impl/VnpayServiceImpl.java</url>
+          <line>128</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

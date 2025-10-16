@@ -4,14 +4,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import project.swp.spring.sebt_platform.model.SystemConfigEntity;
 import project.swp.spring.sebt_platform.model.WalletEntity;
 import project.swp.spring.sebt_platform.model.WalletTransactionEntity;
 import project.swp.spring.sebt_platform.model.enums.TransactionStatus;
 import project.swp.spring.sebt_platform.model.enums.WalletPurpose;
 import project.swp.spring.sebt_platform.model.enums.WalletEntryType;
+import project.swp.spring.sebt_platform.repository.SystemConfigRepository;
 import project.swp.spring.sebt_platform.repository.WalletRepository;
 import project.swp.spring.sebt_platform.repository.WalletTransactionRepository;
 import project.swp.spring.sebt_platform.service.WalletLedgerService;
+import project.swp.spring.sebt_platform.util.Utils;
 
 import java.math.BigDecimal;
 
@@ -20,11 +23,14 @@ public class WalletLedgerServiceImpl implements WalletLedgerService {
 
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
+    private final SystemConfigRepository systemConfigRepository;
 
     public WalletLedgerServiceImpl(WalletRepository walletRepository,
-                                   WalletTransactionRepository walletTransactionRepository) {
+                                   WalletTransactionRepository walletTransactionRepository,
+                                   SystemConfigRepository systemConfigRepository) {
         this.walletRepository = walletRepository;
         this.walletTransactionRepository = walletTransactionRepository;
+        this.systemConfigRepository = systemConfigRepository;
     }
 
     @Override
@@ -85,8 +91,9 @@ public class WalletLedgerServiceImpl implements WalletLedgerService {
         if (wallet.getBalance().compareTo(fee) < 0) {
             return null; // or throw new InsufficientFundsException("Insufficient balance for listing fee");
         }
+        String orderId = Utils.createOrderId(WalletPurpose.LISTING_FEE, userId);
         WalletTransactionEntity tx = new WalletTransactionEntity();
-        tx.setOrderId("LISTING_FEE-" + listingId + "-" + System.currentTimeMillis());
+        tx.setOrderId(orderId);
         tx.setWallet(wallet);
         tx.setAmount(fee.negate()); // store negative to represent debit OR keep positive with entryType=DEBIT
         tx.setBalanceBefore(wallet.getBalance());
@@ -102,6 +109,8 @@ public class WalletLedgerServiceImpl implements WalletLedgerService {
         walletTransactionRepository.save(tx);
         return tx;
     }
+
+
 
     @Override
     public WalletEntity getWalletByUserId(Long userId) {
@@ -120,4 +129,32 @@ public class WalletLedgerServiceImpl implements WalletLedgerService {
     public WalletTransactionEntity getTransactionByOrderId(String orderId) {
         return walletTransactionRepository.findByOrderId(orderId);
     }
+
+    @Override
+    public WalletTransactionEntity pricingFee(Long userId) {
+        WalletEntity wallet = walletRepository.findByUserId(userId);
+        SystemConfigEntity config = systemConfigRepository.findByPricingFee();
+        BigDecimal feeAmount = config != null ? new BigDecimal(config.getConfigValue()) : new BigDecimal("20000.00");
+        if (wallet != null && wallet.getBalance().compareTo(feeAmount) >= 0) {
+            String orderId = Utils.createOrderId(WalletPurpose.PRICING_FEE, userId);
+            WalletTransactionEntity tx = new WalletTransactionEntity();
+            tx.setOrderId(orderId);
+            tx.setWallet(wallet);
+            tx.setAmount(feeAmount.negate()); // store negative to represent debit OR keep positive with entryType=DEBIT
+            tx.setBalanceBefore(wallet.getBalance());
+            wallet.setBalance(wallet.getBalance().subtract(feeAmount));
+            tx.setBalanceAfter(wallet.getBalance());
+            tx.setStatus(TransactionStatus.COMPLETED);
+            tx.setPurpose(WalletPurpose.PRICING_FEE);
+            tx.setEntryType(WalletEntryType.DEBIT);
+            tx.setUserId(userId);
+            tx.setDescription("Pricing feature fee");
+            walletRepository.save(wallet);
+            walletTransactionRepository.save(tx);
+            return tx;
+        }
+        return null;
+    }
+
+
 }

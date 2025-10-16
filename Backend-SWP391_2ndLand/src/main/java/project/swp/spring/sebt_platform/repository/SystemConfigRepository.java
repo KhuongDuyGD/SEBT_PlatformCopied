@@ -15,4 +15,8 @@ public interface SystemConfigRepository extends JpaRepository<SystemConfigEntity
     @Query("SELECT s FROM SystemConfigEntity s " +
             "WHERE s.configKey = 'POST_LISTING_PREMIUM_FEE' ")
     SystemConfigEntity findByPremiumFee();
+
+    @Query("SELECT s FROM SystemConfigEntity s " +
+            "WHERE s.configKey = 'PRICING_FEE' ")
+    SystemConfigEntity findByPricingFee();
 }
