@@ -15,6 +15,11 @@ import java.util.Map;
 import project.swp.spring.sebt_platform.dto.request.UpdateProfileFormDTO;
 import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.SessionInfoResponseDTO;
+import project.swp.spring.sebt_platform.dto.response.ListingFeePaymentResponseDTO;
+import project.swp.spring.sebt_platform.model.ListingEntity;
+import project.swp.spring.sebt_platform.model.enums.ListingStatus;
+import project.swp.spring.sebt_platform.repository.ListingRepository;
+import project.swp.spring.sebt_platform.service.ListingFeePolicy;
 import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
 import project.swp.spring.sebt_platform.service.MemberService;
 import project.swp.spring.sebt_platform.util.Utils;
@@ -23,11 +28,15 @@ import project.swp.spring.sebt_platform.util.Utils;
 @RequestMapping("/api/members")
 public class MemberController {
 
-    private final MemberService memberService;
+        private final MemberService memberService;
+        private final ListingRepository listingRepository;
+        private final ListingFeePolicy listingFeePolicy;
 
     @Autowired
-    public MemberController(MemberService memberService) {
-        this.memberService = memberService;
+        public MemberController(MemberService memberService, ListingRepository listingRepository, ListingFeePolicy listingFeePolicy) {
+                this.memberService = memberService;
+                this.listingRepository = listingRepository;
+                this.listingFeePolicy = listingFeePolicy;
     }
 
     @ApiResponses(value = {
@@ -245,32 +254,121 @@ public class MemberController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = String.class)))
     })
-    @GetMapping("/pay-balance")
-    public ResponseEntity<?> payListingByBalance(Long listingId,HttpServletRequest request) {
-        try {
-            HttpSession session = request.getSession(false);
-            Long userId = (Long) session.getAttribute("userId");
-            if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Invalid session");
-            }
+        /**
+         * POST /api/members/listings/{id}/pay-fee
+         * Thanh toán phí đăng tin sau khi bài đăng đã được admin duyệt (status = PAY_WAITING).
+         * Logic:
+         *  - Kiểm tra session
+         *  - Kiểm tra listing thuộc về user và đang ở trạng thái PAY_WAITING
+         *  - Tính fee qua ListingFeePolicy
+         *  - Gọi service debit (refactor trong MemberServiceImpl) -> chuyển listing sang ACTIVE nếu đủ tiền
+         *  - Trả về JSON chi tiết (fee, trạng thái mới, số dư, thiếu tiền hay không)
+         */
+        @PostMapping("/listings/{listingId}/pay-fee")
+        public ResponseEntity<?> payListingFee(@PathVariable Long listingId, HttpServletRequest request) {
+                try {
+                        HttpSession session = request.getSession(false);
+                        if (session == null) {
+                                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No active session");
+                        }
+                        Long userId = (Long) session.getAttribute("userId");
+                        if (userId == null) {
+                                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session");
+                        }
 
-            memberService.payByBalance(userId,listingId);
+                        ListingEntity listing = listingRepository.findById(listingId).orElse(null);
+                        if (listing == null) {
+                                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Listing not found");
+                        }
+                        if (!listing.getSeller().getId().equals(userId)) {
+                                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Listing does not belong to current user");
+                        }
+                        if (listing.getStatus() != ListingStatus.PAY_WAITING) {
+                                return ResponseEntity.status(HttpStatus.CONFLICT).body("Listing is not waiting for payment");
+                        }
 
-            return  ResponseEntity.ok(new SessionInfoResponseDTO(
-                    session.getId(),
-                    (Long) session.getAttribute("userId"),
-                    (String) session.getAttribute("username"),
-                    (String) session.getAttribute("email"),
-                    session.getCreationTime(),
-                    session.getLastAccessedTime(),
-                    session.getMaxInactiveInterval()
-            ));
+                        var ctx = new ListingFeePolicy.ListingContext(
+                                        listing.getProduct() != null && listing.getProduct().getEvVehicle() != null,
+                                        listing.getProduct() != null && listing.getProduct().getBattery() != null,
+                                        listing.getPrice()
+                        );
+                        var fee = listingFeePolicy.computeFee(ctx);
 
-        }catch (Exception e) {
-            return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Cannot get session info");
+                        ListingFeePaymentResponseDTO result = memberService.payByBalance(userId, listing.getId(), fee);
+                        return ResponseEntity.status(result.insufficientBalance() ? HttpStatus.PAYMENT_REQUIRED : HttpStatus.OK).body(result);
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Payment processing error: " + e.getMessage());
+                }
         }
-    }
+
+        /**
+         * GET /api/members/listings/{listingId}/fee
+         * Trả về số phí cần thanh toán cho listing đang ở trạng thái PAY_WAITING (hoặc APPROVED nhưng chưa chuyển trạng thái – phòng trường hợp future refactor).
+         */
+        @GetMapping("/listings/{listingId}/fee")
+        public ResponseEntity<?> getListingFee(@PathVariable Long listingId, HttpServletRequest request) {
+                try {
+                        HttpSession session = request.getSession(false);
+                        if (session == null) {
+                                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No active session");
+                        }
+                        Long userId = (Long) session.getAttribute("userId");
+                        if (userId == null) {
+                                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session");
+                        }
+                        ListingEntity listing = listingRepository.findById(listingId).orElse(null);
+                        if (listing == null) {
+                                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Listing not found");
+                        }
+                        if (!listing.getSeller().getId().equals(userId)) {
+                                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Listing does not belong to current user");
+                        }
+                        if (listing.getStatus() != ListingStatus.PAY_WAITING) {
+                                return ResponseEntity.status(HttpStatus.CONFLICT).body("Listing not in PAY_WAITING status");
+                        }
+                        var ctx = new ListingFeePolicy.ListingContext(
+                                listing.getProduct() != null && listing.getProduct().getEvVehicle() != null,
+                                listing.getProduct() != null && listing.getProduct().getBattery() != null,
+                                listing.getPrice()
+                        );
+                        var fee = listingFeePolicy.computeFee(ctx);
+                        return ResponseEntity.ok(Map.of("fee", fee));
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Cannot compute fee: " + e.getMessage());
+                }
+        }
+
+        /**
+         * GET /api/members/listings/pending-payment-count
+         * Đếm số bài đăng ở trạng thái PAY_WAITING của user hiện tại.
+         */
+        @GetMapping("/listings/pending-payment-count")
+        public ResponseEntity<?> countPendingPaymentListings(HttpServletRequest request) {
+                try {
+                        Long userId = Utils.getUserIdFromSession(request);
+                        if (userId == null) {
+                                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session");
+                        }
+                        long count = listingRepository.countListingEntitiesBySellerIdAndStatus(userId, ListingStatus.PAY_WAITING);
+                        return ResponseEntity.ok(Map.of("count", count));
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Cannot count pending payment listings");
+                }
+        }
+
+        // Moved ra ngoài: GET /api/members/profile-completeness
+        @GetMapping("/profile-completeness")
+        public ResponseEntity<?> getProfileCompleteness(HttpServletRequest request) {
+                Long userId = Utils.getUserIdFromSession(request);
+                if (userId == null) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session");
+                }
+                var user = memberService.getCurrentUser(userId);
+                if (user == null) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+                }
+                boolean phonePresent = user.getPhoneNumber() != null && !user.getPhoneNumber().trim().isEmpty();
+                return ResponseEntity.ok(Map.of("phonePresent", phonePresent));
+        }
 
 }

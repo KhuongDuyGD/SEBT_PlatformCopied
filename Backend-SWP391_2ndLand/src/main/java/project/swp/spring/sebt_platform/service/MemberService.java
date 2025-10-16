@@ -8,9 +8,8 @@ import project.swp.spring.sebt_platform.dto.response.PostAnoucementResponseDTO;
 import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
 import project.swp.spring.sebt_platform.model.UserEntity;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
-import java.util.Map;
+import project.swp.spring.sebt_platform.dto.response.ListingFeePaymentResponseDTO;
 
 public interface MemberService {
     public UserProfileResponseDTO getUserProfileById(Long id);
@@ -34,5 +33,12 @@ public interface MemberService {
 
     public Object getConfigValue(String key);
 
-    public boolean payByBalance(Long userId,Long requestId);
+    /**
+     * Thanh toán phí đăng tin sau khi admin duyệt (listing đang ở PAY_WAITING).
+     * @param userId chủ ví
+     * @param listingId id listing
+     * @param fee số tiền cần trừ
+     * @return DTO kết quả (bao gồm insufficientBalance nếu không đủ tiền)
+     */
+    ListingFeePaymentResponseDTO payByBalance(Long userId, Long listingId, BigDecimal fee);
 }

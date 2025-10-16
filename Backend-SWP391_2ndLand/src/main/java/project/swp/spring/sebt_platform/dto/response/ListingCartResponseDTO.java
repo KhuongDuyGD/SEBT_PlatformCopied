@@ -8,6 +8,8 @@ public class ListingCartResponseDTO {
     private int viewCount;
     private String sellerPhoneNumber;
     private boolean favorite;
+    // Added listing status to support PAY_WAITING button logic on FE
+    private String status;
 
     public ListingCartResponseDTO() {
     }
@@ -76,5 +78,13 @@ public class ListingCartResponseDTO {
 
     public void setFavorite(boolean favorite) {
         this.favorite = favorite;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

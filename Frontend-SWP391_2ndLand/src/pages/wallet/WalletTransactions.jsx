@@ -58,6 +58,16 @@ export default function WalletTransactions() {
         return <span style={{ color: neg? '#cf1322':'#237804', fontWeight: 600 }}>{neg? '-':''}{Math.abs(num).toLocaleString('vi-VN')} VND</span>;
       }
     },
+    { title: 'Balance Trước', key: 'balanceBefore', align: 'right', render: (_, record) => {
+        const after = record.balanceAfter;
+        const amt = record.amount;
+        if (after == null || amt == null) return '-';
+        // amount có thể âm (debit) hoặc dương (credit). balanceAfter = balanceBefore + amount
+        // => balanceBefore = balanceAfter - amount
+        const before = Number(after) - Number(amt);
+        return <span>{before.toLocaleString('vi-VN')} VND</span>;
+      }
+    },
     { title: 'Balance Sau', dataIndex: 'balanceAfter', key: 'balanceAfter', align: 'right', render: b => b!=null ? Number(b).toLocaleString('vi-VN'): '-' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status', render: s => <Tag color={statusColors[s] || 'default'}>{s}</Tag> },
     { title: 'Mô tả', dataIndex: 'description', key: 'description', width: 240, ellipsis: true }
