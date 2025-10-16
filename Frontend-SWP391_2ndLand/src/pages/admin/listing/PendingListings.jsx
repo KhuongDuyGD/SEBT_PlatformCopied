@@ -1,28 +1,32 @@
+// Import các thư viện và component cần dùng
 import { useEffect, useState } from 'react';
 import { useListingApproval } from '../../../hooks/useListingApproval.js';
 import ListingApprovalCard from '../../../components/admin/listing/ListingApprovalCard.jsx';
 import PaginationBar from '../../../components/PaginationBar.jsx';
 
+// Component chính quản lý danh sách tin chờ duyệt
 const PendingListings = () => {
+    // Lấy dữ liệu và hàm xử lý từ custom hook useListingApproval
     const {
-        listings,
-        loading,
-        actionLoading,
-        pagination,
-        error,
-        fetchPendingListings,
-        handleApproveListing,
-        handleRejectListing,
-        clearError
+        listings,            // Danh sách tin đăng chờ duyệt
+        loading,             // Trạng thái đang tải danh sách
+        actionLoading,       // Trạng thái đang duyệt/từ chối từng tin
+        pagination,          // Thông tin phân trang (page, size, totalPages, ...)
+        error,               // Lỗi nếu có
+        fetchPendingListings,// Hàm gọi API lấy danh sách tin
+        handleApproveListing,// Hàm duyệt tin đăng
+        handleRejectListing, // Hàm từ chối tin đăng
+        clearError           // Hàm xoá lỗi
     } = useListingApproval();
 
-    const [currentPage, setCurrentPage] = useState(0);
-    const [pageSize, setPageSize] = useState(12);
-    const [sortBy, setSortBy] = useState('createdDate');
-    const [sortDirection, setSortDirection] = useState('DESC');
-    const [notification, setNotification] = useState(null);
+    // State cục bộ của component
+    const [currentPage, setCurrentPage] = useState(0);           // Trang hiện tại
+    const [pageSize, setPageSize] = useState(12);                // Số tin/trang
+    const [sortBy, setSortBy] = useState('createdDate');         // Trường sắp xếp
+    const [sortDirection, setSortDirection] = useState('DESC');  // Thứ tự sắp xếp
+    const [notification, setNotification] = useState(null);      // Thông báo kết quả approve/reject
 
-    // Fetch listings on component mount and when params change
+    // Gọi API mỗi khi trang, kích thước, sắp xếp thay đổi
     useEffect(() => {
         fetchPendingListings({
             page: currentPage,
@@ -32,56 +36,57 @@ const PendingListings = () => {
         });
     }, [fetchPendingListings, currentPage, pageSize, sortBy, sortDirection]);
 
-    // Handle approve action
+    // Xử lý khi bấm duyệt tin
     const onApproveListing = async (listingId, note) => {
         const result = await handleApproveListing(listingId, note);
         setNotification({
             type: result.success ? 'success' : 'error',
             message: result.message
         });
-
-        // Auto hide notification after 5 seconds
+        // Ẩn thông báo sau 5s
         setTimeout(() => setNotification(null), 5000);
     };
 
-    // Handle reject action
+    // Xử lý khi bấm từ chối tin
     const onRejectListing = async (listingId, reason) => {
         const result = await handleRejectListing(listingId, reason);
         setNotification({
             type: result.success ? 'success' : 'error',
             message: result.message
         });
-
-        // Auto hide notification after 5 seconds
+        // Ẩn thông báo sau 5s
         setTimeout(() => setNotification(null), 5000);
     };
 
-    // Handle page change
+    // Khi đổi trang
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
 
-    // Handle page size change
+    // Khi đổi số lượng tin/trang
     const handlePageSizeChange = (size) => {
         setPageSize(size);
-        setCurrentPage(0); // Reset to first page
+        setCurrentPage(0); // Reset về trang đầu
     };
 
-    // Handle sort change
+    // Khi đổi kiểu sắp xếp
     const handleSortChange = (field) => {
         if (sortBy === field) {
+            // Nếu đang sắp theo cùng field thì đảo chiều ASC/DESC
             setSortDirection(prev => prev === 'ASC' ? 'DESC' : 'ASC');
         } else {
+            // Nếu chọn field khác thì mặc định DESC
             setSortBy(field);
             setSortDirection('DESC');
         }
-        setCurrentPage(0); // Reset to first page
+        setCurrentPage(0); // Reset về trang đầu
     };
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
+
+                {/* Tiêu đề trang và nút refresh */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between">
                         <div>
@@ -93,12 +98,14 @@ const PendingListings = () => {
                             </p>
                         </div>
 
+                        {/* Hiển thị tổng số tin + nút refresh thủ công */}
                         <div className="flex items-center gap-4">
                             <div className="bg-white rounded-lg shadow px-4 py-2">
                                 <span className="text-sm text-gray-600">Tổng tin chờ duyệt: </span>
                                 <span className="font-bold text-blue-600">{pagination.totalElements}</span>
                             </div>
 
+                            {/* Nút reload danh sách */}
                             <button
                                 onClick={() => {
                                     console.log('Manual fetch triggered');
@@ -117,7 +124,7 @@ const PendingListings = () => {
                     </div>
                 </div>
 
-                {/* Production UI - no debug panel */}
+                {/* Hiển thị lỗi nếu có */}
                 {error && (
                     <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                         <div className="flex justify-between items-center">
@@ -132,7 +139,7 @@ const PendingListings = () => {
                     </div>
                 )}
 
-                {/* Filters & Sort */}
+                {/* Bộ lọc: chọn số lượng hiển thị, sắp xếp, thứ tự */}
                 <div className="mb-6 bg-white rounded-lg shadow p-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -153,6 +160,7 @@ const PendingListings = () => {
                             </div>
                         </div>
 
+                        {/* Phần chọn trường sắp xếp và thứ tự */}
                         <div className="flex items-center gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -170,6 +178,7 @@ const PendingListings = () => {
                                 </select>
                             </div>
 
+                            {/* Nút đổi thứ tự ASC/DESC */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Thứ tự
@@ -185,7 +194,7 @@ const PendingListings = () => {
                     </div>
                 </div>
 
-                {/* Loading State */}
+                {/* Khi đang tải dữ liệu thì hiện vòng xoay loading */}
                 {loading && (
                     <div className="flex justify-center items-center py-12">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -193,10 +202,11 @@ const PendingListings = () => {
                     </div>
                 )}
 
-                {/* Listings Grid */}
+                {/* Khi đã tải xong dữ liệu */}
                 {!loading && (
                     <>
                         {listings.length > 0 ? (
+                            // Nếu có tin, render từng tin bằng ListingApprovalCard
                             <div className="space-y-6">
                                 {listings.map((listing) => (
                                     <ListingApprovalCard
@@ -209,6 +219,7 @@ const PendingListings = () => {
                                 ))}
                             </div>
                         ) : (
+                            // Nếu không có tin nào chờ duyệt
                             <div className="text-center py-12">
                                 <div className="text-gray-400 text-6xl mb-4">📋</div>
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -222,7 +233,7 @@ const PendingListings = () => {
                     </>
                 )}
 
-                {/* Pagination */}
+                {/* Thanh phân trang */}
                 {!loading && listings.length > 0 && pagination.totalPages > 1 && (
                     <div className="mt-8 flex justify-center">
                         <PaginationBar
@@ -233,7 +244,7 @@ const PendingListings = () => {
                     </div>
                 )}
 
-                {/* Summary Footer */}
+                {/* Footer tóm tắt: hiển thị số lượng và trang hiện tại */}
                 {!loading && listings.length > 0 && (
                     <div className="mt-8 bg-white rounded-lg shadow p-4">
                         <div className="flex justify-between items-center text-sm text-gray-600">

@@ -1,28 +1,37 @@
-
+// Import các thư viện React và component cần thiết
 import React, { useState } from 'react';
-import { normalizeImage } from '../../../utils/listingMapper.js';
-import ModalListingApprovalCard from './ModalListingApprovalCard.jsx';
+import { normalizeImage } from '../../../utils/listingMapper.js'; // Hàm chuẩn hóa đường dẫn ảnh
+import ModalListingApprovalCard from './ModalListingApprovalCard.jsx'; // Modal hiển thị chi tiết tin đăng
 
+// Component chính hiển thị từng thẻ tin chờ duyệt
 const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) => {
-    const [showRejectModal, setShowRejectModal] = useState(false);
-    const [rejectionReason, setRejectionReason] = useState('');
-    const [approvalNote, setApprovalNote] = useState('');
-    const [showApprovalNote, setShowApprovalNote] = useState(false);
-    const [showDetailModal, setShowDetailModal] = useState(false);
+    // Khai báo các state dùng để quản lý hiển thị modal và input
+    const [showRejectModal, setShowRejectModal] = useState(false); // Bật/tắt modal từ chối
+    const [rejectionReason, setRejectionReason] = useState('');    // Lưu lý do từ chối
+    const [approvalNote, setApprovalNote] = useState('');          // Lưu ghi chú phê duyệt
+    const [showApprovalNote, setShowApprovalNote] = useState(false); // Hiển thị/ẩn ô ghi chú phê duyệt
+    const [showDetailModal, setShowDetailModal] = useState(false);   // Hiển thị/ẩn modal chi tiết tin
 
-    const requestId = listing.id || listing.requestId || listing.listingId;
+    // Lấy ID của tin từ các trường có thể có trong object listing
+    const requestId = listing.listingId;
 
+    // Xử lý khi admin bấm nút "Phê duyệt"
     const handleApprove = () => {
+        // Nếu admin có mở phần ghi chú -> gửi cả ghi chú
         if (showApprovalNote) {
             onApprove(requestId, approvalNote);
             setApprovalNote('');
             setShowApprovalNote(false);
-        } else {
+        }
+        // Nếu không có ghi chú -> chỉ gửi requestId
+        else {
             onApprove(requestId);
         }
     };
 
+    // Xử lý khi admin bấm nút "Từ chối"
     const handleReject = () => {
+        // Nếu admin có nhập lý do -> gọi onReject và đóng modal
         if (rejectionReason.trim()) {
             onReject(requestId, rejectionReason);
             setRejectionReason('');
@@ -30,6 +39,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
         }
     };
 
+    // Hàm định dạng tiền VND
     const formatPrice = (price) => {
         if (!price) return 'Chưa có giá';
         return new Intl.NumberFormat('vi-VN', {
@@ -38,10 +48,12 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
         }).format(price);
     };
 
+    // Hàm lấy badge hiển thị tình trạng sản phẩm (Mới, Như mới, Tốt, ...)
     const getConditionBadge = () => {
         const condition = listing.product?.ev?.conditionStatus || listing.product?.battery?.conditionStatus;
         if (!condition) return null;
 
+        // Map các trạng thái -> màu và text
         const conditionMap = {
             NEW: { text: 'Mới', color: 'bg-green-100 text-green-800' },
             LIKE_NEW: { text: 'Như mới', color: 'bg-blue-100 text-blue-800' },
@@ -60,14 +72,17 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
         );
     };
 
+    // JSX chính hiển thị card của listing
     return (
         <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-            {/* Header với thông tin cơ bản */}
+            {/* Phần header: tiêu đề + trạng thái */}
             <div className="p-4 border-b border-gray-100">
                 <div className="flex justify-between items-start mb-2">
                     <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
                         {listing.title}
                     </h3>
+
+                    {/* Hiển thị tình trạng và trạng thái "Chờ duyệt" */}
                     <div className="flex gap-2 items-center">
                         {getConditionBadge()}
                         <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
@@ -76,6 +91,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                     </div>
                 </div>
 
+                {/* Hiển thị ID và nút xem chi tiết */}
                 <div className="flex items-center justify-between text-sm text-gray-600">
                     <span>ID: #{listing.listingId}</span>
                     <div className="flex items-center gap-3">
@@ -91,26 +107,26 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                 </div>
             </div>
 
+            {/* Thân thẻ: chứa ảnh và các nút hành động */}
             <div className="p-4">
-                {/* compact header/summary area */}
-
                 <div className="flex gap-4">
-                    {/* Ảnh thumbnail */}
+                    {/* Ảnh thumbnail sản phẩm */}
                     <div className="flex-shrink-0 ">
                         <img
-                            src={normalizeImage(listing.thumbnail)}
+                            src={normalizeImage(listing.thumbnail)} // Chuẩn hóa đường dẫn ảnh
                             alt={listing.title || 'Listing image'}
                             className="object-cover rounded-lg"
                             style={{ width: '200px', height: '200px' }}
                             onError={(e) => {
-                                e.target.src = 'https://placehold.co/200x200?text=No+Image';
+                                e.target.src = 'https://placehold.co/200x200?text=No+Image'; // fallback nếu ảnh lỗi
                             }}
                         />
                     </div>
                 </div>
 
-                {/* Action buttons */}
+                {/* Các nút thao tác */}
                 <div className="mt-4 flex gap-3 justify-end border-t pt-4">
+                    {/* Nút bật/tắt ghi chú phê duyệt */}
                     <button
                         onClick={() => setShowApprovalNote(!showApprovalNote)}
                         className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 underline"
@@ -118,6 +134,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                         {showApprovalNote ? 'Ẩn ghi chú' : 'Thêm ghi chú'}
                     </button>
 
+                    {/* Nút mở modal từ chối */}
                     <button
                         onClick={() => setShowRejectModal(true)}
                         disabled={loading}
@@ -127,6 +144,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                         {loading ? 'Đang xử lý...' : 'Từ chối'}
                     </button>
 
+                    {/* Nút phê duyệt */}
                     <button
                         onClick={handleApprove}
                         disabled={loading}
@@ -137,7 +155,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                     </button>
                 </div>
 
-                {/* Approval note input */}
+                {/* Nếu bật "Ghi chú phê duyệt" thì hiện ô textarea */}
                 {showApprovalNote && (
                     <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -154,7 +172,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                 )}
             </div>
 
-            {/* Reject Modal */}
+            {/* Modal xác nhận từ chối */}
             {showRejectModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-96 max-w-90vw">
@@ -162,6 +180,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                             Từ chối tin đăng
                         </h3>
 
+                        {/* Ô nhập lý do từ chối */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Lý do từ chối <span className="text-red-500">*</span>
@@ -176,6 +195,7 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                             />
                         </div>
 
+                        {/* Nút xác nhận / hủy */}
                         <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => setShowRejectModal(false)}
@@ -195,19 +215,19 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
                 </div>
             )}
 
-            {/* Detail Modal */}
+            {/* Modal hiển thị chi tiết tin đăng */}
             {showDetailModal && (
                 <ModalListingApprovalCard
                     isOpen={showDetailModal}
                     onClose={() => setShowDetailModal(false)}
                     data={{
-                        requestId: listing.id ?? listing.requestId ?? listing.raw?.requestId,
-                        listingId: listing.listingId ?? listing.raw?.listingId,
-                        thumbnailUrl: listing.thumbnailUrl || listing.thumbnail || listing.mainImage || listing.image || listing.raw?.thumbnailUrl,
-                        price: listing.price ?? listing.raw?.price,
-                        title: listing.title ?? listing.raw?.title,
-                        status: listing.status ?? listing.raw?.status,
-                        raw: listing.raw
+                        // Truyền toàn bộ thông tin cần thiết qua prop data
+                        requestId: listing.id,
+                        listingId: listing.listingId,
+                        thumbnailUrl: listing.thumbnail,
+                        price: listing.price,
+                        title: listing.title,
+                        status: listing.status,
                     }}
                 />
             )}
@@ -215,4 +235,5 @@ const ListingApprovalCard = ({ listing, onApprove, onReject, loading = false }) 
     );
 };
 
+// Xuất component ra để các file khác import
 export default ListingApprovalCard;

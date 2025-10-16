@@ -1,18 +1,14 @@
 // src/api/admin.js
-// API functions cho admin management
+// File này chứa các hàm API dùng cho quản trị viên (admin) để quản lý các bài đăng (listing)
 
-import axios from './axios.js';
+import axios from './axios.js'; // Import instance axios đã được cấu hình sẵn (baseURL, interceptor, v.v.)
 
 /**
- * Lấy danh sách listing đang chờ xét duyệt
- * @param {Object} params - Query parameters
- * @param {number} params.page - Trang hiện tại (default: 0)
- * @param {number} params.size - Số lượng items per page (default: 10)
- * @param {string} params.sortBy - Field để sort (default: createdDate)
- * @param {string} params.sortDirection - ASC hoặc DESC (default: DESC)
- * @returns {Promise} Response với danh sách pending listings
+ * Lấy danh sách các bài đăng đang chờ duyệt
+ * params: gồm page, size, sortBy, sortDirection
  */
 export const getPendingListings = async (params = {}) => {
+    // Giải nén giá trị mặc định cho các tham số nếu người dùng không truyền vào
     const {
         page = 0,
         size = 10,
@@ -21,35 +17,35 @@ export const getPendingListings = async (params = {}) => {
     } = params;
 
     try {
-        // Use admin endpoint that returns post requests for admin review
+        // Gửi request GET đến endpoint admin/post-request (API backend dùng để lấy danh sách cần duyệt)
         const response = await axios.get('/admin/post-request', {
-            params: {
-                page,
-                size
-            }
+            params: { page, size } // Truyền query parameters vào axios
         });
 
-        // Normalize response to a { content: [], totalElements, totalPages, size, number }
+        // Lấy dữ liệu từ response, nếu không có thì dùng object rỗng
         const data = response.data || {};
-        // When Spring serializes a Page object it usually contains: content, totalElements, totalPages, size, number
-        const content = data.content || data.data || [];
-        const totalElements = data.totalElements ?? (data.length || 0);
-        const totalPages = data.totalPages ?? 1;
-        const pageSize = data.size ?? size;
-        const pageNumber = data.number ?? page;
 
-        // Map PostListingCartResponseDTO -> listing-like object the UI expects
+        // Backend thường trả về object chứa các thuộc tính: content, totalElements, totalPages, size, number
+        const content = data.content || data.data || []; // danh sách item thực tế
+        const totalElements = data.totalElements ?? (data.length || 0); // tổng số phần tử
+        const totalPages = data.totalPages ?? 1; // tổng số trang
+        const pageSize = data.size ?? size; // kích thước trang hiện tại
+        const pageNumber = data.number ?? page; // trang hiện tại
+
+        // Chuyển đổi từng item trong danh sách thành object chuẩn để hiển thị trên UI
         const mapped = (Array.isArray(content) ? content : []).map(item => {
-            // item may use camelCase or PascalCase (ListingId)
-            const id = item.requestId;
-            const listingId = item.listingId;
-            const title = item.title ?? '—';
-            const price = typeof item.price === 'number' ? item.price : (item.price ? Number(item.price) : null);
-            const thumbnail = item.thumbnailUrl || null;
-            const status = item.status ?? 'PENDING';
-            return { id, listingId, title, price, thumbnail, status, raw: item };
+            const id = item.requestId; // ID của yêu cầu duyệt
+            const listingId = item.listingId; // ID của bài đăng gốc
+            const title = item.title ?? '—'; // tiêu đề bài đăng
+            const price = typeof item.price === 'number'
+                ? item.price
+                : (item.price ? Number(item.price) : null); // chuyển giá sang số
+            const thumbnail = item.thumbnailUrl || null; // ảnh thumbnail
+            const status = item.status ?? 'PENDING'; // trạng thái bài đăng
+            return { id, listingId, title, price, thumbnail, status, raw: item }; // trả về object chuẩn
         });
 
+        // Trả về dữ liệu đã được chuẩn hóa
         return {
             content: mapped,
             totalElements,
@@ -58,48 +54,37 @@ export const getPendingListings = async (params = {}) => {
             number: pageNumber
         };
     } catch (error) {
+        // Nếu gọi API chính thất bại, log lỗi
         console.error('Admin API failed:', error);
-        try {
 
-            // Get both EV and battery listings
+        try {
+            // Gọi dự phòng đến 2 endpoint lấy EV và battery listings
             const [evResponse, batteryResponse] = await Promise.all([
-                axios.get('/evCart', {
-                    params: { page, size }
-                }),
-                axios.get('/batteryCart', {
-                    params: { page, size }
-                })
+                axios.get('/evCart', { params: { page, size } }),
+                axios.get('/batteryCart', { params: { page, size } })
             ]);
 
-            // Combine both responses
+            // Lấy dữ liệu từ 2 response
             const evListings = evResponse.data.content || evResponse.data || [];
             const batteryListings = batteryResponse.data.content || batteryResponse.data || [];
-            const allListings = [...evListings, ...batteryListings];
+            const allListings = [...evListings, ...batteryListings]; // Gộp lại
 
-            // Filter logic: giả sử những listing mới tạo cần được duyệt
-            // Hoặc những listing có status khác "APPROVED"
-            const filteredListings = allListings.filter(listing => {
-                // Có thể filter theo:
-                // 1. Status không phải APPROVED
-                // 2. Listing mới tạo trong vòng X ngày
-                // 3. Listing chưa có admin review
+            // Tạm thời hiển thị tất cả listing để debug
+            const filteredListings = allListings.filter(listing => true);
 
-                const status = listing.status || listing.listingStatus;
-
-                // Tạm thời hiển thị tất cả để debug
-                return true; // Sẽ sửa logic này sau khi biết cấu trúc data
-            });
-
-            // Map any combined listing objects to UI listing shape (best-effort)
+            // Chuyển đổi từng listing về dạng chuẩn để hiển thị
             const mapped = filteredListings.map(item => ({
-                id: item.ListingId,
+                id: item.listingId,
                 title: item.title ?? '—',
-                price: typeof item.price === 'number' ? item.price : (item.price ? Number(item.price) : null),
+                price: typeof item.price === 'number'
+                    ? item.price
+                    : (item.price ? Number(item.price) : null),
                 thumbnail: item.thumbnailUrl || null,
                 status: item.status || 'ACTIVE',
                 raw: item
             }));
 
+            // Trả về kết quả dự phòng
             return {
                 content: mapped,
                 totalElements: mapped.length,
@@ -109,18 +94,15 @@ export const getPendingListings = async (params = {}) => {
             };
         } catch (fallbackError) {
             console.error('Fallback API also failed:', fallbackError);
-            throw error; // Throw original error
+            throw error; // Ném lỗi gốc ra ngoài
         }
     }
-};/**
- * Approve một listing
- * @param {number|string} listingId - ID của listing cần approve
- * @param {string} approvalNote - Ghi chú khi approve (optional)
- * @returns {Promise} Response sau khi approve
- */
+};
+
+// Approve (chấp thuận) một bài đăng
 export const approveListing = async (listingId, approvalNote = '') => {
     try {
-        // Backend exposes GET /api/admin/approve-request/{postRequestId}
+        // Gọi endpoint approve-request/{id} để phê duyệt bài đăng
         const response = await axios.get(`/admin/approve-request/${listingId}`);
         return response.data;
     } catch (error) {
@@ -129,19 +111,15 @@ export const approveListing = async (listingId, approvalNote = '') => {
     }
 };
 
-/**
- * Reject một listing
- * @param {number|string} listingId - ID của listing cần reject
- * @param {string} rejectionReason - Lý do reject (required)
- * @returns {Promise} Response sau khi reject
- */
+// Reject (từ chối) một bài đăng
 export const rejectListing = async (listingId, rejectionReason) => {
+    // Kiểm tra lý do từ chối có tồn tại hay không
     if (!rejectionReason?.trim()) {
         throw new Error('Rejection reason is required');
     }
 
     try {
-        // Backend exposes GET /api/admin/reject-request/{postRequestId}?reason=...
+        // Gọi endpoint reject-request/{id}?reason=...
         const response = await axios.get(`/admin/reject-request/${listingId}`, {
             params: { reason: rejectionReason }
         });
@@ -152,15 +130,10 @@ export const rejectListing = async (listingId, rejectionReason) => {
     }
 };
 
-/**
- * Lấy chi tiết listing để xem trước khi approve/reject (ADMIN)
- * Endpoint này cho phép admin xem listing ở bất kỳ trạng thái nào (kể cả PENDING)
- * @param {number|string} listingId - ID của listing
- * @returns {Promise} Chi tiết listing đầy đủ
- */
+// Lấy chi tiết bài đăng (kể cả ở trạng thái PENDING)
 export const getListingDetail = async (listingId) => {
     try {
-        // Use admin endpoint that can view listings regardless of status
+        // Gọi endpoint admin riêng để xem chi tiết bài đăng
         const response = await axios.get(`/admin/listing-detail/${listingId}`);
         return response.data;
     } catch (error) {
@@ -169,12 +142,10 @@ export const getListingDetail = async (listingId) => {
     }
 };
 
-/**
- * Lấy thống kê tổng quan cho admin dashboard
- * @returns {Promise} Thống kê overview
- */
+// Lấy thống kê tổng quan cho trang dashboard admin
 export const getAdminStats = async () => {
     try {
+        // Gọi endpoint thống kê
         const response = await axios.get('/api/admin/stats');
         return response.data;
     } catch (error) {
@@ -183,14 +154,12 @@ export const getAdminStats = async () => {
     }
 };
 
-/**
- * Test API để debug - lấy tất cả listings
- */
+// Hàm test/debug: Lấy tất cả EV và Battery listings
 export const getAllListingsForDebug = async () => {
     try {
         console.log('Debug: Getting all listings from evCart and batteryCart...');
 
-        // Try the actual backend endpoints
+        // Gọi song song 2 endpoint
         const [evResponse, batteryResponse] = await Promise.all([
             axios.get('/evCart'),
             axios.get('/batteryCart')
@@ -200,6 +169,7 @@ export const getAllListingsForDebug = async () => {
         const batteryListings = batteryResponse.data.content || batteryResponse.data || [];
         const allListings = [...evListings, ...batteryListings];
 
+        // Trả về thông tin chi tiết
         return {
             content: allListings,
             totalElements: allListings.length,
@@ -209,35 +179,24 @@ export const getAllListingsForDebug = async () => {
     } catch (error) {
         console.error('Debug API failed:', error);
 
-        // Try different endpoints
-        const endpoints = [
-            '/evCart',
-            '/batteryCart',
-            '/search',
-            '/my-listings'
-        ];
+        // Thử các endpoint khác nếu 2 cái trên lỗi
+        const endpoints = ['/evCart', '/batteryCart', '/search', '/my-listings'];
 
         for (const endpoint of endpoints) {
             try {
                 const response = await axios.get(endpoint);
                 return response.data;
             } catch (err) {
-                // Continue to next endpoint
+                // Nếu lỗi thì thử endpoint tiếp theo
             }
         }
 
+        // Nếu tất cả đều lỗi, ném lỗi ra
         throw error;
     }
 };
 
-/**
- * Lấy lịch sử xét duyệt listing
- * @param {Object} params - Query parameters
- * @param {number} params.page - Trang hiện tại
- * @param {number} params.size - Số lượng items per page
- * @param {string} params.status - Filter theo status (APPROVED, REJECTED)
- * @returns {Promise} Lịch sử xét duyệt
- */
+// Lấy lịch sử xét duyệt (approve/reject)
 export const getApprovalHistory = async (params = {}) => {
     const {
         page = 0,
@@ -246,7 +205,7 @@ export const getApprovalHistory = async (params = {}) => {
     } = params;
 
     try {
-        // There is no explicit admin listings history endpoint in backend; try admin post-request list as history source
+        // Hiện chưa có endpoint riêng cho lịch sử, nên tạm dùng /admin/post-request
         const response = await axios.get('/admin/post-request', {
             params: { page, size }
         });
