@@ -5,9 +5,8 @@ import java.math.BigDecimal;
 /**
  * Policy interface to compute listing publication fee based on product type & price.
  */
-public interface ListingFeePolicy {
+public interface FeePolicyService {
 
-    BigDecimal computeFee(ListingContext ctx);
+    BigDecimal computeListingFee(boolean hasEv, boolean hasBattery, Long price);
 
-    record ListingContext(boolean hasEv, boolean hasBattery, BigDecimal price) {}
 }

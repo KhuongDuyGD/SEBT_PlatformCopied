@@ -37,7 +37,7 @@ import project.swp.spring.sebt_platform.model.enums.VehicleCondition;
 import project.swp.spring.sebt_platform.model.enums.VehicleType;
 import project.swp.spring.sebt_platform.service.CloudinaryService;
 import project.swp.spring.sebt_platform.service.ListingService;
-import project.swp.spring.sebt_platform.service.ListingFeePolicy;
+import project.swp.spring.sebt_platform.service.FeePolicyService;
 import project.swp.spring.sebt_platform.util.Utils;
 import project.swp.spring.sebt_platform.validation.CreateListingValidator;
 import project.swp.spring.sebt_platform.repository.UserRepository;
@@ -62,7 +62,7 @@ public class ListingController {
     private CloudinaryService cloudinaryService;
 
     @Autowired
-    private ListingFeePolicy listingFeePolicy;
+    private FeePolicyService feePolicyService;
 
     @Autowired
     private UserRepository userRepository;
@@ -166,8 +166,7 @@ public class ListingController {
             if (c.contains("EV")) hasEv = true; // simple heuristic
             if (c.contains("BAT")) hasBattery = true; // battery keyword
         }
-        java.math.BigDecimal p = price != null ? java.math.BigDecimal.valueOf(price) : java.math.BigDecimal.ZERO;
-        var fee = listingFeePolicy.computeFee(new project.swp.spring.sebt_platform.service.ListingFeePolicy.ListingContext(hasEv, hasBattery, p));
+        var fee = feePolicyService.computeListingFee(hasEv,hasBattery,price);
         return ResponseEntity.ok(Map.of(
                 "fee", fee.toPlainString(),
                 "currency", "VND"
@@ -636,9 +635,7 @@ public class ListingController {
     }
 
     // ========== HELPER METHODS ==========
-
     private int validateSize(int size) {
         return (size <= 0 || size > 100) ? 12 : size;
     }
-
 }

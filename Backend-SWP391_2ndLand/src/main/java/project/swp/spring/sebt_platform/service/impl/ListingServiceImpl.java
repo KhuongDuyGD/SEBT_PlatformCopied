@@ -50,8 +50,6 @@ import project.swp.spring.sebt_platform.repository.PostRequestRepository;
 import project.swp.spring.sebt_platform.repository.ProductRepository;
 import project.swp.spring.sebt_platform.repository.UserRepository;
 import project.swp.spring.sebt_platform.service.ListingService;
-import project.swp.spring.sebt_platform.service.ListingFeePolicy;
-import project.swp.spring.sebt_platform.service.WalletLedgerService;
 
 @Service
 public class ListingServiceImpl implements ListingService {
@@ -67,8 +65,6 @@ public class ListingServiceImpl implements ListingService {
     private final ListingImageRepository listingImageRepository;
     private final LocationRepository locationRepository;
     private final FavoriteRepository favoriteRepository;
-    private final ListingFeePolicy listingFeePolicy;
-    private final WalletLedgerService walletLedgerService;
 
     @Autowired
     public ListingServiceImpl(PostRequestRepository postRequestRepository,
@@ -79,9 +75,7 @@ public class ListingServiceImpl implements ListingService {
                               ListingRepository listingRepository,
                               ListingImageRepository listingImageRepository,
                               LocationRepository locationRepository,
-                              FavoriteRepository favoriteRepository,
-                              ListingFeePolicy listingFeePolicy,
-                              WalletLedgerService walletLedgerService) {
+                              FavoriteRepository favoriteRepository) {
         this.postRequestRepository = postRequestRepository;
         this.userRepository = userRepository;
         this.listingRepository = listingRepository;
@@ -91,8 +85,6 @@ public class ListingServiceImpl implements ListingService {
         this.batteryRepository = batteryRepository;
     this.productRepository = productRepository;
     this.favoriteRepository = favoriteRepository;
-    this.listingFeePolicy = listingFeePolicy;
-    this.walletLedgerService = walletLedgerService;
     }
 
     @Override

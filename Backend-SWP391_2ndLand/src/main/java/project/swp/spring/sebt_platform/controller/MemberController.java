@@ -19,7 +19,7 @@ import project.swp.spring.sebt_platform.dto.response.ListingFeePaymentResponseDT
 import project.swp.spring.sebt_platform.model.ListingEntity;
 import project.swp.spring.sebt_platform.model.enums.ListingStatus;
 import project.swp.spring.sebt_platform.repository.ListingRepository;
-import project.swp.spring.sebt_platform.service.ListingFeePolicy;
+import project.swp.spring.sebt_platform.service.FeePolicyService;
 import project.swp.spring.sebt_platform.dto.response.UserProfileResponseDTO;
 import project.swp.spring.sebt_platform.service.MemberService;
 import project.swp.spring.sebt_platform.util.Utils;
@@ -30,13 +30,13 @@ public class MemberController {
 
         private final MemberService memberService;
         private final ListingRepository listingRepository;
-        private final ListingFeePolicy listingFeePolicy;
+        private final FeePolicyService feePolicyService;
 
     @Autowired
-        public MemberController(MemberService memberService, ListingRepository listingRepository, ListingFeePolicy listingFeePolicy) {
+        public MemberController(MemberService memberService, ListingRepository listingRepository, FeePolicyService feePolicyService) {
                 this.memberService = memberService;
                 this.listingRepository = listingRepository;
-                this.listingFeePolicy = listingFeePolicy;
+                this.feePolicyService = feePolicyService;
     }
 
     @ApiResponses(value = {
@@ -280,19 +280,18 @@ public class MemberController {
                         if (listing == null) {
                                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Listing not found");
                         }
+
                         if (!listing.getSeller().getId().equals(userId)) {
                                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Listing does not belong to current user");
                         }
+
                         if (listing.getStatus() != ListingStatus.PAY_WAITING) {
                                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Listing is not waiting for payment");
                         }
 
-                        var ctx = new ListingFeePolicy.ListingContext(
-                                        listing.getProduct() != null && listing.getProduct().getEvVehicle() != null,
-                                        listing.getProduct() != null && listing.getProduct().getBattery() != null,
-                                        listing.getPrice()
-                        );
-                        var fee = listingFeePolicy.computeFee(ctx);
+                        var fee = feePolicyService.computeListingFee(listing.getProduct() != null && listing.getProduct().getEvVehicle() != null,
+                                listing.getProduct() != null && listing.getProduct().getBattery() != null,
+                                listing.getPrice().longValue());
 
                         ListingFeePaymentResponseDTO result = memberService.payByBalance(userId, listing.getId(), fee);
                         return ResponseEntity.status(result.insufficientBalance() ? HttpStatus.PAYMENT_REQUIRED : HttpStatus.OK).body(result);
@@ -326,12 +325,10 @@ public class MemberController {
                         if (listing.getStatus() != ListingStatus.PAY_WAITING) {
                                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Listing not in PAY_WAITING status");
                         }
-                        var ctx = new ListingFeePolicy.ListingContext(
-                                listing.getProduct() != null && listing.getProduct().getEvVehicle() != null,
+
+                        var fee = feePolicyService.computeListingFee(listing.getProduct() != null && listing.getProduct().getEvVehicle() != null,
                                 listing.getProduct() != null && listing.getProduct().getBattery() != null,
-                                listing.getPrice()
-                        );
-                        var fee = listingFeePolicy.computeFee(ctx);
+                                listing.getPrice().longValue());
                         return ResponseEntity.ok(Map.of("fee", fee));
                 } catch (Exception e) {
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Cannot compute fee: " + e.getMessage());
