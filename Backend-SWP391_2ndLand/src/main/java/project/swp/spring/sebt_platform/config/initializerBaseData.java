@@ -41,11 +41,10 @@ public class initializerBaseData implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-
-        adminService.addConfig("POST_LISTING_NORMAL_FEE", "50000", ConfigDataType.NUMBER, "Normal listing fee");
-        adminService.addConfig("POST_LISTING_PREMIUM_FEE", "800000", ConfigDataType.NUMBER, "Premium listing fee");
-        adminService.addConfig("POST_LISTING_FEATURED_FEE", "100000", ConfigDataType.NUMBER, "Featured listing fee");
-        adminService.addConfig("PRICING_FEE", "20000", ConfigDataType.NUMBER, "Fee for using pricing service");
+        adminService.addConfig("BATTERY_FEE", "50000", ConfigDataType.NUMBER, "Normal listing fee");
+        adminService.addConfig("EV_THRESHOLD", "500000000", ConfigDataType.NUMBER, "Premium listing fee");
+        adminService.addConfig("EV_LOW_FEE", "100000", ConfigDataType.NUMBER, "Featured listing fee");
+        adminService.addConfig("EV_HIGH_FEE", "200000", ConfigDataType.NUMBER, "Fee for using pricing service");
 
         authService.register("admin123", "noreplysebtplatform@gmail.com", UserRole.ADMIN);
         authService.register("123456", "ducminh852005@gmail.com", UserRole.MEMBER);

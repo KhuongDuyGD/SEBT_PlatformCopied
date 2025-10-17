@@ -18,7 +18,7 @@ import project.swp.spring.sebt_platform.util.Utils;
 import java.math.BigDecimal;
 import project.swp.spring.sebt_platform.dto.response.ListingFeePaymentResponseDTO;
 import project.swp.spring.sebt_platform.service.WalletLedgerService;
-import project.swp.spring.sebt_platform.service.ListingFeePolicy;
+import project.swp.spring.sebt_platform.service.FeePolicyService;
 import java.time.LocalDateTime;
 
 @Service
@@ -40,10 +40,7 @@ public class MemberServiceImpl implements MemberService {
                              FavoriteRepository favoriteRepository,
                              ListingRepository listingRepository,
                              WalletRepository walletRepository,
-                             PostRequestRepository postRequestRepository,
-                             SystemConfigRepository systemConfigRepository,
-                             WalletLedgerService walletLedgerService,
-                             ListingFeePolicy listingFeePolicy) {
+                             WalletLedgerService walletLedgerService) {
         this.userRepository = userRepository;
         this.favoriteRepository = favoriteRepository;
         this.listingRepository = listingRepository;
@@ -237,44 +234,64 @@ public class MemberServiceImpl implements MemberService {
         try {
             ListingEntity listing = listingRepository.findById(listingId).orElse(null);
             if (listing == null) {
-                return new ListingFeePaymentResponseDTO(listingId, fee, false, null, false, null, "Listing not found");
+                return new ListingFeePaymentResponseDTO(listingId, fee, false,
+                        null, false, null,
+                        "Listing not found");
             }
             if (!listing.getSeller().getId().equals(userId)) {
-                return new ListingFeePaymentResponseDTO(listingId, fee, false, listing.getStatus().name(), false, null, "Listing does not belong to user");
+                return new ListingFeePaymentResponseDTO(listingId, fee, false,
+                        listing.getStatus().name(), false,
+                        null, "Listing does not belong to user");
             }
             if (listing.getStatus() != ListingStatus.PAY_WAITING) {
                 // Idempotent: nếu đã ACTIVE thì coi như đã thanh toán
                 if (listing.getStatus() == ListingStatus.ACTIVE) {
                     WalletEntity wallet = walletRepository.findByUserId(userId);
-                    return new ListingFeePaymentResponseDTO(listingId, fee, false, listing.getStatus().name(), false, wallet.getBalance(), "Already active");
+                    return new ListingFeePaymentResponseDTO(listingId, fee,
+                            false, listing.getStatus().name(),
+                            false, wallet.getBalance(),
+                            "Already active");
                 }
-                return new ListingFeePaymentResponseDTO(listingId, fee, false, listing.getStatus().name(), false, null, "Listing not in PAY_WAITING state");
+                return new ListingFeePaymentResponseDTO(listingId, fee, false,
+                        listing.getStatus().name(), false,
+                        null, "Listing not in PAY_WAITING state");
             }
 
             WalletEntity wallet = walletRepository.findByUserId(userId);
             if (wallet == null) {
-                return new ListingFeePaymentResponseDTO(listingId, fee, false, listing.getStatus().name(), false, null, "Wallet not found");
+                return new ListingFeePaymentResponseDTO(listingId, fee,
+                        false, listing.getStatus().name(), false,
+                        null, "Wallet not found");
             }
 
             if (wallet.getBalance().compareTo(fee) < 0) {
-                return new ListingFeePaymentResponseDTO(listingId, fee, false, listing.getStatus().name(), true, wallet.getBalance(), "Insufficient balance");
+                return new ListingFeePaymentResponseDTO(listingId, fee,
+                        false, listing.getStatus().name(),
+                        true, wallet.getBalance(),
+                        "Insufficient balance");
             }
 
             var tx = walletLedgerService.debitListingFee(userId, listingId, fee);
             if (tx == null) {
-                return new ListingFeePaymentResponseDTO(listingId, fee, false, listing.getStatus().name(), false, wallet.getBalance(), "Debit failed");
+                return new ListingFeePaymentResponseDTO(listingId, fee,
+                        false, listing.getStatus().name(),
+                        false, wallet.getBalance(),
+                        "Debit failed");
             }
 
             listing.setStatus(ListingStatus.ACTIVE);
             listingRepository.save(listing);
             WalletEntity updatedWallet = walletRepository.findByUserId(userId);
-            return new ListingFeePaymentResponseDTO(listingId, fee, true, listing.getStatus().name(), false, updatedWallet.getBalance(), "Listing activated");
+            return new ListingFeePaymentResponseDTO(listingId, fee,
+                    true, listing.getStatus().name(),
+                    false, updatedWallet.getBalance(),
+                    "Listing activated");
         } catch (Exception e) {
-            return new ListingFeePaymentResponseDTO(listingId, fee, false, null, false, null, "Payment error: " + e.getMessage());
+            return new ListingFeePaymentResponseDTO(listingId, fee,
+                    false, null,
+                    false, null,
+                    "Payment error: " + e.getMessage());
         }
     }
-
-
-    // Legacy verifyListingType() removed – fee được tính qua ListingFeePolicy ở Controller.
 
 }
